@@ -4,15 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centro de Control de Producción (Versión Final)</title>
-    <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Pako (Compression library for sharing) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Tinos&display=swap" rel="stylesheet">
-    <!-- Custom Styles -->
     <style>
         :root {
             --bg-color: #0F172A; --surface-color: #1E293B; --border-color: #334155;
@@ -47,7 +43,7 @@
             width: 100%; max-width: 1600px; display: grid;
             grid-template-columns: 260px 1fr;
             grid-template-rows: auto auto 1fr;
-            grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; 
+            grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main";
             gap: 16px;
         }
         .sidebar {
@@ -169,6 +165,63 @@
         .modal-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
         .modal-close { font-size: 1.75rem; color: var(--text-dark); cursor: pointer; line-height: 1; position: absolute; top: 16px; right: 16px; }
         #modalBody textarea { width: 100%; height: 100px; resize: none; background-color: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;}
+
+        /* --- NUEVO: Estilos para panel desplegable --- */
+        h3.collapsible-trigger {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none; /* Prevenir selección de texto al hacer clic */
+        }
+        h3.collapsible-trigger .collapse-icon::before {
+            content: '►';
+            display: inline-block;
+            font-size: 0.7rem;
+            transition: transform 0.2s;
+        }
+        .card-collapsible.expanded h3.collapsible-trigger .collapse-icon::before {
+            transform: rotate(90deg);
+        }
+        .collapsible-content {
+            max-height: 0;
+            overflow-y: auto;
+            transition: max-height 0.3s ease-out;
+        }
+        .card-collapsible.expanded .collapsible-content {
+            max-height: 500px; /* Altura máxima para la lista de órdenes */
+            transition: max-height 0.4s ease-in;
+        }
+
+        /* --- NUEVO: Estilos responsivos para móviles --- */
+        @media (max-width: 992px) {
+            body {
+                padding: 8px;
+            }
+            .main-container {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "global-header"
+                    "header"
+                    "sidebar"
+                    "main";
+            }
+            .rastreo-controls {
+                grid-template-columns: 1fr;
+            }
+            .summary-card {
+                grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            }
+            .stat-item p {
+                font-size: 1.5rem;
+            }
+            .app-branding {
+                font-size: 1.8rem;
+            }
+            .app-title {
+                font-size: 1.1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -189,9 +242,12 @@
                     <input type="file" id="fileInput" accept=".xlsx, .xls, .json" multiple style="display: none;">
                     <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
                 </div>
-                <div class="card" style="flex-grow: 1;">
-                    <h3>Órdenes Cargadas</h3>
-                    <div id="orderList">
+                <div class="card card-collapsible expanded" style="flex-grow: 1;">
+                    <h3 class="collapsible-trigger" id="loadedOrdersHeader">
+                        <span>Órdenes Cargadas</span>
+                        <span class="collapse-icon"></span>
+                    </h3>
+                    <div id="orderList" class="collapsible-content">
                         <p class="text-dark" style="font-size:0.9rem;">Cargue uno o más archivos para comenzar.</p>
                     </div>
                 </div>
@@ -278,7 +334,6 @@
         </div>
     </div>
     
-    <!-- Modal HTML -->
     <div id="modalOverlay" class="modal-overlay">
         <div id="modalContent" class="modal-content">
              <span id="modalClose" class="modal-close">&times;</span>
@@ -340,6 +395,8 @@
             const modalBody = document.getElementById('modalBody');
             const modalClose = document.getElementById('modalClose');
             const copyReportBtn = document.getElementById('copyReportBtn');
+            // NUEVO: Elemento para controlar el panel desplegable
+            const loadedOrdersHeader = document.getElementById('loadedOrdersHeader');
 
             // --- EVENT LISTENERS ---
             fileDropArea.addEventListener('click', () => fileInput.click());
@@ -382,6 +439,13 @@
 
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
+
+            // NUEVO: Event listener para el panel desplegable
+            loadedOrdersHeader.addEventListener('click', () => {
+                const parentCard = loadedOrdersHeader.closest('.card-collapsible');
+                parentCard.classList.toggle('expanded');
+            });
+
 
             // --- MODAL FUNCTIONS ---
             function showModal(title, message, type = 'info', showCopyBtn = false) {
@@ -496,6 +560,8 @@
                         saveOrdersToLocalStorage();
                         updateOrderList();
                         setActiveOrder(isUpdate ? orderToUpdateKey : lastKey);
+                        // NUEVO: Asegurarse de que el panel esté expandido al cargar archivos
+                        document.querySelector('.card-collapsible').classList.add('expanded');
                     })
                     .catch(err => {
                         showModal('Error al Cargar', 'Uno o más archivos no pudieron ser procesados.', 'error');
@@ -701,7 +767,7 @@
 
                 const reportHTML = `
                     <div id="report-content" style="font-family: Inter, sans-serif; color: #F8FAFC;">
-                        <h3 style="margin: 0 0 10px 0; font-size: 1.1rem;">Reporte de Estatus de Jornada - ${reportDate}</h3>
+                        <h3 style="margin: 0 0 10px 0; font-size: 1.1rem; border: none; padding: 0;">Reporte de Estatus de Jornada - ${reportDate}</h3>
                         <p style="margin: 0 0 16px 0; font-size: 0.9rem;">
                             <strong>Órdenes Totales:</strong> ${totalOrders} | 
                             <strong>Órdenes Terminadas:</strong> ${completedOrders}
