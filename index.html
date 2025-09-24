@@ -131,6 +131,7 @@
         .line-badge { background-color: #334155; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem; font-weight: 500; color: var(--text-dark); }
         .line-badge span { font-weight: 700; color: var(--text-secondary); }
 
+        /* === ESTILOS TABLA EMPAQUE (ESCRITORIO) === */
         .box-row { cursor: pointer; }
         .box-row:hover { background-color: #334155; }
         .box-row td:first-child::before {
@@ -138,17 +139,10 @@
             font-size: 0.7rem; transition: transform 0.2s;
         }
         .box-row.expanded td:first-child::before { transform: rotate(90deg); }
-        
-        /* === INICIO: SOLUCIÓN CSS PARA TABLA DE EMPAQUE === */
-        .serial-row {
-            display: none;
-        }
-        .box-row.expanded + .serial-row {
-            display: table-row;
-        }
+        .serial-row { display: none; }
+        .box-row.expanded + .serial-row { display: table-row; }
         .serial-row td { background-color: var(--bg-color); padding: 12px 20px 12px 40px; border-color: #2a3a5e; }
-        /* === FIN: SOLUCIÓN CSS PARA TABLA DE EMPAQUE === */
-
+        
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
@@ -156,41 +150,20 @@
         tbody tr.is-today { background-color: rgba(52, 211, 153, 0.1) !important; }
         tbody tr.is-today td { color: var(--success-color) !important; }
         
-        .serial-details-container {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            width: 100%;
+        .serial-details-container, .mobile-packing-list {
+            display: flex; flex-direction: column;
+            gap: 12px; width: 100%;
         }
         .serial-detail-item {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            padding-bottom: 10px;
+            display: flex; flex-wrap: wrap; justify-content: space-between;
+            align-items: center; gap: 10px; padding-bottom: 10px;
             border-bottom: 1px solid var(--border-color);
         }
-        .serial-detail-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-        .serial-info, .packing-info {
-            display: flex;
-            flex-direction: column;
-        }
-        .packing-info {
-            text-align: left;
-        }
-        .detail-label {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-bottom: 2px;
-        }
-        .detail-value {
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
+        .serial-detail-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .serial-info, .packing-info { display: flex; flex-direction: column; }
+        .packing-info { text-align: left; }
+        .detail-label { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 2px; }
+        .detail-value { font-weight: 600; font-size: 0.95rem; }
 
         @media (min-width: 500px) {
             .packing-info { text-align: right; }
@@ -213,12 +186,10 @@
         .modal-overlay.visible .modal-content { transform: scale(1); }
         .modal-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
         .modal-close { font-size: 1.75rem; color: var(--text-dark); cursor: pointer; line-height: 1; position: absolute; top: 16px; right: 16px; }
-        #modalBody textarea, #modalBody pre { 
-            width: 100%; min-height: 150px; resize: none; background-color: var(--bg-color); 
-            color: var(--text-primary); border: 1px solid var(--border-color); 
-            border-radius: 6px; padding: 12px; font-family: 'Inter', sans-serif;
-            white-space: pre-wrap; word-wrap: break-word; font-size: 0.9rem;
-        }
+        #modalBody .status-report { font-family: 'Inter', sans-serif; font-size: 0.95rem; white-space: pre-wrap; color: var(--text-primary); }
+        #modalBody .status-report h4 { font-size: 1.1rem; color: var(--primary-color); margin: 16px 0 8px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;}
+        #modalBody .status-report p { margin: 4px 0; }
+        #modalBody .status-report strong { color: var(--text-secondary); }
 
         body.mode-rastreo #empaqueView { display: none !important; }
         body.mode-empaque #rastreoView { display: none !important; }
@@ -280,7 +251,7 @@
             }
             .card.mobile-collapsible.expanded h3.mobile-trigger::after { transform: rotate(90deg); }
             
-            #rastreoTable thead, #empaqueTable thead { display: none; }
+            #rastreoTable thead { display: none; }
             
             #rastreoTable tr { 
                 display: block; margin-bottom: 1rem; border-radius: 8px; 
@@ -297,36 +268,43 @@
                 text-align: left; margin-right: 1rem; color: var(--text-secondary);
             }
 
-            #empaqueTable, #empaqueTable tbody, #empaqueTable tr { display: block; }
-            #empaqueTable .box-row, #empaqueTable .serial-row {
-                margin-bottom: 1rem;
+            /* === ESTILOS PARA VISTA MÓVIL DE EMPAQUE (<details>) === */
+            #empaqueTableContainer { display: none; } /* Ocultar tabla en móvil */
+            .mobile-packing-list details {
+                background-color: var(--bg-color);
                 border: 1px solid var(--border-color);
                 border-radius: 8px;
+                margin-bottom: 1rem;
             }
+            .mobile-packing-list summary {
+                padding: 1rem;
+                cursor: pointer;
+                list-style: none; /* Ocultar flecha por defecto */
+            }
+            .mobile-packing-list summary::-webkit-details-marker { display: none; } /* Ocultar flecha en Chrome/Safari */
 
-            /* === INICIO: SOLUCIÓN CSS MÓVIL PARA TABLA DE EMPAQUE === */
-            .box-row.expanded + .serial-row {
-                display: block;
+            .summary-content {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                gap: 10px;
+                align-items: center;
             }
-            /* === FIN: SOLUCIÓN CSS MÓVIL PARA TABLA DE EMPAQUE === */
+            .summary-content div:first-child::before {
+                content: '►'; display: inline-block; margin-right: 10px;
+                font-size: 0.7rem; transition: transform 0.2s;
+            }
+            details[open] > summary .summary-content div:first-child::before {
+                transform: rotate(90deg);
+            }
+            .box-id-title { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); }
+            .box-details-summary { text-align: right; }
 
-            #empaqueTable .box-row { margin-bottom: 0; border-radius: 8px 8px 0 0; }
-            #empaqueTable .box-row.expanded { border-bottom-color: transparent; }
-             #empaqueTable .serial-row { margin-top: -1px; margin-bottom: 1rem; border-radius: 0 0 8px 8px; }
-
-            #empaqueTable td { display: block; padding: 0.5rem 0; border: none; }
-            #empaqueTable .box-row td { 
-                display: flex; justify-content: space-between; text-align: right; 
-                padding: 0.5rem 0; white-space: normal;
-                border-bottom: 1px solid #0f172a80;
+            .mobile-packing-list .serial-details-container {
+                padding: 0 1rem 1rem 1rem;
             }
-            #empaqueTable .box-row { padding: 1rem; }
-            #empaqueTable tr td:last-child { border-bottom: none; }
-            #empaqueTable .box-row td::before {
-                content: attr(data-label); float: left; font-weight: bold; 
-                text-align: left; margin-right: 1rem; color: var(--text-secondary);
-            }
-             #empaqueTable .serial-row td { padding: 1rem; }
+        }
+        @media (min-width: 993px) {
+            #empaqueMobileContainer { display: none; } /* Ocultar vista móvil en escritorio */
         }
     </style>
 </head>
@@ -430,9 +408,14 @@
                 <div id="empaqueView">
                     <div class="card" style="height:100%;">
                         <input type="text" id="empaqueFilterInput" placeholder="Buscar por Serial o BoxID..." style="margin-bottom:16px">
-                        <div class="table-wrapper">
+                        
+                        <div id="empaqueTableContainer" class="table-wrapper">
                              <table id="empaqueTable"></table>
                         </div>
+                        
+                        <div id="empaqueMobileContainer">
+                            </div>
+
                     </div>
                 </div>
             </main>
@@ -443,7 +426,7 @@
         <div id="modalContent" class="modal-content">
              <span id="modalClose" class="modal-close">&times;</span>
              <h2 id="modalTitle" class="modal-title"></h2>
-             <div id="modalBody" style="margin-top:16px; color: var(--text-secondary);"></div>
+             <div id="modalBody" style="margin-top:16px; color: var(--text-secondary); max-height: 70vh; overflow-y: auto;"></div>
              <button id="copyReportBtn" class="btn" style="margin-top: 20px; display:none;">Copiar al Portapapeles</button>
         </div>
     </div>
@@ -537,10 +520,8 @@
 
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
             
-            // === INICIO: LÓGICA PARA BOTONES DE EXPORTACIÓN Y REPORTE ===
             exportViewButton.addEventListener('click', handleExportView);
             exportStatusButton.addEventListener('click', handleStatusReport);
-            // === FIN: LÓGICA PARA BOTONES DE EXPORTACIÓN Y REPORTE ===
 
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
@@ -548,13 +529,14 @@
             function showModal(title, content, type = 'info', showCopyBtn = false) {
                  modalOverlay.querySelector('.modal-content').className = `modal-content ${type}`;
                  modalTitle.textContent = title;
-                 modalBody.innerHTML = content; // Can be HTML
+                 modalBody.innerHTML = content;
                  copyReportBtn.style.display = showCopyBtn ? 'block' : 'none';
                  if (showCopyBtn) {
                     copyReportBtn.onclick = () => {
-                        const reportText = modalBody.querySelector('pre, textarea')?.textContent || modalBody.textContent;
-                        navigator.clipboard.writeText(reportText).then(() => {
-                           showModal('Copiado', 'El reporte se ha copiado al portapapeles.', 'success');
+                        const reportContent = modalBody.querySelector('.status-report')?.innerText || modalBody.innerText;
+                        navigator.clipboard.writeText(reportContent).then(() => {
+                            copyReportBtn.textContent = '¡Copiado!';
+                            setTimeout(() => copyReportBtn.textContent = 'Copiar al Portapapeles', 2000);
                         }, () => {
                            showModal('Error', 'No se pudo copiar el reporte.', 'error');
                         });
@@ -867,7 +849,8 @@
                 exportStatusButton.disabled = !hasOrders;
                 if (!hasOrders) {
                     document.getElementById('rastreoTable').innerHTML = '';
-                    document.getElementById('empaqueTable').innerHTML = '';
+                    document.getElementById('empaqueTableContainer').innerHTML = `<table id="empaqueTable"></table>`;
+                    document.getElementById('empaqueMobileContainer').innerHTML = '';
                 }
                 renderSummary();
                 updateGlobalDashboard();
@@ -1011,6 +994,9 @@
                 ).join('');
             }
             
+            // =========================================================================
+            // === INICIO: RENDERIZADO DE EMPAQUE (ESCRITORIO Y MÓVIL) - RECONSTRUIDO ===
+            // =========================================================================
             function renderEmpaqueView(key) {
                 let dataToShow = new Map(); let headers = [];
                 if (key === 'all') {
@@ -1028,10 +1014,14 @@
                     const order = loadedOrders.get(key);
                     dataToShow = order.empaqueData || new Map(); headers = order.headers.empaque || [];
                 }
-                
-                const table = document.getElementById('empaqueTable');
+
+                const desktopContainer = document.getElementById('empaqueTableContainer');
+                const mobileContainer = document.getElementById('empaqueMobileContainer');
+
                 if (!dataToShow || dataToShow.size === 0 || !headers || headers.length === 0) {
-                    table.innerHTML = `<thead><tr><th>No hay datos de empaque disponibles.</th></tr></thead>`;
+                    const noDataMsg = `<thead><tr><th>No hay datos de empaque disponibles.</th></tr></thead>`;
+                    desktopContainer.innerHTML = `<table id="empaqueTable">${noDataMsg}</table>`;
+                    mobileContainer.innerHTML = `<p class="text-dark">${noDataMsg}</p>`;
                     return;
                 }
 
@@ -1041,13 +1031,16 @@
                 const employeeIdHeader = findHeader(headers, PACKING_KEYS.EMPLOYEE_ID);
 
                 if (!boxIdHeader || !serialHeader || !packedDateHeader || !employeeIdHeader) {
-                    table.innerHTML = `<thead><tr><th style="color: var(--warning-color);">Error: Columnas de empaque no encontradas en el archivo. Verifique que existan 'BoxID', 'Serial Number', 'Finish Packed Date' y 'Employee ID'.</th></tr></thead>`;
+                    const errorMsg = `<thead><tr><th style="color: var(--warning-color);">Error: Columnas de empaque no encontradas en el archivo. Verifique que existan 'BoxID', 'Serial Number', 'Finish Packed Date' y 'Employee ID'.</th></tr></thead>`;
+                    desktopContainer.innerHTML = `<table id="empaqueTable">${errorMsg}</table>`;
+                    mobileContainer.innerHTML = `<p class="text-dark" style="color: var(--warning-color);">${errorMsg}</p>`;
                     return;
                 }
 
                 const filterText = empaqueFilterInput.value.toLowerCase();
-                let tableHTML = `<thead><tr><th>${boxIdHeader}</th><th>Cantidad</th><th>Último Empaque</th></tr></thead><tbody>`;
-                
+                let desktopHTML = `<thead><tr><th>${boxIdHeader}</th><th>Cantidad</th><th>Último Empaque</th></tr></thead><tbody>`;
+                let mobileHTML = `<div class="mobile-packing-list">`;
+
                 for (const [boxId, serials] of dataToShow.entries()) {
                     if(!serials || serials.length === 0) continue;
                     const latestDate = Math.max(...serials.map(s => s[packedDateHeader] || 0));
@@ -1072,36 +1065,68 @@
                     });
                     serialsDetailsHTML += '</div>';
 
-                    tableHTML += `
+                    // HTML para la tabla de escritorio
+                    desktopHTML += `
                         <tr class="box-row" data-boxid="${boxId}">
                             <td data-label="Box ID">${boxId}</td>
                             <td data-label="Cantidad">${serials.length}</td>
                             <td data-label="Último Empaque">${formatDateTime(excelSerialToDate(latestDate))}</td>
                         </tr>
-                        <tr class="serial-row" data-parentbox="${boxId}">
-                            <td colspan="3">${serialsDetailsHTML}</td>
-                        </tr>`;
+                        <tr class="serial-row" data-parentbox="${boxId}"><td colspan="3">${serialsDetailsHTML}</td></tr>`;
+                    
+                    // HTML para las tarjetas de móvil
+                    mobileHTML += `
+                        <details>
+                            <summary>
+                                <div class="summary-content">
+                                    <div><span class="box-id-title">${boxId}</span></div>
+                                    <div class="box-details-summary">
+                                        <span class="detail-label">Cantidad: ${serials.length}</span><br>
+                                        <span class="detail-value">${formatDateTime(excelSerialToDate(latestDate))}</span>
+                                    </div>
+                                </div>
+                            </summary>
+                            ${serialsDetailsHTML}
+                        </details>`;
                 }
-                tableHTML += `</tbody>`;
-                table.innerHTML = tableHTML;
+                desktopHTML += `</tbody>`;
+                mobileHTML += `</div>`;
 
-                table.querySelectorAll('.box-row').forEach(row => {
+                desktopContainer.innerHTML = `<table id="empaqueTable">${desktopHTML}</table>`;
+                mobileContainer.innerHTML = mobileHTML;
+
+                desktopContainer.querySelectorAll('.box-row').forEach(row => {
                     row.addEventListener('click', () => row.classList.toggle('expanded'));
                 });
             }
 
-            // === INICIO: FUNCIONES DE ACCIONES (EXPORTAR Y REPORTE) ===
             function handleExportView() {
-                if (currentVisibleData.length === 0) {
+                if (!currentVisibleData || currentVisibleData.length === 0) {
                     showModal('Exportar Vista', 'No hay datos en la vista actual para exportar.', 'warning');
                     return;
                 }
                 try {
-                    const worksheet = XLSX.utils.json_to_sheet(currentVisibleData);
+                    // Limpiar y formatear los datos antes de exportar
+                    const dataToExport = currentVisibleData.map(row => {
+                        const cleanRow = {};
+                        // Iterar sobre las llaves de TRACKING_KEYS para asegurar el orden y el formato
+                        Object.values(TRACKING_KEYS).forEach(header => {
+                            if (row.hasOwnProperty(header)) {
+                                if (header === TRACKING_KEYS.DATE_REGISTERED) {
+                                    cleanRow[header] = formatDateTime(excelSerialToDate(row[header]));
+                                } else {
+                                    cleanRow[header] = row[header];
+                                }
+                            }
+                        });
+                        return cleanRow;
+                    });
+
+                    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
                     const workbook = XLSX.utils.book_new();
                     XLSX.utils.book_append_sheet(workbook, worksheet, 'Vista Actual');
                     const orderName = (activeOrderKey && activeOrderKey !== 'all') ? activeOrderKey : 'Multiples_Ordenes';
-                    XLSX.writeFile(workbook, `Reporte_Vista_${orderName}.xlsx`);
+                    XLSX.writeFile(workbook, `Reporte_Vista_${orderName}_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}.xlsx`);
                 } catch(e) {
                     console.error("Error al exportar a Excel:", e);
                     showModal('Error', 'Ocurrió un error al generar el archivo de Excel.', 'error');
@@ -1109,47 +1134,39 @@
             }
             
             function handleStatusReport() {
-                if (activeOrderKey === 'all' || !loadedOrders.has(activeOrderKey)) {
-                    showModal('Generar Reporte', 'Por favor, seleccione una sola orden para generar el reporte de estatus.', 'warning');
+                const incompleteOrders = Array.from(loadedOrders.entries())
+                    .filter(([key, order]) => (order.orderQty > order.packedQty))
+                    .map(([key, order]) => ({ key, ...order }));
+
+                if (incompleteOrders.length === 0) {
+                    showModal('Reporte de Estatus', '¡Felicidades! Todas las órdenes han sido completadas.', 'success');
                     return;
                 }
-                const order = loadedOrders.get(activeOrderKey);
-                const data = order.rastreoData || [];
-                const total = data.length;
-                const today = data.filter(r => r.status === 'today').length;
-                const delayed = data.filter(r => r.status === 'delayed').length;
-                const scrap = data.filter(r => r.status === 'scrap').length;
-                const normal = data.filter(r => r.status === 'normal').length;
-                
-                let report = `REPORTE DE ESTATUS - ORDEN: ${activeOrderKey}\n`;
-                report += `CATÁLOGO: ${order.catalogNumber || 'N/A'}\n`;
-                report += `--------------------------------------------------\n`;
-                report += `TOTAL DE PIEZAS REGISTRADAS: ${total}\n`;
-                report += `  - En Movimiento (Hoy):     ${today}\n`;
-                report += `  - Sin Movimiento (Retraso): ${delayed}\n`;
-                report += `  - En Scrap:                 ${scrap}\n`;
-                report += `  - Sin Estatus (Normal):     ${normal}\n`;
-                report += `--------------------------------------------------\n`;
-                
-                if (delayed > 0) {
-                    report += `\nDESGLOSE DE PIEZAS SIN MOVIMIENTO:\n`;
-                    const lineHeader = findHeader(order.headers.rastreo, TRACKING_KEYS.LINE);
-                    const stationHeader = findHeader(order.headers.rastreo, TRACKING_KEYS.STATION);
-                    
-                    const delayedByLine = data.filter(r => r.status === 'delayed').reduce((acc, row) => {
-                        const line = row[lineHeader] || 'Sin Línea';
-                        if (!acc[line]) acc[line] = 0;
-                        acc[line]++;
-                        return acc;
-                    }, {});
 
-                    for (const [line, count] of Object.entries(delayedByLine)) {
-                        report += `  - ${line}: ${count} pz\n`;
-                    }
-                }
-                showModal(`Reporte de Estatus: ${activeOrderKey}`, `<pre>${report}</pre>`, 'info', true);
+                let reportHTML = `<div class="status-report">`;
+                reportHTML += `<p><strong>Fecha del Reporte:</strong> ${new Date().toLocaleString('es-ES')}</p>`;
+
+                incompleteOrders.forEach(order => {
+                    const data = order.rastreoData || [];
+                    const remaining = (order.orderQty || 0) - (order.packedQty || 0);
+                    const today = data.filter(r => r.status === 'today').length;
+                    const delayed = data.filter(r => r.status === 'delayed').length;
+                    const scrap = data.filter(r => r.status === 'scrap').length;
+
+                    reportHTML += `
+                        <h4>📦 Orden: ${order.key}</h4>
+                        <p><strong>📝 Catálogo:</strong> ${order.catalogNumber || 'N/A'}</p>
+                        <p><strong>📊 Progreso:</strong> ${order.packedQty || 0} / ${order.orderQty || 0} Unidades</p>
+                        <p><strong>📉 Restantes:</strong> ${remaining} Unidades</p>
+                        <p>------------------</p>
+                        <p><strong>✅ En Movimiento (Hoy):</strong> ${today}</p>
+                        <p><strong>⚠️ Sin Movimiento (Retraso):</strong> ${delayed}</p>
+                        <p><strong>🗑️ En Scrap:</strong> ${scrap}</p>
+                    `;
+                });
+                reportHTML += `</div>`;
+                showModal(`Reporte de Órdenes Incompletas`, reportHTML, 'info', true);
             }
-            // === FIN: FUNCIONES DE ACCIONES (EXPORTAR Y REPORTE) ===
 
             function formatCell(value, header, isDateTime = false) {
                  if (isDateTime) return formatDateTime(excelSerialToDate(value));
