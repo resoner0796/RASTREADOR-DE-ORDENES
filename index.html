@@ -165,7 +165,6 @@
         .modal-content.success .modal-title { color: var(--success-color); }
         .modal-content.error .modal-title { color: var(--danger-color); }
         .modal-content.info .modal-title { color: var(--primary-color); }
-
     </style>
 </head>
 <body>
@@ -203,8 +202,8 @@
             </div>
             <div class="card">
                  <h2>3. Exportar Reportes</h2>
-                 <p class="text-dark" style="font-size: 0.9rem; margin-top: 0; margin-bottom: 16px;">Genera un archivo Excel con los seriales que requieren acción.</p>
-                 <button id="exportButton" class="btn" disabled>Exportar para Reimpresión</button>
+                 <p class="text-dark" style="font-size: 0.9rem; margin-top: 0; margin-bottom: 16px;">Exporta los datos que se muestran actualmente en la tabla.</p>
+                 <button id="exportButton" class="btn" disabled>Exportar Vista Actual</button>
             </div>
         </header>
 
@@ -246,6 +245,7 @@
             // --- GLOBAL STATE AND CONSTANTS ---
             let allData = [];
             let processedData = [];
+            let currentVisibleData = []; // This will hold the data currently displayed in the table
             let currentStatusFilter = 'all';
             let currentLineFilter = 'all';
             let headersCache = {};
@@ -488,25 +488,18 @@
             }
             
             function handleExport() {
-                // This function is now completely independent and robust.
-                if (allData.length === 0 || !headersCache.serial) {
-                    showModal('Error de Exportación', 'No hay datos cargados o no se pudo encontrar la columna de seriales.', 'error');
+                if (!headersCache.serial) {
+                    showModal('Error de Exportación', 'No se pudo identificar la columna "Producto Serial Number". Verifique el archivo.', 'error');
                     return;
                 }
-
-                let dataToExport = processedData.filter(row => row.status === 'delayed');
                 
-                if(currentLineFilter !== 'all'){
-                    dataToExport = dataToExport.filter(row => row[headersCache.line] === currentLineFilter);
-                }
-                
-                if (dataToExport.length === 0) {
-                     showModal('Información', 'No hay seriales sin movimiento (retrasados) para exportar con los filtros actuales.', 'info');
+                if (currentVisibleData.length === 0) {
+                     showModal('Información', 'No hay datos visibles en la tabla para exportar (según los filtros aplicados).', 'info');
                     return;
                 }
 
                 const orderNumber = statOrderNumber.textContent;
-                const finalData = dataToExport.map(row => {
+                const finalData = currentVisibleData.map(row => {
                     const serial = String(row[headersCache.serial] || '');
                     const cleanedSerial = serial.replace(/S#/i, '');
                     return {
@@ -517,14 +510,13 @@
 
                 const worksheet = XLSX.utils.json_to_sheet(finalData);
                 const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Reimpresión");
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Exportación");
 
-                const fileName = `Reimpresion_Orden_${orderNumber}.xlsx`;
+                const fileName = `Exportacion_Orden_${orderNumber}.xlsx`;
                 XLSX.writeFile(workbook, fileName);
 
                 showModal('Exportación Exitosa', `Se ha generado el archivo "${fileName}" con ${finalData.length} seriales.`, 'success');
             }
-
 
             // --- UI RENDERING ---
             function render() {
@@ -533,7 +525,7 @@
                 let filteredData = processedData;
 
                 if (currentStatusFilter !== 'all') {
-                    filteredData = processedData.filter(row => row.status === currentStatusFilter);
+                    filteredData = filteredData.filter(row => row.status === currentStatusFilter);
                 }
                 if (currentLineFilter !== 'all') {
                     filteredData = filteredData.filter(row => row[headersCache.line] === currentLineFilter);
@@ -551,6 +543,9 @@
 
                 updateTable(filteredData, displayHeaders);
                 updateLineCounts(filteredData);
+
+                // ** CRITICAL FIX **: Update the global variable with the currently visible data
+                currentVisibleData = filteredData;
             }
 
             function updateTable(data, displayHeaders) {
@@ -603,6 +598,7 @@
             function resetView() {
                 allData = [];
                 processedData = [];
+                currentVisibleData = [];
                 headersCache = {};
                 fileNameDisplay.textContent = '';
                 statOrderNumber.textContent = 'N/A';
