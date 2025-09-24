@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control de Órdenes (Precisión Horaria)</title>
+    <title>Panel de Control de Órdenes (con Exportación)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Custom Styles -->
     <style>
@@ -44,7 +44,7 @@
 
         .controls-header {
             display: grid;
-            grid-template-columns: 1fr 2fr;
+            grid-template-columns: 1fr 2fr 1fr;
             gap: 24px;
         }
 
@@ -89,16 +89,25 @@
         .filter-container { display: flex; flex-direction: column; gap: 16px; }
         .filter-group { display: flex; flex-wrap: wrap; gap: 10px; }
 
-        .filter-btn {
+        .btn, .filter-btn {
             padding: 8px 16px; border-radius: 6px; cursor: pointer; background-color: #334155;
             border: 1px solid #475569; color: var(--text-secondary); font-weight: 500;
             text-align: center; transition: all 0.2s;
         }
-        .filter-btn:hover { background-color: #475569; color: var(--text-primary); }
+        .btn:hover, .filter-btn:hover { background-color: #475569; color: var(--text-primary); }
         .filter-btn.active {
             color: var(--bg-color); font-weight: 700;
             background-color: var(--primary-color); border-color: var(--primary-color);
         }
+        .btn {
+             width: 100%; padding: 12px; background-color: var(--primary-color); color: var(--bg-color);
+             font-weight: 700;
+        }
+        .btn:disabled {
+            background-color: #334155; color: var(--text-dark); cursor: not-allowed;
+            border-color: #475569;
+        }
+        .btn:hover:not(:disabled) { background-color: #67CFFB;}
         
         .summary-card {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -166,8 +175,12 @@
                              <p id="lineFiltersPlaceholder" class="text-dark" style="font-size: 0.9rem;">Cargue un archivo para ver los filtros de línea.</p>
                         </div>
                     </div>
-                     <input type="text" id="filterInput" placeholder="Buscar por serial, status, etc...">
                 </div>
+            </div>
+            <div class="card">
+                 <h2>3. Exportar Reportes</h2>
+                 <p class="text-dark" style="font-size: 0.9rem; margin-top: 0; margin-bottom: 16px;">Genera un archivo Excel con los seriales que requieren acción.</p>
+                 <button id="exportButton" class="btn" disabled>Exportar para Reimpresión</button>
             </div>
         </header>
 
@@ -180,6 +193,7 @@
         </section>
 
         <main class="results-card card">
+            <input type="text" id="filterInput" placeholder="Buscar en la tabla por serial, status, etc..." style="margin-bottom: 16px;">
             <div id="lineCountsContainer"></div>
             <div id="output" class="table-wrapper">
                 <div id="loader" style="display: none;">Procesando archivo...</div>
@@ -193,10 +207,12 @@
         document.addEventListener('DOMContentLoaded', () => {
             // --- GLOBAL STATE AND CONSTANTS ---
             let allData = [];
+            let processedData = []; // This will store data with calculated status
             let currentStatusFilter = 'all';
             let currentLineFilter = 'all';
 
             const KEY_HEADER_TEXT = {
+                SERIAL: 'Producto Serial Number',
                 IS_SCRAP: 'Is Scrap', NOT_PACKED: 'Not Packed',
                 CREATED_BY: 'Created By', DATE_REGISTERED: 'Date Registered'
             };
@@ -221,6 +237,7 @@
             const statusFiltersContainer = document.getElementById('statusFilters');
             const lineFiltersContainer = document.getElementById('lineFilters');
             const lineFiltersPlaceholder = document.getElementById('lineFiltersPlaceholder');
+            const exportButton = document.getElementById('exportButton');
 
             // --- EVENT LISTENERS ---
             fileDropArea.addEventListener('click', () => fileInput.click());
@@ -243,19 +260,17 @@
                 }
             });
 
+            exportButton.addEventListener('click', handleExport);
+
             // --- HELPER FUNCTIONS ---
             function excelSerialToDate(serial) {
-                // This is a professional-grade function to convert Excel date serials.
-                // It correctly handles the 1900 leap year bug and avoids timezone issues.
                 if (typeof serial !== 'number' || isNaN(serial)) return null;
                 try {
                     const decoded_date = XLSX.SSF.parse_date_code(serial);
                     if (decoded_date) {
                         return new Date(decoded_date.y, decoded_date.m - 1, decoded_date.d, decoded_date.H, decoded_date.M, decoded_date.S);
                     }
-                } catch(e) {
-                    console.error("Could not parse date serial:", serial, e);
-                }
+                } catch(e) { console.error("Could not parse date serial:", serial, e); }
                 return null;
             }
 
@@ -300,8 +315,11 @@
                             const scrapHeader = findHeader(headers, KEY_HEADER_TEXT.IS_SCRAP);
                             const scrapCount = allData.filter(row => String(row[scrapHeader]).trim().toUpperCase() === 'X').length;
                             statScrapQty.textContent = scrapCount;
+                            
+                            processAllData(); // Pre-calculate status for all rows
                             createLineFilters(headers);
                             render();
+                            exportButton.disabled = false;
                         } else {
                            placeholderText.textContent = "Se procesó el archivo, pero no se encontró la tabla de datos en la fila 20 o no contiene información.";
                         }
@@ -379,20 +397,13 @@
                 });
             }
 
-            // --- UI RENDERING ---
-            function render() {
-                if (allData.length === 0) return;
-
-                const headers = Object.keys(allData[0]);
+            function processAllData() {
+                const headers = Object.keys(allData[0] || {});
                 const scrapHeader = findHeader(headers, KEY_HEADER_TEXT.IS_SCRAP);
-                const notPackedHeader = findHeader(headers, KEY_HEADER_TEXT.NOT_PACKED);
                 const dateRegisteredHeader = findHeader(headers, KEY_HEADER_TEXT.DATE_REGISTERED);
-                const createdByHeader = findHeader(headers, KEY_HEADER_TEXT.CREATED_BY);
-                const lineHeader = findHeader(headers, 'Line');
-                
                 const today = new Date();
 
-                let processedData = allData.map(row => {
+                processedData = allData.map(row => {
                     let status = 'normal';
                     const isScrap = String(row[scrapHeader]).trim().toUpperCase() === 'X';
                     if (isScrap) {
@@ -409,6 +420,48 @@
                     }
                     return { ...row, status };
                 });
+            }
+            
+            function handleExport() {
+                const serialHeader = findHeader(Object.keys(allData[0] || {}), KEY_HEADER_TEXT.SERIAL);
+                if (!serialHeader) {
+                    alert("No se pudo encontrar la columna de seriales para exportar.");
+                    return;
+                }
+
+                const dataToExport = processedData
+                    .filter(row => row.status === 'delayed')
+                    .map(row => {
+                        const serial = String(row[serialHeader] || '');
+                        // Remove "S#" prefix, case-insensitive
+                        const cleanedSerial = serial.replace(/S#/i, '');
+                        return { 'Serial_Para_Reimpresion': cleanedSerial };
+                    });
+                
+                if (dataToExport.length === 0) {
+                    alert("No hay seriales sin movimiento para exportar.");
+                    return;
+                }
+
+                const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Reimpresión");
+
+                const orderNumber = statOrderNumber.textContent || 'SIN_ORDEN';
+                const fileName = `Reimpresion_Orden_${orderNumber}.xlsx`;
+                XLSX.writeFile(workbook, fileName);
+            }
+
+
+            // --- UI RENDERING ---
+            function render() {
+                if (processedData.length === 0) return;
+
+                const headers = Object.keys(allData[0]);
+                const notPackedHeader = findHeader(headers, KEY_HEADER_TEXT.NOT_PACKED);
+                const scrapHeader = findHeader(headers, KEY_HEADER_TEXT.IS_SCRAP);
+                const createdByHeader = findHeader(headers, KEY_HEADER_TEXT.CREATED_BY);
+                const lineHeader = findHeader(headers, 'Line');
                 
                 let filteredData = processedData;
 
@@ -482,6 +535,7 @@
 
             function resetView() {
                 allData = [];
+                processedData = [];
                 fileNameDisplay.textContent = '';
                 statOrderNumber.textContent = 'N/A';
                 statOrderQty.textContent = '0';
@@ -499,6 +553,7 @@
                 placeholderText.textContent = 'Cargue un archivo para comenzar.';
                 resultsTable.style.display = 'none';
                 lineCountsContainer.innerHTML = '';
+                exportButton.disabled = true;
             }
         });
     </script>
