@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control de Órdenes (Reportes Avanzados)</title>
+    <title>Panel de Control de Órdenes (Solución Definitiva)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
@@ -251,10 +251,13 @@
             let headersCache = {};
 
             const KEY_HEADER_TEXT = {
-                SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', 
-                NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', 
-                DATE_REGISTERED: 'Date Registered', LINE: 'Line',
-                STATION: 'Área' // Mapping Station to Área
+                SERIAL: 'Product Serial Number', 
+                IS_SCRAP: 'Is Scrap', 
+                NOT_PACKED: 'Not Packed', 
+                CREATED_BY: 'Created By', 
+                DATE_REGISTERED: 'Date Registered', 
+                LINE: 'Line',
+                STATION: 'Station' // Corrected based on user feedback
             };
             const TARGET_COLUMNS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
 
@@ -491,7 +494,7 @@
             
             function handleExport() {
                 if (!headersCache.serial || !headersCache.station || !headersCache.dateRegistered) {
-                    showModal('Error de Exportación', `No se pudo identificar una columna clave (Serial, Área o Fecha). Verifique el archivo.`, 'error');
+                    showModal('Error de Exportación', `No se pudo identificar una columna clave ("${KEY_HEADER_TEXT.SERIAL}", "${KEY_HEADER_TEXT.STATION}", o "${KEY_HEADER_TEXT.DATE_REGISTERED}"). Verifique el archivo.`, 'error');
                     return;
                 }
                 
