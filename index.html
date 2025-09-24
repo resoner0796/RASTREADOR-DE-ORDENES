@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Control de Producción (Versión Definitiva)</title>
+    <title>Centro de Control de Producción (con Reporte Gerencial)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
@@ -111,11 +111,6 @@
         thead { position: sticky; top: 0; background-color: var(--surface-color); z-index: 10; }
         th { font-weight: 600; color: var(--text-secondary); font-size: 0.75rem; }
         
-        .controls-header { /* ** CRITICAL FIX ** */
-            display: grid;
-            grid-template-columns: 1fr 2fr 1fr;
-            gap: 16px;
-        }
         /* Rastreo View specific */
         .rastreo-controls { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px;}
         .filter-container { display: flex; flex-direction: column; gap: 16px; }
@@ -164,7 +159,7 @@
         .modal-overlay.visible { opacity: 1; visibility: visible; }
         .modal-content {
             background-color: var(--surface-color); border-radius: 12px; padding: 24px;
-            border: 1px solid var(--border-color); width: 90%; max-width: 450px;
+            border: 1px solid var(--border-color); width: 90%; max-width: 600px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: scale(0.95); transition: transform 0.3s;
         }
         .modal-overlay.visible .modal-content { transform: scale(1); }
@@ -247,8 +242,10 @@
                         </div>
                         <div>
                              <h3>Exportar Reportes</h3>
-                             <p class="text-dark" style="font-size: 0.9rem; margin-top: 0; margin-bottom: 16px;">Exporta los datos que se muestran actualmente en la tabla.</p>
-                             <button id="exportButton" class="btn" disabled>Exportar Vista Actual</button>
+                             <div style="display: flex; flex-direction: column; gap: 10px;">
+                                 <button id="exportViewButton" class="btn" disabled>Exportar Vista Actual</button>
+                                 <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
+                             </div>
                         </div>
                     </div>
                     <div class="card" style="flex-grow:1; display:flex; flex-direction:column;">
@@ -277,7 +274,8 @@
         <div id="modalContent" class="modal-content">
              <span id="modalClose" class="modal-close">&times;</span>
              <h2 id="modalTitle" class="modal-title"></h2>
-             <p id="modalMessage" style="margin-top:16px; color: var(--text-secondary);"></p>
+             <div id="modalBody" style="margin-top:16px; color: var(--text-secondary);"></div>
+             <button id="copyReportBtn" class="btn" style="margin-top: 20px; display:none;">Copiar al Portapapeles</button>
         </div>
     </div>
 
@@ -321,14 +319,16 @@
             const rastreoStatusFilters = document.getElementById('rastreoStatusFilters');
             const rastreoLineFilters = document.getElementById('rastreoLineFilters');
             const rastreoLineFiltersPlaceholder = document.getElementById('rastreoLineFiltersPlaceholder');
-            const exportButton = document.getElementById('exportButton');
+            const exportViewButton = document.getElementById('exportViewButton');
+            const exportStatusButton = document.getElementById('exportStatusButton');
             const lineCountsContainer = document.getElementById('lineCountsContainer');
             const placeholderText = document.getElementById('placeholderText');
             const empaqueFilterInput = document.getElementById('empaqueFilterInput');
             const modalOverlay = document.getElementById('modalOverlay');
             const modalTitle = document.getElementById('modalTitle');
-            const modalMessage = document.getElementById('modalMessage');
+            const modalBody = document.getElementById('modalBody');
             const modalClose = document.getElementById('modalClose');
+            const copyReportBtn = document.getElementById('copyReportBtn');
 
             // --- EVENT LISTENERS ---
             fileDropArea.addEventListener('click', () => fileInput.click());
@@ -365,16 +365,18 @@
             });
 
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
-            exportButton.addEventListener('click', handleExport);
+            exportViewButton.addEventListener('click', handleExport);
+            exportStatusButton.addEventListener('click', handleStatusReport);
 
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
 
             // --- MODAL FUNCTIONS ---
-            function showModal(title, message, type = 'info') {
+            function showModal(title, message, type = 'info', showCopyBtn = false) {
                  modalOverlay.querySelector('.modal-content').className = `modal-content ${type}`;
                  modalTitle.textContent = title;
-                 modalMessage.textContent = message;
+                 modalBody.innerHTML = message; // Use innerHTML to render report table
+                 copyReportBtn.style.display = showCopyBtn ? 'block' : 'none';
                  modalOverlay.classList.add('visible');
             }
             function hideModal() { modalOverlay.classList.remove('visible'); }
@@ -597,6 +599,94 @@
 
                 showModal('Exportación Exitosa', `Se ha generado el archivo "${fileName}" con ${finalData.length} seriales.`, 'success');
             }
+            
+             function handleStatusReport() {
+                if (loadedOrders.size === 0) {
+                    showModal('Información', 'No hay órdenes cargadas para generar un reporte.', 'info');
+                    return;
+                }
+
+                const now = new Date();
+                const reportDate = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} AM`;
+
+                const totalOrders = loadedOrders.size;
+                const completedOrders = Array.from(loadedOrders.values()).filter(order => order.orderQty > 0 && order.orderQty <= order.packedQty).length;
+
+                let tableRows = '';
+                for (const [key, order] of loadedOrders.entries()) {
+                    const scrapHeader = findHeader(order.headers.rastreo, TRACKING_KEYS.IS_SCRAP);
+                    const scrapCount = scrapHeader ? order.rastreoData.filter(row => String(row[scrapHeader]).trim().toUpperCase() === 'X').length : 0;
+                    const delayedCount = order.rastreoData.filter(row => row.status === 'delayed').length;
+                    
+                    let status, statusEmoji;
+                    if (order.orderQty > 0 && order.orderQty <= order.packedQty) {
+                        status = 'Terminada';
+                        statusEmoji = '🟢';
+                    } else if (delayedCount > 0) {
+                        status = 'Con Retrasos';
+                        statusEmoji = '🟡';
+                    } else if (scrapCount > 5) { // Example: critical if more than 5 scraps
+                        status = 'Crítico';
+                        statusEmoji = '🔴';
+                    } else {
+                        status = 'En Proceso';
+                        statusEmoji = '🔵';
+                    }
+                    
+                    const progress = order.orderQty > 0 ? ((order.packedQty / order.orderQty) * 100).toFixed(1) : 0;
+                    
+                    tableRows += `
+                        <tr style="border-bottom: 1px solid #334155;">
+                            <td style="padding: 8px; font-weight: bold;">${key}</td>
+                            <td style="padding: 8px;">${statusEmoji} ${status}</td>
+                            <td style="padding: 8px;">${order.packedQty} / ${order.orderQty} (${progress}%)</td>
+                            <td style="padding: 8px; text-align: center;">${scrapCount}</td>
+                            <td style="padding: 8px; text-align: center;">${delayedCount}</td>
+                        </tr>
+                    `;
+                }
+
+                const reportHTML = `
+                    <div id="report-content" style="font-family: Inter, sans-serif; color: #F8FAFC;">
+                        <h3 style="margin: 0 0 10px 0; font-size: 1.1rem;">Reporte de Estatus de Jornada - ${reportDate}</h3>
+                        <p style="margin: 0 0 16px 0; font-size: 0.9rem;">
+                            <strong>Órdenes Totales:</strong> ${totalOrders} | 
+                            <strong>Órdenes Terminadas:</strong> ${completedOrders}
+                        </p>
+                        <hr style="border: none; border-top: 1px solid #334155; margin-bottom: 16px;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                            <thead style="color: #94A3B8;">
+                                <tr>
+                                    <th style="padding: 8px;">Orden</th>
+                                    <th style="padding: 8px;">Estatus</th>
+                                    <th style="padding: 8px;">Progreso</th>
+                                    <th style="padding: 8px; text-align: center;">Scrap</th>
+                                    <th style="padding: 8px; text-align: center;">Sin Mov.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                showModal('Reporte de Estatus de Jornada', reportHTML, 'info', true);
+                
+                copyReportBtn.onclick = () => {
+                    try {
+                        const content = document.getElementById('report-content');
+                        const blob = new Blob([content.innerHTML], { type: 'text/html' });
+                        const clipboardItem = new ClipboardItem({ 'text/html': blob });
+                        navigator.clipboard.write([clipboardItem]).then(() => {
+                           showModal('¡Éxito!', 'Reporte copiado al portapapeles. Ya puedes pegarlo en tu correo.', 'success');
+                        });
+                    } catch(e) {
+                         showModal('Error', 'No se pudo copiar el reporte. Tu navegador podría no ser compatible.', 'error');
+                         console.error("Copy failed:", e);
+                    }
+                };
+            }
 
 
             // --- UI & RENDERING ---
@@ -682,7 +772,8 @@
                     placeholderText.style.display = 'block';
                     document.getElementById('rastreoTable').innerHTML = '';
                     document.getElementById('empaqueTable').innerHTML = '';
-                    exportButton.disabled = true;
+                    exportViewButton.disabled = true;
+                    exportStatusButton.disabled = true;
                     rastreoLineFiltersPlaceholder.textContent = 'Cargue un archivo para ver los filtros.';
                     rastreoLineFiltersPlaceholder.style.display = 'block';
                     rastreoLineFilters.innerHTML = '';
@@ -771,7 +862,8 @@
                 }
 
                 currentVisibleData = filteredData;
-                exportButton.disabled = dataToShow.length === 0;
+                exportViewButton.disabled = dataToShow.length === 0;
+                exportStatusButton.disabled = loadedOrders.size === 0;
 
                 updateRastreoTable(filteredData, headers);
                 updateLineCounts(filteredData, headers);
