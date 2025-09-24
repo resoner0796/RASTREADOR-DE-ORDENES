@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Control de Producción (Versión Definitiva)</title>
+    <title>Centro de Control de Producción (Versión Final)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
@@ -25,13 +25,14 @@
         }
         .main-container {
             width: 100%; max-width: 1800px; display: grid;
-            grid-template-columns: 280px 1fr; grid-template-rows: auto 1fr;
-            grid-template-areas: "sidebar header" "sidebar main"; gap: 24px;
+            grid-template-columns: 280px 1fr; grid-template-rows: auto auto 1fr;
+            grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; gap: 24px;
         }
         .sidebar {
             grid-area: sidebar; background-color: var(--surface-color); border-radius: 12px;
             padding: 24px; display: flex; flex-direction: column; gap: 16px;
         }
+        .global-header { grid-area: global-header; }
         .header { grid-area: header; }
         .main-content { grid-area: main; display: flex; flex-direction: column; gap: 24px; }
         .card {
@@ -62,7 +63,7 @@
             display: flex; align-items: center; justify-content: center; transition: color 0.2s;
         }
         .order-item .icon-btn:hover { color: var(--text-primary); }
-        .order-item .icon-btn svg { width: 20px; height: 20px; }
+        .order-item .icon-btn svg { width: 18px; height: 18px; }
 
         .mode-switcher {
             display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 4px;
@@ -74,7 +75,7 @@
         }
         .mode-switcher button.active { background-color: var(--surface-color); color: var(--primary-color); }
         
-        .summary-card {
+        .summary-card, .global-dashboard-card {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 24px; text-align: center;
         }
@@ -167,7 +168,20 @@
             </div>
         </aside>
 
-        <header class="header card">
+        <header class="global-header card">
+            <div class="global-dashboard-card">
+                 <div class="stat-item">
+                    <h3>Órdenes del Día</h3>
+                    <p id="totalOrdersStat">0</p>
+                </div>
+                 <div class="stat-item">
+                    <h3>Órdenes Terminadas</h3>
+                    <p id="completedOrdersStat">0</p>
+                </div>
+            </div>
+        </header>
+
+        <section class="header card">
              <div class="mode-switcher">
                 <button id="modeRastreo" class="active">Rastreo</button>
                 <button id="modeEmpaque">Empaque</button>
@@ -179,7 +193,7 @@
                  <div class="stat-item"><h3>Restante</h3><p id="statRemainingQty">0</p></div>
                  <div class="stat-item"><h3>Cant. en Scrap</h3><p id="statScrapQty">0</p></div>
             </div>
-        </header>
+        </section>
 
         <main class="main-content">
             <div id="rastreoView" style="display:flex; flex-direction:column; gap:24px;">
@@ -266,6 +280,8 @@
             const statPackedQty = document.getElementById('statPackedQty');
             const statRemainingQty = document.getElementById('statRemainingQty');
             const statScrapQty = document.getElementById('statScrapQty');
+            const totalOrdersStat = document.getElementById('totalOrdersStat');
+            const completedOrdersStat = document.getElementById('completedOrdersStat');
             const modeRastreo = document.getElementById('modeRastreo');
             const modeEmpaque = document.getElementById('modeEmpaque');
             const rastreoView = document.getElementById('rastreoView');
@@ -351,14 +367,14 @@
                 return `${day}/${month}/${year} ${hours}:${minutes}`;
             }
              function findHeader(headers, keyText) { return headers.find(h => h.toLowerCase() === keyText.toLowerCase()); }
-
+            
             // --- LOCALSTORAGE ---
             function saveOrdersToLocalStorage() {
                 const dataToSave = JSON.stringify(Array.from(loadedOrders.entries()));
-                localStorage.setItem('loadedOrdersData', dataToSave);
+                localStorage.setItem('productionControlCenterData', dataToSave);
             }
             function loadOrdersFromLocalStorage() {
-                const savedData = localStorage.getItem('loadedOrdersData');
+                const savedData = localStorage.getItem('productionControlCenterData');
                 if (savedData) {
                     try {
                         const parsedData = JSON.parse(savedData);
@@ -369,7 +385,7 @@
                         }
                     } catch(e) {
                         console.error("Failed to load data from localStorage", e);
-                        localStorage.removeItem('loadedOrdersData');
+                        localStorage.removeItem('productionControlCenterData');
                     }
                 }
             }
@@ -390,7 +406,7 @@
                         });
                         saveOrdersToLocalStorage();
                         updateOrderList();
-                        setActiveOrder(lastKey);
+                        setActiveOrder(isUpdate ? orderToUpdateKey : lastKey);
                     })
                     .catch(err => {
                         showModal('Error al Cargar', 'Uno o más archivos no pudieron ser procesados.', 'error');
@@ -407,7 +423,7 @@
                             const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                             const orderNumber = worksheet['B3']?.v || `Archivo_${file.name.slice(0,10)}`;
                             
-                            const keyToUpdate = isUpdate ? orderToUpdateKey : orderNumber;
+                            const keyToUse = isUpdate ? orderToUpdateKey : orderNumber;
                             
                             const rastreoRawData = extractTableData(worksheet, TRACKING_COLS, 20);
                             const packingRawData = extractTableData(worksheet, Object.values(PACKING_COLS), 20, true);
@@ -422,7 +438,7 @@
                                     empaque: Object.keys(packingRawData[0] || {})
                                 }
                             };
-                            resolve({ key: keyToUpdate, data: orderData });
+                            resolve({ key: keyToUse, data: orderData });
                         } catch(err) { reject(err); }
                     };
                     reader.readAsArrayBuffer(file);
@@ -454,6 +470,8 @@
                             if(cell && cell.v !== undefined) {
                                 row[headerName] = cell.v;
                                 hasData = true;
+                            } else {
+                                row[headerName] = ''; // Ensure key exists
                             }
                          }
                      });
@@ -570,7 +588,7 @@
                     orderList.appendChild(orderItem);
                 }
                 setActiveOrder(activeOrderKey);
-                saveOrdersToLocalStorage();
+                updateGlobalDashboard();
             }
             
             function createOrderButton(key, text) {
@@ -595,9 +613,10 @@
                     const updateBtn = document.createElement('button');
                     updateBtn.className = 'icon-btn';
                     updateBtn.title = 'Actualizar orden';
-                    updateBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 2ZM10 15a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 15ZM10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM15.39 12.34a.75.75 0 0 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 1.06l-1.06 1.06ZM4.66 6.39a.75.75 0 0 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 1.06l-1.06 1.06ZM17.25 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 .75.75ZM5.25 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 .75.75ZM13.61 6.39a.75.75 0 0 1 1.06-1.06l1.06 1.06a.75.75 0 0 1-1.06 1.06l-1.06-1.06ZM6.39 13.61a.75.75 0 0 1 1.06-1.06l-1.06-1.06a.75.75 0 0 1-1.06 1.06l1.06 1.06Z"/></svg>`;
+                    updateBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183m-4.991-2.69v4.992" /></svg>`;
                     updateBtn.onclick = () => {
                         orderToUpdateKey = key;
+                        updateFileInput.value = ''; // Reset file input
                         updateFileInput.click();
                     };
                     item.appendChild(updateBtn);
@@ -605,10 +624,11 @@
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = 'icon-btn';
                     deleteBtn.title = 'Eliminar orden';
-                    deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75V4.5h8V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 6a.75.75 0 0 1 .75.75v7.5a.75.75 0 0 1-1.5 0v-7.5A.75.75 0 0 1 10 6ZM4.5 6a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-11Z" clip-rule="evenodd" /></svg>`;
+                    deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>`;
                     deleteBtn.onclick = () => {
                         loadedOrders.delete(key);
                         if (activeOrderKey === key) activeOrderKey = 'all';
+                        saveOrdersToLocalStorage();
                         updateOrderList();
                         render();
                     };
@@ -635,6 +655,7 @@
                     rastreoLineFiltersPlaceholder.textContent = 'Cargue un archivo para ver los filtros.';
                     rastreoLineFilters.innerHTML = '';
                     lineCountsContainer.innerHTML = '';
+                    updateGlobalDashboard();
                     return;
                 }
                 placeholderText.style.display = 'none';
@@ -644,6 +665,7 @@
                 } else {
                     renderEmpaqueView(activeOrderKey);
                 }
+                 updateGlobalDashboard();
             }
 
             function renderSummary() {
@@ -662,13 +684,22 @@
                     orderQty += order.orderQty;
                     packedQty += order.packedQty;
                     const scrapHeader = findHeader(order.headers.rastreo, TRACKING_KEYS.IS_SCRAP);
-                    scrapCount += order.rastreoData.filter(row => String(row[scrapHeader]).trim().toUpperCase() === 'X').length;
+                    if(scrapHeader) {
+                        scrapCount += order.rastreoData.filter(row => String(row[scrapHeader]).trim().toUpperCase() === 'X').length;
+                    }
                 });
 
                 statOrderQty.textContent = orderQty;
                 statPackedQty.textContent = packedQty;
                 statRemainingQty.textContent = orderQty - packedQty;
                 statScrapQty.textContent = scrapCount;
+            }
+
+             function updateGlobalDashboard() {
+                const totalOrders = loadedOrders.size;
+                const completedOrders = Array.from(loadedOrders.values()).filter(order => order.orderQty > 0 && order.orderQty <= order.packedQty).length;
+                totalOrdersStat.textContent = totalOrders;
+                completedOrdersStat.textContent = completedOrders;
             }
             
             function renderRastreoView(key) {
@@ -866,7 +897,6 @@
                 updateOrderList();
                 render();
             }
-
              // Initialize view
             loadOrdersFromLocalStorage();
 
