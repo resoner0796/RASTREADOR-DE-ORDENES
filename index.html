@@ -167,7 +167,7 @@
         #modalBody textarea { width: 100%; height: 100px; resize: none; background-color: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;}
 
 
-        /* --- NUEVO: Estilos responsivos y layout móvil --- */
+        /* --- ESTILOS RESPONSIVOS Y LAYOUT MÓVIL --- */
         @media (max-width: 992px) {
             body { padding: 8px; }
             .main-container {
@@ -176,21 +176,22 @@
                 gap: 12px;
             }
             
-            /* CORREGIDO: Aplanar la estructura para que los hijos se puedan reordenar */
+            /* Aplanar la estructura para que los hijos se puedan reordenar */
             .sidebar, .main-content, #rastreoView {
                 display: contents; 
             }
             .sidebar > h2 { display: none; }
 
-            /* CORREGIDO: Asignar el nuevo orden vertical a cada elemento individual */
-            .app-header { order: 1; }
-            .global-header { order: 2; }
-            .header { order: 3; } /* Contiene summary y switcher */
-            #uploadCard { order: 4; } /* Panel de Control */
-            #orderListCard { order: 5; } /* Órdenes Cargadas */
-            #filtersCard { order: 6; } /* Filtros y Acciones */
-            #tableCard { order: 7; } /* La tarjeta de la tabla de rastreo */
-            #empaqueView { order: 7; } /* La vista de empaque también va al final */
+            /* **CORRECCIÓN FINAL**: Asignar el orden numérico correcto a CADA bloque */
+            /* El .app-header está fuera de este contenedor, por lo que siempre va primero */
+            .global-header { order: 1; }
+            .header { order: 2; }
+            #uploadCard { order: 3; }
+            #orderListCard { order: 4; }
+            #filtersCard { order: 5; }
+            #tableCard { order: 6; }
+            #empaqueView { order: 6; } /* La vista de empaque también va al final */
+            
 
             /* Ajustar tarjetas de estadísticas según el nuevo diseño */
             .global-dashboard-card { grid-template-columns: 1fr 1fr; }
@@ -1044,7 +1045,6 @@
                 
                 const isMobile = window.innerWidth <= 992;
 
-                // Definir las columnas a mostrar en cada vista
                 let headersToRender;
                 if (isMobile) {
                     headersToRender = [
@@ -1052,7 +1052,7 @@
                         findHeader(headers, TRACKING_KEYS.LINE),
                         findHeader(headers, TRACKING_KEYS.STATION),
                         findHeader(headers, TRACKING_KEYS.DATE_REGISTERED)
-                    ].filter(Boolean); // Filtrar por si alguna columna no existe
+                    ].filter(Boolean);
                 } else {
                     const headersToHide = [TRACKING_KEYS.CREATED_BY, TRACKING_KEYS.NOT_PACKED, TRACKING_KEYS.IS_SCRAP].map(h => findHeader(headers, h)).filter(Boolean);
                     headersToRender = headers.filter(h => !headersToHide.includes(h) && h !== 'status');
