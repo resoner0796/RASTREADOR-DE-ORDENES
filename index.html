@@ -286,16 +286,11 @@
                 text-align: left; margin-right: 1rem; color: var(--text-secondary);
             }
 
-            /* === CSS FIX FOR PACKING TABLE === */
-            #empaqueTable, #empaqueTable tbody { display: block; } /* REMOVED 'tr' from this rule */
+            #empaqueTable, #empaqueTable tbody, #empaqueTable tr { display: block; }
             #empaqueTable .box-row, #empaqueTable .serial-row {
-                display: block; /* Ensure serial-row becomes block when visible */
                 margin-bottom: 1rem;
                 border: 1px solid var(--border-color);
                 border-radius: 8px;
-            }
-            #empaqueTable .serial-row { 
-                display: none; /* Keep it hidden by default */
             }
             #empaqueTable .box-row { margin-bottom: 0; border-radius: 8px 8px 0 0; }
             #empaqueTable .box-row.expanded { border-bottom-color: transparent; }
@@ -745,7 +740,6 @@
             // =========== ✅ FIN: SOLUCIÓN DEFINITIVA "EN MOVIMIENTO" ✅ ============
             // ======================================================================
 
-
             function groupEmpaqueData(data) {
                 if (!data || data.length === 0) return new Map();
                 const headers = Object.keys(data[0]);
@@ -1013,19 +1007,32 @@
                             dataToShow.get(boxId).push(...serials);
                         });
                     });
-                    if (loadedOrders.size > 0) headers = Array.from(loadedOrders.values()).find(o => o.headers.empaque)?.headers.empaque;
+                    if (loadedOrders.size > 0) {
+                        const orderWithHeaders = Array.from(loadedOrders.values()).find(o => o.headers && o.headers.empaque && o.headers.empaque.length > 0);
+                        if (orderWithHeaders) headers = orderWithHeaders.headers.empaque;
+                    }
                 } else if (loadedOrders.has(key)) {
                     const order = loadedOrders.get(key);
                     dataToShow = order.empaqueData; headers = order.headers.empaque;
                 }
+                
                 const table = document.getElementById('empaqueTable');
                 if (!dataToShow || dataToShow.size === 0 || !headers || headers.length === 0) {
-                     table.innerHTML = `<thead><tr><th>No hay datos de empaque.</th></tr></thead>`; return;
+                    table.innerHTML = `<thead><tr><th>No hay datos de empaque disponibles.</th></tr></thead>`;
+                    return;
                 }
+
                 const boxIdHeader = findHeader(headers, PACKING_KEYS.BOX_ID);
                 const serialHeader = findHeader(headers, PACKING_KEYS.SERIAL);
                 const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
                 const employeeIdHeader = findHeader(headers, PACKING_KEYS.EMPLOYEE_ID);
+
+                // Verificación de seguridad: Asegurarse que las columnas esenciales existen.
+                if (!boxIdHeader || !serialHeader || !packedDateHeader || !employeeIdHeader) {
+                    table.innerHTML = `<thead><tr><th style="color: var(--warning-color);">Error: Faltan columnas en el archivo Excel. Verifique que existan 'BoxID', 'Serial Number', 'Finish Packed Date' y 'Employee ID'.</th></tr></thead>`;
+                    return;
+                }
+
                 const filterText = empaqueFilterInput.value.toLowerCase();
                 let tableHTML = `
                     <thead><tr><th>${boxIdHeader}</th><th>Cantidad</th><th>Último Empaque</th></tr></thead>
@@ -1067,6 +1074,7 @@
                 }
                 tableHTML += `</tbody>`;
                 table.innerHTML = tableHTML;
+
                 table.querySelectorAll('.box-row').forEach(row => {
                     row.addEventListener('click', () => {
                         row.classList.toggle('expanded');
@@ -1074,7 +1082,6 @@
                         const serialRow = table.querySelector(`.serial-row[data-parentbox="${boxId}"]`);
                         if (serialRow) {
                             if (row.classList.contains('expanded')) {
-                                // Usar 'block' en vista móvil y 'table-row' en escritorio
                                 const isMobileView = window.innerWidth <= 992;
                                 serialRow.style.display = isMobileView ? 'block' : 'table-row';
                             } else {
