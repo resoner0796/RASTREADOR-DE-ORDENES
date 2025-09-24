@@ -1,520 +1,272 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Analizador de Órdenes - Rastreo de Seriales</title>
-
-<!-- Estilos simples y claros -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rastreo de Órdenes de Producción</title>
 <style>
-  :root{
-    --bg:#0f1724; --card:#0b1220; --muted:#9aa4b2; --accent:#4f46e5; --success:#10b981;
-    --danger:#ef4444; --glass: rgba(255,255,255,0.04);
-    font-family: Inter, Roboto, "Segoe UI", Arial, sans-serif;
-    color-scheme: dark;
-  }
-  html,body{height:100%; margin:0; background:linear-gradient(180deg,#071025 0%, #071726 100%); color:#e6eef8;}
-  .container{max-width:1100px; margin:28px auto; padding:22px;}
-  header{display:flex; gap:16px; align-items:center; margin-bottom:18px;}
-  header h1{font-size:20px; margin:0}
-  .panel{background:var(--card); padding:14px; border-radius:10px; box-shadow: 0 4px 18px rgba(2,6,23,0.6);}
-  .flex{display:flex; gap:12px; align-items:center;}
-  .col{flex:1;}
-  label{display:block; font-size:13px; color:var(--muted); margin-bottom:8px;}
-  input[type=file]{color:var(--muted);}
-  textarea{width:100%; min-height:120px; background:transparent; border:1px dashed var(--glass); color:inherit; padding:10px; border-radius:8px; resize:vertical;}
-  button{background:var(--accent); border:none; color:white; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:600;}
-  button.ghost{background:transparent; border:1px solid rgba(255,255,255,0.06);}
-  .cards{display:grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-top:12px;}
-  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:12px; border-radius:8px;}
-  .small{font-size:12px; color:var(--muted);}
-  table{width:100%; border-collapse:collapse; margin-top:14px; font-size:13px;}
-  th,td{padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.03); text-align:left;}
-  th{color:var(--muted); font-weight:600; font-size:12px;}
-  .tag{padding:5px 8px; border-radius:999px; font-size:12px; display:inline-block;}
-  .tag.success{background:rgba(16,185,129,0.12); color:var(--success);}
-  .tag.danger{background:rgba(239,68,68,0.08); color:var(--danger);}
-  .filters{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; align-items:center;}
-  .hint{font-size:12px; color:var(--muted); margin-top:8px;}
-  .results{margin-top:16px;}
-  .table-wrap{max-height:380px; overflow:auto; border-radius:8px;}
-  .pill{background:rgba(255,255,255,0.03); padding:6px 10px; border-radius:999px;}
-  .btn-small{padding:6px 10px; font-size:13px;}
-  .footer{margin-top:16px; font-size:12px; color:var(--muted);}
-  .kbd{background:rgba(255,255,255,0.03); padding:2px 6px; border-radius:6px; font-weight:600; font-size:12px;}
-  @media (max-width:640px){
-    header{flex-direction:column; align-items:flex-start;}
-  }
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f4f6f9;
+        color: #333;
+    }
+    header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    header h1 {
+        margin: 0;
+        font-size: 1.8em;
+        color: #2c3e50;
+    }
+    .upload-section {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .upload-section input, 
+    .upload-section button {
+        margin: 5px;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.95em;
+    }
+    .upload-section input[type=file] {
+        background: #fff;
+        border: 1px solid #ccc;
+        cursor: pointer;
+    }
+    .upload-section button {
+        background: #2980b9;
+        color: white;
+        cursor: pointer;
+    }
+    .upload-section button:hover {
+        background: #1f6391;
+    }
+    .cards {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+    }
+    .card {
+        background: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        text-align: center;
+        min-width: 160px;
+    }
+    .card h3 {
+        margin: 0;
+        font-size: 1em;
+        color: #555;
+    }
+    .card p {
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        background: white;
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    th, td {
+        padding: 10px 12px;
+        text-align: left;
+        font-size: 0.9em;
+    }
+    th {
+        background: #2980b9;
+        color: white;
+    }
+    tr:nth-child(even) {
+        background: #f9f9f9;
+    }
+    tr:hover {
+        background: #ecf6ff;
+    }
+    tr.scrap {
+        background-color: #ffcccc !important; /* Rojo */
+    }
+    tr.sin-movimiento {
+        background-color: #fff3cd !important; /* Amarillo */
+    }
+    .filters {
+        margin: 15px 0;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .filters select {
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 0.9em;
+        background: white;
+    }
+    .actions {
+        text-align: right;
+        margin-top: 10px;
+    }
+    .actions button {
+        background: #27ae60;
+        color: white;
+        padding: 8px 12px;
+        margin-left: 10px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9em;
+    }
+    .actions button:hover {
+        background: #1e8449;
+    }
 </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div>
-        <h1>Analizador de Órdenes — Rastreo de Seriales</h1>
-        <div class="small">Sube tu Excel o pega la tabla (desde Excel Ctrl+C → Ctrl+V) y obtén análisis automático</div>
-      </div>
-      <div style="margin-left:auto" class="small">Zona horaria: <span class="pill">America/Monterrey</span></div>
-    </header>
+<header>
+    <h1>📊 Rastreo de Órdenes de Producción</h1>
+</header>
 
-    <div class="panel">
-      <div class="flex" style="gap:18px; align-items:flex-start;">
-        <div style="min-width:260px">
-          <label>Subir archivo (.xlsx / .xls / .csv)</label>
-          <input id="file" type="file" accept=".xlsx,.xls,.csv" />
-          <div class="hint">O pega la tabla en el recuadro de la derecha si prefieres copiar y pegar desde Excel.</div>
-        </div>
+<section class="upload-section">
+    <input type="file" id="fileInput" accept=".csv, .xlsx">
+    <button onclick="analizarDatos()">Analizar Datos</button>
+</section>
 
-        <div style="flex:1">
-          <label>Pegar datos (desde Excel: selecciona -> Ctrl + C -> aquí Ctrl + V)</label>
-          <textarea id="pasteArea" placeholder="Pegado de tablas: columnas como Serial, Creation Date, Created By, NotPacked, IsScrap, Área, Línea, Station, Employee, Status, Date registered"></textarea>
-          <div style="display:flex; gap:8px; margin-top:8px;">
-            <button id="analyze" class="btn-small">Analizar datos</button>
-            <button id="clear" class="btn-small ghost">Limpiar</button>
-            <button id="sample" class="btn-small ghost">Cargar ejemplo</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="filters" style="margin-top:12px;">
-        <label class="small">Filtro rápido:</label>
-        <select id="areaFilter"><option value="">Todas las Áreas</option></select>
-        <select id="lineFilter"><option value="">Todas las Líneas</option></select>
-        <select id="stationFilter"><option value="">Todas las Stations</option></select>
-        <select id="statusFilter"><option value="">Todos los Status</option></select>
-        <button id="exportCSV" class="btn-small ghost" title="Copiar tabla visible">Copiar tabla</button>
-      </div>
-
-      <div id="summary" class="cards" aria-live="polite" style="margin-top:12px"></div>
-
-      <div class="results">
-        <div class="table-wrap panel" id="tableWrap" style="margin-top:12px; padding:0;">
-          <table id="resultsTable" role="table" aria-label="Resultados">
-            <thead>
-              <tr>
-                <th>Serial</th><th>Área</th><th>Línea</th><th>Station</th><th>Employee</th><th>Status</th><th>NotPacked</th><th>IsScrap</th><th>Date registered</th><th>Comentario</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="footer">
-        Consejo: si tus fechas vienen con hora, el sistema detecta la fecha en la zona <strong>America/Monterrey</strong> y compara día a día (hoy/ayer/anteayer). Si la columna <em>Date registered</em> está vacía se considera "sin movimiento".
-      </div>
+<section class="cards">
+    <div class="card">
+        <h3>Total Seriales</h3>
+        <p id="totalSeriales">0</p>
     </div>
-  </div>
+    <div class="card">
+        <h3>Scrap</h3>
+        <p id="totalScrap">0</p>
+    </div>
+    <div class="card">
+        <h3>No Empacados</h3>
+        <p id="totalNotPacked">0</p>
+    </div>
+    <div class="card">
+        <h3>Sin Movimiento</h3>
+        <p id="totalSinMovimiento">0</p>
+    </div>
+</section>
 
-  <!-- SheetJS para leer Excel en el navegador -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<section class="filters" id="filters"></section>
 
-  <script>
-  (function(){
-    // Zona horaria que usaremos para comparar días
-    const TZ = 'America/Monterrey';
+<table id="tablaResultados">
+    <thead>
+        <tr>
+            <th>Serial</th>
+            <th>Creation Date</th>
+            <th>Created By</th>
+            <th>NotPacked</th>
+            <th>IsScrap</th>
+            <th>Área</th>
+            <th>Línea</th>
+            <th>Station</th>
+            <th>Status</th>
+            <th>Date Registered</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
 
-    // Column name normalization: map to canonical keys
-    const canonical = {
-      serial: ['serial','id','serial number','serialno'],
-      creationDate: ['creation date','created date','date created'],
-      createdBy: ['created by','creator'],
-      notPacked: ['notpacked','not packed','not_packed'],
-      isScrap: ['isscrap','is scrap','scrap','is_scrap','isscrapped'],
-      area: ['área','area','department'],
-      line: ['línea','line','linea'],
-      station: ['station','estacion','estación'],
-      employee: ['employee','emp','operario','operator'],
-      status: ['status','estado'],
-      dateRegistered: ['date registered','date_registered','date registered','date registered','date registered','date registered','registered date','fecha registrada','date registered']
+<div class="actions">
+    <button onclick="copiarTabla()">Copiar Tabla</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+let datos = [];
+
+function analizarDatos() {
+    const input = document.getElementById('fileInput');
+    if (!input.files.length) {
+        alert("Sube un archivo primero.");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        datos = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+        mostrarDatos(datos);
     };
+    reader.readAsArrayBuffer(input.files[0]);
+}
 
-    function findColMap(headers){
-      // returns mapping headerIndex -> canonicalKey (or null)
-      const map = {};
-      const lcHeaders = headers.map(h => (h||'').toString().trim().toLowerCase());
-      for (let i=0;i<lcHeaders.length;i++){
-        const h = lcHeaders[i];
-        for (const [key, variants] of Object.entries(canonical)){
-          for (const v of variants){
-            if (h === v || h.includes(v) || v.includes(h) && h.length>0) {
-              map[key] = i;
-            }
-          }
+function mostrarDatos(registros) {
+    const tbody = document.querySelector("#tablaResultados tbody");
+    tbody.innerHTML = "";
+
+    let totalSeriales = registros.length;
+    let totalScrap = 0;
+    let totalNotPacked = 0;
+    let totalSinMovimiento = 0;
+
+    const hoy = new Date();
+    const ayer = new Date(hoy);
+    ayer.setDate(hoy.getDate() - 1);
+
+    registros.forEach(r => {
+        const fila = document.createElement("tr");
+
+        let fecha = new Date(r["Date registered"]);
+        let sinMovimiento = !(fecha.toDateString() === hoy.toDateString() || fecha.toDateString() === ayer.toDateString());
+
+        if (r["IsScrap"].toString().toLowerCase() === "true") {
+            fila.classList.add("scrap");
+            totalScrap++;
         }
-      }
-      return map;
-    }
+        if (r["NotPacked"].toString().toLowerCase() === "true") {
+            totalNotPacked++;
+        }
+        if (sinMovimiento) {
+            fila.classList.add("sin-movimiento");
+            totalSinMovimiento++;
+        }
 
-    // parse boolean-like values
-    function truthy(val){
-      if (val === undefined || val === null) return false;
-      const s = String(val).trim().toLowerCase();
-      return ['true','1','si','sí','yes','y','x'].includes(s);
-    }
+        fila.innerHTML = `
+            <td>${r["Serial"]}</td>
+            <td>${r["Creation Date"]}</td>
+            <td>${r["Created By"]}</td>
+            <td>${r["NotPacked"]}</td>
+            <td>${r["IsScrap"]}</td>
+            <td>${r["Área"]}</td>
+            <td>${r["Línea"]}</td>
+            <td>${r["Station"]}</td>
+            <td>${r["Status"]}</td>
+            <td>${r["Date registered"]}</td>
+        `;
 
-    // convert date to local date string in TZ (yyyy-mm-dd)
-    function toTZDateString(dateInput){
-      if (!dateInput) return null;
-      const d = (dateInput instanceof Date) ? dateInput : new Date(dateInput);
-      if (isNaN(d)) return null;
-      // Build yyyy-mm-dd in TZ using toLocaleString
-      const parts = d.toLocaleString('en-CA', { timeZone: TZ }).split(' ')[0]; // en-CA ISO-like yyyy-mm-dd
-      // some browsers already give yyyy-mm-dd, some give dd/mm/yyyy; to be robust:
-      // We'll use Intl.DateTimeFormat to extract parts:
-      try {
-        const df = new Intl.DateTimeFormat('en', { timeZone: TZ, year:'numeric', month:'2-digit', day:'2-digit' });
-        const [{value:month},,{value:day},,{value:year}] = df.formatToParts(d);
-        return `${year}-${month}-${day}`;
-      } catch (e){
-        return parts;
-      }
-    }
-
-    // get today/yesterday/anteayer in TZ as yyyy-mm-dd
-    function getRelativeDates(){
-      const now = new Date();
-      // Use conversion via toLocaleString to get TZ time then create Date object from that string safely:
-      const tzNowStr = new Date().toLocaleString('en-US', { timeZone: TZ });
-      const tzNow = new Date(tzNowStr);
-      const day0 = new Date(tzNow.getFullYear(), tzNow.getMonth(), tzNow.getDate());
-      const day1 = new Date(day0); day1.setDate(day0.getDate()-1);
-      const day2 = new Date(day0); day2.setDate(day0.getDate()-2);
-      const fmt = d => {
-        const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
-        return `${y}-${m}-${dd}`;
-      };
-      return { today: fmt(day0), yesterday: fmt(day1), anteayer: fmt(day2) };
-    }
-
-    // UI elements
-    const fileInput = document.getElementById('file');
-    const pasteArea = document.getElementById('pasteArea');
-    const analyzeBtn = document.getElementById('analyze');
-    const clearBtn = document.getElementById('clear');
-    const sampleBtn = document.getElementById('sample');
-    const summaryEl = document.getElementById('summary');
-    const resultsTbody = document.querySelector('#resultsTable tbody');
-    const areaFilter = document.getElementById('areaFilter');
-    const lineFilter = document.getElementById('lineFilter');
-    const stationFilter = document.getElementById('stationFilter');
-    const statusFilter = document.getElementById('statusFilter');
-    const exportCSV = document.getElementById('exportCSV');
-
-    let parsedRows = []; // canonical objects
-
-    fileInput.addEventListener('change', async (e) => {
-      const f = e.target.files && e.target.files[0];
-      if (!f) return;
-      try {
-        const data = await f.arrayBuffer();
-        const wb = XLSX.read(data, { type: 'array' });
-        // Use first sheet
-        const first = wb.Sheets[wb.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(first, { defval: '' });
-        // Convert to clipboard-like text and process
-        const csv = XLSX.utils.sheet_to_csv(first);
-        pasteArea.value = csv;
-        processClipboard(csv);
-      } catch (err) {
-        alert('Error leyendo archivo: ' + err.message);
-      }
+        tbody.appendChild(fila);
     });
 
-    // parse pasted content (CSV or tab-separated)
-    function parseClipboardText(text){
-      // Try to parse using SheetJS from CSV
-      try {
-        const wb = XLSX.read(text, { type:'string' , raw:true, codepage:65001 });
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        const arr = XLSX.utils.sheet_to_json(sheet, { raw:false, defval:'' });
-        return { headers: Object.keys(arr[0]||{}), rows: arr };
-      } catch(e){
-        // fallback: split by newline, then by tab or comma
-        const lines = text.trim().split(/\r\n|\n/).filter(l=>l.trim());
-        if (lines.length<1) return { headers:[], rows:[] };
-        const delim = lines[0].includes('\t') ? '\t' : (lines[0].includes(',') ? ',' : null);
-        const headers = delim ? lines.shift().split(delim).map(h=>h.trim()) : [];
-        const rows = lines.map(l => {
-          const cols = delim ? l.split(delim) : [l];
-          const obj = {};
-          headers.forEach((h,i)=> obj[h]=cols[i] ? cols[i].trim() : '');
-          return obj;
-        });
-        return { headers, rows };
-      }
-    }
+    document.getElementById("totalSeriales").innerText = totalSeriales;
+    document.getElementById("totalScrap").innerText = totalScrap;
+    document.getElementById("totalNotPacked").innerText = totalNotPacked;
+    document.getElementById("totalSinMovimiento").innerText = totalSinMovimiento;
+}
 
-    function processClipboard(text){
-      const parsed = parseClipboardText(text);
-      if (!parsed || !parsed.headers.length){
-        alert('No se detectaron columnas. Asegúrate de pegar la tabla completa (incluyendo encabezados).');
-        return;
-      }
-      // Build mapping
-      const headers = parsed.headers;
-      const map = findColMap(headers);
-      // Normalize rows to canonical object
-      parsedRows = parsed.rows.map(raw => {
-        const obj = {};
-        // obtain by header index if map contains index, else fallback by header name
-        function getField(key){
-          if (map[key] !== undefined) {
-            const headerName = headers[map[key]];
-            return raw[headerName] !== undefined ? raw[headerName] : raw[Object.keys(raw)[map[key]]];
-          } else {
-            // try several header name candidates
-            for (const h of Object.keys(raw)){
-              if (h.trim().toLowerCase().includes(key.toLowerCase())) return raw[h];
-            }
-            return raw[key] || '';
-          }
-        }
-        obj.serial = ( getField('serial') || getField('Serial') || '' ).toString().trim();
-        obj.area = ( getField('area') || '' ).toString().trim();
-        obj.line = ( getField('line') || '' ).toString().trim();
-        obj.station = ( getField('station') || '' ).toString().trim();
-        obj.employee = ( getField('employee') || '' ).toString().trim();
-        obj.status = ( getField('status') || '' ).toString().trim();
-        obj.notPacked = getField('notPacked') || getField('NotPacked') || '';
-        obj.isScrap = getField('isScrap') || getField('IsScrap') || '';
-        obj.dateRegisteredRaw = getField('dateRegistered') || getField('Date registered') || getField('Date Registered') || '';
-        // parse date into Date object if possible
-        let parsedDate = null;
-        if (obj.dateRegisteredRaw){
-          // try numeric excel date to JS date (SheetJS often parses but when reading csv it's string)
-          // Try Date.parse first. If numeric (like 45123), treat as Excel serial date (days since 1899-12-31)
-          const maybeNum = Number(obj.dateRegisteredRaw);
-          if (!isNaN(maybeNum) && String(obj.dateRegisteredRaw).trim().length < 7){
-            // Excel serial -> JS
-            const excelStart = new Date(Date.UTC(1899,11,30)); // 1899-12-30 base
-            parsedDate = new Date(excelStart.getTime() + maybeNum * 24*60*60*1000);
-          } else {
-            const d = new Date(obj.dateRegisteredRaw);
-            parsedDate = isNaN(d) ? null : d;
-            // another attempt: replace common / with - and try
-            if (!parsedDate){
-              const d2 = new Date(obj.dateRegisteredRaw.replace(/\//g,'-'));
-              parsedDate = isNaN(d2) ? null : d2;
-            }
-          }
-        }
-        obj.dateRegistered = parsedDate;
-        return obj;
-      });
-      runAnalysis();
-    }
-
-    function runAnalysis(){
-      const rel = getRelativeDates();
-      // prepare summary counters
-      const total = parsedRows.length;
-      let scrapCount = 0, notPackedCount = 0;
-      const noMovement = { today:[], yesterday:[], anteayer:[] };
-      const noDate = [];
-      const areas = new Set(), lines = new Set(), stations = new Set(), statuses = new Set();
-
-      parsedRows.forEach(r => {
-        if (truthy(r.isScrap)) scrapCount++;
-        if (truthy(r.notPacked)) notPackedCount++;
-        // date string in TZ
-        const ds = toTZDateString(r.dateRegistered);
-        if (!ds){
-          noDate.push(r);
-        } else {
-          if (ds === rel.today) {
-            // moved today, skip
-          } else if (ds === rel.yesterday) {
-            // moved yesterday
-          } else if (ds === rel.anteayer) {
-            // moved anteayer
-          } else {
-            // If not today/yesterday/anteayer -> mark as "no movement recent"
-            // We'll add to 'noMovement' under 'older' by placing in yesterday list for monitoring
-            // For UX: we'll push to yesterday & anteayer lists when appropriate
-          }
-        }
-        // For detection of no movement "yesterday or anteayer": We want to find rows whose last dateRegistered is NOT equal to yesterday OR anteayer (i.e., they didn't have movement those days).
-        // Simpler: We'll compute lastRegisteredDate as ds and then check whether it equals yesterday or anteayer.
-        const lastDS = ds;
-        if (!lastDS) {
-          // treated as missing movement
-          noMovement.yesterday.push(r);
-          noMovement.anteayer.push(r);
-        } else {
-          if (lastDS !== rel.yesterday) noMovement.yesterday.push(r);
-          if (lastDS !== rel.anteayer) noMovement.anteayer.push(r);
-        }
-
-        if (r.area) areas.add(r.area);
-        if (r.line) lines.add(r.line);
-        if (r.station) stations.add(r.station);
-        if (r.status) statuses.add(r.status);
-      });
-
-      // render summary
-      summaryEl.innerHTML = '';
-      function addCard(title, big, hintHtml=''){
-        const div = document.createElement('div'); div.className='card';
-        div.innerHTML = `<div class="small">${title}</div><div style="font-size:18px;font-weight:700;margin-top:6px">${big}</div>${hintHtml?'<div class="small" style="margin-top:6px">'+hintHtml+'</div>':''}`;
-        summaryEl.appendChild(div);
-      }
-      addCard('Total seriales', total);
-      addCard('Seriales en scrap', scrapCount, `<span class="tag danger">${scrapCount}</span>`);
-      addCard('No empaquetados (NotPacked)', notPackedCount, `<span class="tag">${notPackedCount}</span>`);
-      addCard('Sin fecha de registro', noDate.length, `<span class="small">Revisar por posible falta de movimiento</span>`);
-      addCard(`No mov. ayer (${rel.yesterday})`, noMovement.yesterday.length, `<span class="small">Seriados que NO registraron movimiento ayer</span>`);
-      addCard(`No mov. anteayer (${rel.anteayer})`, noMovement.anteayer.length, `<span class="small">Seriados que NO registraron movimiento anteayer</span>`);
-
-      // populate filters
-      populateFilter(areaFilter, Array.from(areas).sort());
-      populateFilter(lineFilter, Array.from(lines).sort());
-      populateFilter(stationFilter, Array.from(stations).sort());
-      populateFilter(statusFilter, Array.from(statuses).sort());
-
-      // render table (by default full list, but mark items with comments)
-      renderTable(parsedRows, rel);
-    }
-
-    function populateFilter(selectEl, values){
-      const current = selectEl.value || '';
-      selectEl.innerHTML = '<option value="">Todos</option>';
-      values.forEach(v => {
-        const opt = document.createElement('option'); opt.value = v; opt.textContent = v; selectEl.appendChild(opt);
-      });
-      if (current) selectEl.value = current;
-    }
-
-    function renderTable(rows, rel){
-      resultsTbody.innerHTML = '';
-      const af = areaFilter.value, lf = lineFilter.value, sf = stationFilter.value, stf = statusFilter.value;
-      // filter
-      const visible = rows.filter(r => {
-        if (af && r.area !== af) return false;
-        if (lf && r.line !== lf) return false;
-        if (sf && r.station !== sf) return false;
-        if (stf && r.status !== stf) return false;
-        return true;
-      });
-
-      visible.forEach(r => {
-        const tr = document.createElement('tr');
-        const ds = toTZDateString(r.dateRegistered) || '';
-        // determine comment
-        let comment = '';
-        if (truthy(r.isScrap)) comment += 'SCRAP ';
-        if (!ds) comment += 'SIN FECHA ';
-        else {
-          if (ds !== rel.today && ds !== rel.yesterday && ds !== rel.anteayer) comment += 'No mov recent ';
-          if (ds === rel.yesterday) comment += 'Mov ayer ';
-          if (ds === rel.anteayer) comment += 'Mov anteayer ';
-        }
-        tr.innerHTML = `<td><strong>${escapeHtml(r.serial||'')}</strong></td>
-                        <td>${escapeHtml(r.area||'')}</td>
-                        <td>${escapeHtml(r.line||'')}</td>
-                        <td>${escapeHtml(r.station||'')}</td>
-                        <td>${escapeHtml(r.employee||'')}</td>
-                        <td>${escapeHtml(r.status||'')}</td>
-                        <td>${escapeHtml(String(r.notPacked||''))}</td>
-                        <td>${escapeHtml(String(r.isScrap||''))}</td>
-                        <td>${escapeHtml(ds)}</td>
-                        <td>${escapeHtml(comment)}</td>`;
-        resultsTbody.appendChild(tr);
-      });
-    }
-
-    // helpers
-    function escapeHtml(s){
-      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
-
-    analyzeBtn.addEventListener('click', ()=> {
-      const txt = pasteArea.value.trim();
-      if (!txt){
-        alert('Pega la tabla en el recuadro o sube un archivo Excel primero.');
-        return;
-      }
-      processClipboard(txt);
+function copiarTabla() {
+    const tabla = document.getElementById("tablaResultados").outerHTML;
+    navigator.clipboard.writeText(tabla).then(() => {
+        alert("Tabla copiada al portapapeles");
     });
-
-    clearBtn.addEventListener('click', ()=> {
-      pasteArea.value = '';
-      parsedRows = [];
-      summaryEl.innerHTML = '';
-      resultsTbody.innerHTML = '';
-      areaFilter.innerHTML = '<option value="">Todas las Áreas</option>';
-      lineFilter.innerHTML = '<option value="">Todas las Líneas</option>';
-      stationFilter.innerHTML = '<option value="">Todas las Stations</option>';
-      statusFilter.innerHTML = '<option value="">Todos los Status</option>';
-      fileInput.value = '';
-    });
-
-    sampleBtn.addEventListener('click', ()=> {
-      // small CSV sample
-      const sample = `Serial,Creation Date,Created By,NotPacked,IsScrap,Área,Línea,Station,Employee,Status,Date registered
-S-1001,2025-09-20,Juan,false,false,Manufactura,Linea A,ST-1,Empleado1,OK,2025-09-22
-S-1002,2025-09-20,Maria,true,false,Manufactura,Linea A,ST-2,Empleado2,Pending,2025-09-21
-S-1003,2025-09-19,Pedro,false,true,Ensamble,Linea B,ST-4,Empleado3,SCRAP,2025-09-18
-S-1004,2025-09-18,Ana,false,false,Ensamble,Linea B,ST-4,Empleado4,OK,
-S-1005,2025-09-16,Rosa,false,false,Manufactura,Linea A,ST-1,Empleado1,OK,2025-09-20`;
-      pasteArea.value = sample;
-    });
-
-    // filter change re-render
-    [areaFilter, lineFilter, stationFilter, statusFilter].forEach(s => s.addEventListener('change', ()=> {
-      renderTable(parsedRows, getRelativeDates());
-    }));
-
-    // export / copy visible table to clipboard as CSV
-    exportCSV.addEventListener('click', async ()=>{
-      const rows = Array.from(resultsTbody.querySelectorAll('tr'));
-      if (!rows.length){ alert('No hay datos para copiar'); return; }
-      const csv = [['Serial','Área','Línea','Station','Employee','Status','NotPacked','IsScrap','Date registered','Comentario']];
-      rows.forEach(tr => {
-        const tds = Array.from(tr.querySelectorAll('td')).map(td=>td.textContent.trim());
-        csv.push(tds);
-      });
-      const csvText = csv.map(r => r.map(cell => `"${cell.replace(/"/g,'""')}"`).join(',')).join('\n');
-      try {
-        await navigator.clipboard.writeText(csvText);
-        alert('Tabla copiada al portapapeles (CSV).');
-      } catch(e){
-        // fallback: show in prompt
-        prompt('Copia el CSV manualmente:', csvText);
-      }
-    });
-
-    // utility to get relative dates (exposed earlier but usable here)
-    function getRelativeDates(){
-      const now = new Date();
-      // get tz-correct now
-      const tzNowStr = new Date().toLocaleString('en-US', { timeZone: TZ });
-      const tzNow = new Date(tzNowStr);
-      const day0 = new Date(tzNow.getFullYear(), tzNow.getMonth(), tzNow.getDate());
-      const day1 = new Date(day0); day1.setDate(day0.getDate()-1);
-      const day2 = new Date(day0); day2.setDate(day0.getDate()-2);
-      const fmt = d => {
-        const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
-        return `${y}-${m}-${dd}`;
-      };
-      return { today: fmt(day0), yesterday: fmt(day1), anteayer: fmt(day2) };
-    }
-
-    // allow paste directly into textarea and automatically analyze (optional)
-    pasteArea.addEventListener('paste', (ev) => {
-      // Wait a tick for content to appear then analyze automatically
-      setTimeout(()=> {
-        const txt = pasteArea.value.trim();
-        if (txt.length>0) {
-          // we do not auto-run if user is still editing; keep it manual to avoid annoyance.
-        }
-      }, 50);
-    });
-
-    // initial small help text
-    pasteArea.placeholder = "Pega aquí (Ctrl+V) la tabla copiada desde Excel (asegúrate de incluir encabezados). También puedes cargar un archivo .xlsx o .csv usando el selector de la izquierda. Luego pulsa 'Analizar datos'.";
-
-  })();
-  </script>
+}
+</script>
 </body>
 </html>
