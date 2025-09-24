@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control de Órdenes (Versión Final Corregida)</title>
+    <title>Panel de Control de Órdenes (Reportes Avanzados)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
@@ -251,13 +251,10 @@
             let headersCache = {};
 
             const KEY_HEADER_TEXT = {
-                // ** CRITICAL FIX **: Corrected the typo from 'Producto' to 'Product'
-                SERIAL: 'Product Serial Number', 
-                IS_SCRAP: 'Is Scrap', 
-                NOT_PACKED: 'Not Packed', 
-                CREATED_BY: 'Created By', 
-                DATE_REGISTERED: 'Date Registered', 
-                LINE: 'Line'
+                SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', 
+                NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', 
+                DATE_REGISTERED: 'Date Registered', LINE: 'Line',
+                STATION: 'Área' // Mapping Station to Área
             };
             const TARGET_COLUMNS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
 
@@ -434,6 +431,7 @@
                 headersCache.dateRegistered = findHeader(headers, KEY_HEADER_TEXT.DATE_REGISTERED);
                 headersCache.createdBy = findHeader(headers, KEY_HEADER_TEXT.CREATED_BY);
                 headersCache.line = findHeader(headers, KEY_HEADER_TEXT.LINE);
+                headersCache.station = findHeader(headers, KEY_HEADER_TEXT.STATION);
             }
 
             function createLineFilters() {
@@ -492,8 +490,8 @@
             }
             
             function handleExport() {
-                if (!headersCache.serial) {
-                    showModal('Error de Exportación', `No se pudo identificar la columna "${KEY_HEADER_TEXT.SERIAL}". Verifique el archivo.`, 'error');
+                if (!headersCache.serial || !headersCache.station || !headersCache.dateRegistered) {
+                    showModal('Error de Exportación', `No se pudo identificar una columna clave (Serial, Área o Fecha). Verifique el archivo.`, 'error');
                     return;
                 }
                 
@@ -508,15 +506,31 @@
                     const cleanedSerial = serial.replace(/S#/i, '');
                     return {
                         'Numero_de_Orden': orderNumber,
-                        'Serial_Para_Reimpresion': cleanedSerial
+                        'Serial_Para_Reimpresion': cleanedSerial,
+                        'Estacion': row[headersCache.station],
+                        'Fecha_y_Hora_Ultimo_Movimiento': formatDate(excelSerialToDate(row[headersCache.dateRegistered]))
                     };
                 });
 
-                const worksheet = XLSX.utils.json_to_sheet(finalData);
+                const worksheet = XLSX.utils.json_to_sheet([]);
+                
+                const headerText = currentLineFilter === 'all' 
+                    ? `Reporte de Exportación para Todas las Líneas` 
+                    : `Reporte de Exportación para Línea: ${currentLineFilter}`;
+
+                XLSX.utils.sheet_add_aoa(worksheet, [[headerText]], { origin: "A1"});
+                XLSX.utils.sheet_add_json(worksheet, finalData, { origin: "A2", skipHeader: false });
+
+                // Merge header cells
+                const merge = { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }; // A1 to D1
+                if (!worksheet['!merges']) worksheet['!merges'] = [];
+                worksheet['!merges'].push(merge);
+
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, "Exportación");
-
-                const fileName = `Exportacion_Orden_${orderNumber}.xlsx`;
+                
+                const linePart = currentLineFilter === 'all' ? 'Todas_Lineas' : `Linea_${currentLineFilter}`;
+                const fileName = `Exportacion_Orden_${orderNumber}_${linePart}.xlsx`;
                 XLSX.writeFile(workbook, fileName);
 
                 showModal('Exportación Exitosa', `Se ha generado el archivo "${fileName}" con ${finalData.length} seriales.`, 'success');
