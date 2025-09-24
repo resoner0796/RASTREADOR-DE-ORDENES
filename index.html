@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Control de Producción (con Reporte Gerencial)</title>
+    <title>Centro de Control de Producción (con Reportes y Links)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Pako (Compression library for sharing links) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -165,6 +167,7 @@
         .modal-overlay.visible .modal-content { transform: scale(1); }
         .modal-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
         .modal-close { font-size: 1.75rem; color: var(--text-dark); cursor: pointer; line-height: 1; position: absolute; top: 16px; right: 16px; }
+        #modalBody input[type=text] { background-color: var(--bg-color); border: 1px solid var(--border-color); padding: 8px; color: var(--text-primary); border-radius: 4px; width: 100%; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -241,10 +244,11 @@
                             </div>
                         </div>
                         <div>
-                             <h3>Exportar Reportes</h3>
+                             <h3>Acciones y Reportes</h3>
                              <div style="display: flex; flex-direction: column; gap: 10px;">
-                                 <button id="exportViewButton" class="btn" disabled>Exportar Vista Actual</button>
+                                 <button id="exportViewButton" class="btn" disabled>Exportar Vista a Excel</button>
                                  <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
+                                 <button id="shareLinkButton" class="btn" disabled>Generar Link para Compartir</button>
                              </div>
                         </div>
                     </div>
@@ -321,6 +325,7 @@
             const rastreoLineFiltersPlaceholder = document.getElementById('rastreoLineFiltersPlaceholder');
             const exportViewButton = document.getElementById('exportViewButton');
             const exportStatusButton = document.getElementById('exportStatusButton');
+            const shareLinkButton = document.getElementById('shareLinkButton');
             const lineCountsContainer = document.getElementById('lineCountsContainer');
             const placeholderText = document.getElementById('placeholderText');
             const empaqueFilterInput = document.getElementById('empaqueFilterInput');
@@ -367,6 +372,7 @@
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
             exportViewButton.addEventListener('click', handleExport);
             exportStatusButton.addEventListener('click', handleStatusReport);
+            shareLinkButton.addEventListener('click', generateShareLink);
 
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
@@ -401,7 +407,7 @@
             }
              function findHeader(headers, keyText) { return headers.find(h => h.toLowerCase() === keyText.toLowerCase()); }
             
-            // --- LOCALSTORAGE ---
+            // --- LOCALSTORAGE & SHARING LINK ---
             function saveOrdersToLocalStorage() {
                 const dataToSave = JSON.stringify(Array.from(loadedOrders.entries()));
                 localStorage.setItem('productionControlCenterData', dataToSave);
@@ -416,13 +422,53 @@
                             updateOrderList();
                             render();
                         }
-                    } catch(e) {
-                        console.error("Failed to load data from localStorage", e);
-                        localStorage.removeItem('productionControlCenterData');
-                    }
+                    } catch(e) { console.error("LS Load Error", e); localStorage.removeItem('productionControlCenterData');}
                 }
             }
+            
+            function generateShareLink() {
+                if (loadedOrders.size === 0) {
+                    showModal('Información', 'No hay órdenes cargadas para generar un link.', 'info');
+                    return;
+                }
+                const dataString = JSON.stringify(Array.from(loadedOrders.entries()));
+                const compressed = pako.deflate(dataString, { to: 'string' });
+                const encoded = btoa(compressed).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+                
+                const url = `${window.location.origin}${window.location.pathname}#${encoded}`;
+                
+                const linkHTML = `
+                    <p>Copia y comparte este link. Cualquiera con el link podrá ver las órdenes que tienes cargadas actualmente.</p>
+                    <input type="text" readonly value="${url}" onclick="this.select()">
+                `;
+                showModal('Link para Compartir Generado', linkHTML, 'success', false);
+            }
 
+            function loadFromLink() {
+                if (window.location.hash.length > 1) {
+                    try {
+                        let encoded = window.location.hash.substring(1);
+                        const padding = '='.repeat((4 - encoded.length % 4) % 4);
+                        const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/') + padding;
+                        const compressed = atob(base64);
+                        const uint8array = new Uint8Array(compressed.split('').map(c => c.charCodeAt(0)));
+                        const dataString = pako.inflate(uint8array, { to: 'string' });
+                        
+                        loadedOrders = new Map(JSON.parse(dataString));
+                        saveOrdersToLocalStorage();
+                        updateOrderList();
+                        render();
+
+                        // Clean URL after loading
+                        history.pushState("", document.title, window.location.pathname + window.location.search);
+                    } catch (e) {
+                        console.error("Failed to load data from link", e);
+                        showModal('Error', 'El link para compartir parece estar corrupto o es inválido.', 'error');
+                    }
+                } else {
+                    loadOrdersFromLocalStorage();
+                }
+            }
 
             // --- FILE HANDLING & DATA PROCESSING ---
             function handleFiles(files, isUpdate = false) {
@@ -607,7 +653,7 @@
                 }
 
                 const now = new Date();
-                const reportDate = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} AM`;
+                const reportDate = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
                 const totalOrders = loadedOrders.size;
                 const completedOrders = Array.from(loadedOrders.values()).filter(order => order.orderQty > 0 && order.orderQty <= order.packedQty).length;
@@ -617,6 +663,7 @@
                     const scrapHeader = findHeader(order.headers.rastreo, TRACKING_KEYS.IS_SCRAP);
                     const scrapCount = scrapHeader ? order.rastreoData.filter(row => String(row[scrapHeader]).trim().toUpperCase() === 'X').length : 0;
                     const delayedCount = order.rastreoData.filter(row => row.status === 'delayed').length;
+                    const todayCount = order.rastreoData.filter(row => row.status === 'today').length;
                     
                     let status, statusEmoji;
                     if (order.orderQty > 0 && order.orderQty <= order.packedQty) {
@@ -625,8 +672,8 @@
                     } else if (delayedCount > 0) {
                         status = 'Con Retrasos';
                         statusEmoji = '🟡';
-                    } else if (scrapCount > 5) { // Example: critical if more than 5 scraps
-                        status = 'Crítico';
+                    } else if (scrapCount / order.orderQty > 0.05) { // Critical if >5% scrap
+                        status = 'Crítico (Scrap)';
                         statusEmoji = '🔴';
                     } else {
                         status = 'En Proceso';
@@ -640,8 +687,9 @@
                             <td style="padding: 8px; font-weight: bold;">${key}</td>
                             <td style="padding: 8px;">${statusEmoji} ${status}</td>
                             <td style="padding: 8px;">${order.packedQty} / ${order.orderQty} (${progress}%)</td>
-                            <td style="padding: 8px; text-align: center;">${scrapCount}</td>
+                            <td style="padding: 8px; text-align: center;">${todayCount}</td>
                             <td style="padding: 8px; text-align: center;">${delayedCount}</td>
+                            <td style="padding: 8px; text-align: center;">${scrapCount}</td>
                         </tr>
                     `;
                 }
@@ -660,8 +708,9 @@
                                     <th style="padding: 8px;">Orden</th>
                                     <th style="padding: 8px;">Estatus</th>
                                     <th style="padding: 8px;">Progreso</th>
+                                    <th style="padding: 8px; text-align: center;">En Mov. (Hoy)</th>
+                                    <th style="padding: 8px; text-align: center;">Sin Mov. (Retraso)</th>
                                     <th style="padding: 8px; text-align: center;">Scrap</th>
-                                    <th style="padding: 8px; text-align: center;">Sin Mov.</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -676,13 +725,18 @@
                 copyReportBtn.onclick = () => {
                     try {
                         const content = document.getElementById('report-content');
-                        const blob = new Blob([content.innerHTML], { type: 'text/html' });
-                        const clipboardItem = new ClipboardItem({ 'text/html': blob });
-                        navigator.clipboard.write([clipboardItem]).then(() => {
-                           showModal('¡Éxito!', 'Reporte copiado al portapapeles. Ya puedes pegarlo en tu correo.', 'success');
-                        });
+                        // Use a trick to copy HTML by creating a temporary element
+                        const listener = (e) => {
+                            e.clipboardData.setData('text/html', content.innerHTML);
+                            e.clipboardData.setData('text/plain', content.innerText);
+                            e.preventDefault();
+                        };
+                        document.addEventListener('copy', listener);
+                        document.execCommand('copy');
+                        document.removeEventListener('copy', listener);
+                        showModal('¡Éxito!', 'Reporte copiado. Ya puedes pegarlo en tu correo.', 'success');
                     } catch(e) {
-                         showModal('Error', 'No se pudo copiar el reporte. Tu navegador podría no ser compatible.', 'error');
+                         showModal('Error', 'No se pudo copiar el reporte.', 'error');
                          console.error("Copy failed:", e);
                     }
                 };
@@ -737,7 +791,7 @@
                     updateBtn.innerHTML = `✏️`;
                     updateBtn.onclick = () => {
                         orderToUpdateKey = key;
-                        updateFileInput.value = ''; // Reset file input
+                        updateFileInput.value = '';
                         updateFileInput.click();
                     };
                     item.appendChild(updateBtn);
@@ -774,6 +828,7 @@
                     document.getElementById('empaqueTable').innerHTML = '';
                     exportViewButton.disabled = true;
                     exportStatusButton.disabled = true;
+                    shareLinkButton.disabled = true;
                     rastreoLineFiltersPlaceholder.textContent = 'Cargue un archivo para ver los filtros.';
                     rastreoLineFiltersPlaceholder.style.display = 'block';
                     rastreoLineFilters.innerHTML = '';
@@ -802,7 +857,7 @@
                 } else if (loadedOrders.has(activeOrderKey)) {
                     ordersToProcess = [loadedOrders.get(activeOrderKey)];
                     statOrderNumber.textContent = activeOrderKey;
-                } else { // Handle case where active order was deleted
+                } else {
                     activeOrderKey = 'all';
                     ordersToProcess = Array.from(loadedOrders.values());
                     statOrderNumber.textContent = 'Múltiples';
@@ -845,7 +900,6 @@
                 
                 createRastreoLineFilters(dataToShow, headers);
 
-                // Apply filters
                 let filteredData = dataToShow;
                 if (rastreoStatusFilter !== 'all') {
                     filteredData = filteredData.filter(row => row.status === rastreoStatusFilter);
@@ -864,6 +918,8 @@
                 currentVisibleData = filteredData;
                 exportViewButton.disabled = dataToShow.length === 0;
                 exportStatusButton.disabled = loadedOrders.size === 0;
+                shareLinkButton.disabled = loadedOrders.size === 0;
+
 
                 updateRastreoTable(filteredData, headers);
                 updateLineCounts(filteredData, headers);
@@ -1020,16 +1076,9 @@
                  if (header.toLowerCase().includes('date')) return formatDate(excelSerialToDate(value));
                  return value === undefined ? '' : value;
             }
-
-            function resetView() {
-                activeOrderKey = 'all';
-                currentMode = 'rastreo';
-                updateOrderList();
-                render();
-            }
-
+            
              // Initialize view
-            loadOrdersFromLocalStorage();
+            loadFromLink();
 
         });
     </script>
