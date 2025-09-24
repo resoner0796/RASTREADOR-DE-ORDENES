@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control de Órdenes</title>
+    <title>Panel de Control de Órdenes v3</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
@@ -19,6 +19,7 @@
             --primary-color: #38BDF8;
             --danger-color: #FB7185;
             --warning-color: #FBBF24;
+            --success-color: #34D399;
             --text-primary: #F8FAFC;
             --text-secondary: #94A3B8;
             --text-dark: #64748B;
@@ -43,7 +44,7 @@
 
         .controls-header {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: 2fr 1fr;
             gap: 24px;
         }
 
@@ -65,7 +66,7 @@
         .file-drop-area {
             border: 2px dashed var(--border-color);
             border-radius: 8px;
-            padding: 30px 20px;
+            padding: 40px 20px;
             text-align: center;
             cursor: pointer;
             transition: background-color 0.2s ease, border-color 0.2s ease;
@@ -78,7 +79,7 @@
         .file-drop-area span { color: var(--primary-color); font-weight: 500; }
         #fileName { font-size: 0.8rem; margin-top: 12px; color: var(--text-secondary); height: 1em; }
 
-        textarea, input[type="text"] {
+        input[type="text"] {
             width: 100%;
             padding: 10px;
             background-color: var(--bg-color);
@@ -89,26 +90,12 @@
             box-sizing: border-box;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
-        textarea:focus, input[type="text"]:focus {
+        input[type="text"]:focus {
             outline: none;
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
         }
         
-        .btn {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 6px;
-            background-color: var(--primary-color);
-            color: var(--bg-color);
-            font-weight: 700;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            margin-top: 16px;
-        }
-        .btn:hover { background-color: #67CFFB; }
-
         .filter-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -153,7 +140,9 @@
             color: var(--text-primary);
         }
         #statOrderNumber { color: var(--primary-color); }
-        #statPackedQty { color: var(--warning-color); }
+        #statPackedQty { color: var(--success-color); }
+        #statRemainingQty { color: var(--warning-color); }
+        #statScrapQty { color: var(--danger-color); }
 
         .results-card {
             flex-grow: 1;
@@ -167,13 +156,13 @@
         .table-wrapper { overflow: auto; flex-grow: 1; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
-        thead { position: sticky; top: 0; background-color: var(--surface-color); }
+        thead { position: sticky; top: 0; background-color: var(--surface-color); z-index: 10; }
         th { font-weight: 600; color: var(--text-secondary); font-size: 0.8rem; }
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1); }
         tbody tr.is-scrap td { color: var(--danger-color); }
-        tbody tr.not-packed { background-color: rgba(251, 191, 36, 0.1); }
-        tbody tr.not-packed td { color: var(--warning-color); }
-        tbody tr:not(.is-scrap):not(.not-packed):hover { background-color: #334155; }
+        tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1); }
+        tbody tr.is-delayed td { color: var(--warning-color); }
+        tbody tr:not(.is-scrap):not(.is-delayed):hover { background-color: #334155; }
         
         #loader, #placeholderText { text-align: center; padding: 60px; color: var(--text-dark); font-size: 1.1rem; }
     </style>
@@ -183,7 +172,7 @@
     <div class="container">
         <header class="controls-header">
             <div class="card">
-                <h2>1. Cargar Archivo</h2>
+                <h2>1. Cargar Archivo de Excel</h2>
                 <div id="fileDropArea" class="file-drop-area">
                     <p>Arrastra un archivo aquí</p>
                     <p><span>o haz clic para seleccionar</span></p>
@@ -192,16 +181,11 @@
                 <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
             </div>
             <div class="card">
-                <h2>2. Pegado Manual</h2>
-                <textarea id="dataInput" rows="5" placeholder="Pega aquí los datos de las 11 columnas (la primera fila debe ser el encabezado)..."></textarea>
-                <button id="processButton" class="btn">Procesar Datos</button>
-            </div>
-            <div class="card">
-                <h2>3. Filtros</h2>
+                <h2>2. Filtros de Visualización</h2>
                 <div class="filter-buttons">
                     <button class="filter-btn active" data-filter="all">Todos</button>
                     <button class="filter-btn" data-filter="scrap">Scrap</button>
-                    <button class="filter-btn" data-filter="not_packed">Sin Mov.</button>
+                    <button class="filter-btn" data-filter="delayed">Retrasados</button>
                 </div>
                 <input type="text" id="filterInput" placeholder="Buscar por serial, línea, etc...">
             </div>
@@ -220,13 +204,21 @@
                 <h3>Cantidad Empacada</h3>
                 <p id="statPackedQty">0</p>
             </div>
+             <div class="stat-item">
+                <h3>Restante</h3>
+                <p id="statRemainingQty">0</p>
+            </div>
+             <div class="stat-item">
+                <h3>Cantidad en Scrap</h3>
+                <p id="statScrapQty">0</p>
+            </div>
         </section>
 
         <main class="results-card card">
             <div id="lineCountsContainer"></div>
             <div id="output" class="table-wrapper">
                 <div id="loader" style="display: none;">Procesando archivo...</div>
-                <p id="placeholderText">Cargue un archivo o pegue los datos para comenzar.</p>
+                <p id="placeholderText">Cargue un archivo para comenzar.</p>
                 <table id="resultsTable" style="display: none;">
                     <thead></thead>
                     <tbody></tbody>
@@ -241,21 +233,17 @@
             let allData = [];
             let currentFilter = 'all';
 
-            // Based on your requirements, we assume these are the key columns for filtering and highlighting.
-            // The system will look for these exact text strings (case-insensitive) in the headers of row 20.
             const KEY_HEADER_TEXT = {
-                SERIAL: 'Producto Serial Number',
-                LINE: 'Line',
                 IS_SCRAP: 'Is Scrap',
-                NOT_PACKED: 'Not Packed',
+                CREATED_BY: 'Created By',
+                DATE: 'Creation Date' // Main date column for delay checks
             };
+            const TARGET_COLUMNS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
 
             // --- DOM ELEMENT REFERENCES ---
             const fileDropArea = document.getElementById('fileDropArea');
             const fileInput = document.getElementById('fileInput');
             const fileNameDisplay = document.getElementById('fileName');
-            const dataInput = document.getElementById('dataInput');
-            const processButton = document.getElementById('processButton');
             const filterInput = document.getElementById('filterInput');
             const resultsTable = document.getElementById('resultsTable');
             const tableBody = resultsTable.querySelector('tbody');
@@ -263,6 +251,8 @@
             const statOrderNumber = document.getElementById('statOrderNumber');
             const statOrderQty = document.getElementById('statOrderQty');
             const statPackedQty = document.getElementById('statPackedQty');
+            const statRemainingQty = document.getElementById('statRemainingQty');
+            const statScrapQty = document.getElementById('statScrapQty');
             const placeholderText = document.getElementById('placeholderText');
             const lineCountsContainer = document.getElementById('lineCountsContainer');
             const loader = document.getElementById('loader');
@@ -278,18 +268,6 @@
                 if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
             });
             fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
-
-            processButton.addEventListener('click', () => {
-                const data = dataInput.value.trim();
-                if (data) {
-                    resetView(true); // Soft reset for pasted data
-                    const parsedData = parsePastedData(data);
-                    allData = parsedData; // Pasted data is assumed to be clean
-                    render();
-                } else {
-                    placeholderText.textContent = "El área de pegado manual está vacía.";
-                }
-            });
             
             filterInput.addEventListener('input', render);
             
@@ -302,9 +280,36 @@
                 });
             });
 
+            // --- HELPER FUNCTIONS ---
+            const isAffirmative = (val) => ['true', '1', 'yes', true].includes(String(val).toLowerCase());
+
+            function excelSerialToDate(serial) {
+                if (typeof serial !== 'number' || isNaN(serial)) return null;
+                const utc_days = Math.floor(serial - 25569);
+                const utc_value = utc_days * 86400;
+                const date_info = new Date(utc_value * 1000);
+                const fractional_day = serial - Math.floor(serial) + 0.0000001;
+                let total_seconds = Math.floor(86400 * fractional_day);
+                const seconds = total_seconds % 60;
+                total_seconds -= seconds;
+                const hours = Math.floor(total_seconds / (60 * 60));
+                const minutes = Math.floor(total_seconds / 60) % 60;
+                return new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate(), hours, minutes, seconds);
+            }
+
+            function formatDate(date) {
+                if (!(date instanceof Date) || isNaN(date)) return '';
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${day}/${month}/${year} ${hours}:${minutes}`;
+            }
+
             // --- CORE LOGIC ---
             function handleFile(file) {
-                resetView(false); // Hard reset for new file
+                resetView();
                 fileNameDisplay.textContent = file.name;
                 loader.style.display = 'block';
                 placeholderText.style.display = 'none';
@@ -315,20 +320,26 @@
                         const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
                         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                         
-                        // 1. Extract Summary Stats from fixed cells
+                        // 1. Extract and display summary stats
+                        const orderQty = parseInt(worksheet['O3']?.v || 0);
+                        const packedQty = parseInt(worksheet['U3']?.v || 0);
                         statOrderNumber.textContent = worksheet['B3']?.v || 'N/A';
-                        statOrderQty.textContent = worksheet['O3']?.v || '0';
-                        statPackedQty.textContent = worksheet['U3']?.v || '0';
+                        statOrderQty.textContent = orderQty;
+                        statPackedQty.textContent = packedQty;
+                        statRemainingQty.textContent = orderQty - packedQty;
 
-                        // 2. Extract Table Data from fixed columns
+                        // 2. Extract and process table data
                         allData = extractTableData(worksheet);
 
                         if (allData.length > 0) {
+                             // 3. Calculate scrap count from processed data
+                            const scrapHeader = findHeader(Object.keys(allData[0]), KEY_HEADER_TEXT.IS_SCRAP);
+                            const scrapCount = allData.filter(row => isAffirmative(row[scrapHeader])).length;
+                            statScrapQty.textContent = scrapCount;
                             render();
                         } else {
                            placeholderText.textContent = "Se procesó el archivo, pero no se encontró la tabla de datos en la fila 20 o no contiene información.";
                         }
-
                     } catch (error) {
                         console.error("Error processing file:", error);
                         placeholderText.textContent = "Ocurrió un error al procesar el archivo. Verifique que sea un formato válido.";
@@ -341,12 +352,10 @@
             }
 
             function extractTableData(worksheet) {
-                const targetCols = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
                 const headers = {};
                 let headerFound = false;
 
-                // First, get the headers from row 20 and find our key columns
-                targetCols.forEach(col => {
+                TARGET_COLUMNS.forEach(col => {
                     const cell = worksheet[col + '20'];
                     if (cell && cell.v) {
                         headers[col] = cell.v.toString().trim();
@@ -358,11 +367,10 @@
 
                 const jsonData = [];
                 const range = XLSX.utils.decode_range(worksheet['!ref']);
-                // Start iterating from row 21 (index 20)
                 for (let rowNum = 20; rowNum <= range.e.r; ++rowNum) {
                     const row = {};
                     let hasData = false;
-                    targetCols.forEach(col => {
+                    TARGET_COLUMNS.forEach(col => {
                         const headerName = headers[col];
                         if (headerName) {
                             const cellAddress = col + (rowNum + 1);
@@ -378,45 +386,35 @@
                 return jsonData;
             }
             
-            function parsePastedData(text) {
-                const rows = text.split('\n').filter(r => r.trim() !== '');
-                if (rows.length < 2) return [];
-                const headers = rows[0].split('\t').map(h => h.trim());
-                return rows.slice(1).map(rowText => {
-                    const values = rowText.split('\t');
-                    const rowObject = {};
-                    headers.forEach((header, i) => {
-                        rowObject[header] = values[i] ? values[i].trim() : '';
-                    });
-                    return rowObject;
-                });
+            function findHeader(headers, keyText) {
+                return headers.find(h => h.toLowerCase() === keyText.toLowerCase());
             }
 
             // --- UI RENDERING ---
             function render() {
-                if (allData.length === 0) {
-                    resultsTable.style.display = 'none';
-                    lineCountsContainer.innerHTML = '';
-                    if (!loader.style.display) {
-                        placeholderText.style.display = 'block';
-                    }
-                    return;
-                }
+                if (allData.length === 0) return;
 
-                // Find the actual header names for our key columns
                 const headers = Object.keys(allData[0]);
-                const serialHeader = headers.find(h => h.toLowerCase() === KEY_HEADER_TEXT.SERIAL.toLowerCase());
-                const lineHeader = headers.find(h => h.toLowerCase() === KEY_HEADER_TEXT.LINE.toLowerCase());
-                const scrapHeader = headers.find(h => h.toLowerCase() === KEY_HEADER_TEXT.IS_SCRAP.toLowerCase());
-                const notPackedHeader = headers.find(h => h.toLowerCase() === KEY_HEADER_TEXT.NOT_PACKED.toLowerCase());
+                const scrapHeader = findHeader(headers, KEY_HEADER_TEXT.IS_SCRAP);
+                const dateHeader = findHeader(headers, KEY_HEADER_TEXT.DATE);
+                const createdByHeader = findHeader(headers, KEY_HEADER_TEXT.CREATED_BY);
+                const lineHeader = findHeader(headers, 'Line');
 
-                const isAffirmative = (val) => ['true', '1', 'yes', true].includes(String(val).toLowerCase());
-                let filteredData = allData;
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                let filteredData = allData.map(row => {
+                    const rowDate = excelSerialToDate(row[dateHeader]);
+                    return {
+                        ...row,
+                        isDelayed: rowDate instanceof Date && rowDate < today && !isAffirmative(row[scrapHeader])
+                    };
+                });
                 
-                if (currentFilter === 'scrap' && scrapHeader) {
+                if (currentFilter === 'scrap') {
                     filteredData = filteredData.filter(row => isAffirmative(row[scrapHeader]));
-                } else if (currentFilter === 'not_packed' && notPackedHeader) {
-                    filteredData = filteredData.filter(row => isAffirmative(row[notPackedHeader]));
+                } else if (currentFilter === 'delayed') {
+                    filteredData = filteredData.filter(row => row.isDelayed);
                 }
 
                 const searchText = filterInput.value.toLowerCase();
@@ -425,12 +423,14 @@
                         Object.values(row).some(val => String(val).toLowerCase().includes(searchText))
                     );
                 }
+                
+                const displayHeaders = headers.filter(h => h !== createdByHeader);
 
-                updateTable(filteredData, headers, { scrapHeader, notPackedHeader });
+                updateTable(filteredData, displayHeaders, { scrapHeader, dateHeader });
                 updateLineCounts(filteredData, lineHeader);
             }
 
-            function updateTable(data, headers, keyHeaders) {
+            function updateTable(data, displayHeaders, keyHeaders) {
                 tableBody.innerHTML = '';
 
                 if (!data.length) {
@@ -443,18 +443,24 @@
                 resultsTable.style.display = 'table';
                 placeholderText.style.display = 'none';
 
-                tableHead.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+                tableHead.innerHTML = `<tr>${displayHeaders.map(h => `<th>${h}</th>`).join('')}</tr>`;
 
-                const isAffirmative = (val) => ['true', '1', 'yes', true].includes(String(val).toLowerCase());
                 data.forEach(row => {
                     const tr = document.createElement('tr');
-                    const isScrap = keyHeaders.scrapHeader && isAffirmative(row[keyHeaders.scrapHeader]);
-                    const notPacked = keyHeaders.notPackedHeader && isAffirmative(row[keyHeaders.notPackedHeader]);
-
-                    if (isScrap) tr.classList.add('is-scrap');
-                    else if (notPacked) tr.classList.add('not-packed');
+                    const isScrap = isAffirmative(row[keyHeaders.scrapHeader]);
                     
-                    tr.innerHTML = headers.map(h => `<td>${row[h] === undefined ? '' : row[h]}</td>`).join('');
+                    if (isScrap) tr.classList.add('is-scrap');
+                    else if (row.isDelayed) tr.classList.add('is-delayed');
+                    
+                    let cells = '';
+                    displayHeaders.forEach(header => {
+                        let cellValue = row[header];
+                        if (header === keyHeaders.dateHeader) {
+                            cellValue = formatDate(excelSerialToDate(cellValue));
+                        }
+                        cells += `<td>${cellValue === undefined ? '' : cellValue}</td>`;
+                    });
+                    tr.innerHTML = cells;
                     tableBody.appendChild(tr);
                 });
             }
@@ -475,20 +481,19 @@
                 ).join('');
             }
 
-            function resetView(isSoftReset) {
+            function resetView() {
                 allData = [];
-                if (!isSoftReset) {
-                    fileNameDisplay.textContent = '';
-                    dataInput.value = '';
-                    statOrderNumber.textContent = 'N/A';
-                    statOrderQty.textContent = '0';
-                    statPackedQty.textContent = '0';
-                }
+                fileNameDisplay.textContent = '';
+                statOrderNumber.textContent = 'N/A';
+                statOrderQty.textContent = '0';
+                statPackedQty.textContent = '0';
+                statRemainingQty.textContent = '0';
+                statScrapQty.textContent = '0';
                 currentFilter = 'all';
                 filterButtons.forEach(b => b.classList.remove('active'));
                 document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
                 filterInput.value = '';
-                placeholderText.textContent = 'Cargue un archivo o pegue los datos para comenzar.';
+                placeholderText.textContent = 'Cargue un archivo para comenzar.';
                 resultsTable.style.display = 'none';
                 lineCountsContainer.innerHTML = '';
             }
