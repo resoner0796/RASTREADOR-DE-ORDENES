@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control de Órdenes (Definitivo)</title>
+    <title>Panel de Control de Órdenes (Precisión Horaria)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Custom Styles -->
     <style>
@@ -155,7 +155,7 @@
                         <h3>Filtrar por Estado</h3>
                         <div id="statusFilters" class="filter-group">
                             <button class="filter-btn active" data-filter="all">Todos</button>
-                            <button class="filter-btn" data-filter="today">En Movimiento (Hoy)</button>
+                            <button class="filter-btn" data-filter="today">En Movimiento</button>
                             <button class="filter-btn" data-filter="delayed">Sin Movimiento</button>
                             <button class="filter-btn" data-filter="scrap">Scrap</button>
                         </div>
@@ -245,14 +245,18 @@
 
             // --- HELPER FUNCTIONS ---
             function excelSerialToDate(serial) {
+                // This is a professional-grade function to convert Excel date serials.
+                // It correctly handles the 1900 leap year bug and avoids timezone issues.
                 if (typeof serial !== 'number' || isNaN(serial)) return null;
-                // This formula correctly converts Excel's serial number to a JS Date object
-                // without being affected by timezones during the conversion itself.
-                const excelEpoch = new Date(1899, 11, 30);
-                const jsDate = new Date(excelEpoch.getTime() + (serial * 86400000));
-                // Adjust for timezone offset to match local time representation from Excel
-                const timezoneOffset = jsDate.getTimezoneOffset() * 60000;
-                return new Date(jsDate.getTime() + timezoneOffset);
+                try {
+                    const decoded_date = XLSX.SSF.parse_date_code(serial);
+                    if (decoded_date) {
+                        return new Date(decoded_date.y, decoded_date.m - 1, decoded_date.d, decoded_date.H, decoded_date.M, decoded_date.S);
+                    }
+                } catch(e) {
+                    console.error("Could not parse date serial:", serial, e);
+                }
+                return null;
             }
 
             function formatDate(date) {
