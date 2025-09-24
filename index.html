@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Control de Producción (Versión Final)</title>
+    <title>Centro de Control de Producción (Versión Definitiva)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
@@ -28,7 +28,7 @@
             margin-bottom: 16px; /* Size adjustment */
         }
         .app-branding {
-            font-family: 'Tinos', serif; /* Times New Roman Fallback */
+            font-family: 'Tinos', 'Times New Roman', serif;
             font-weight: 400;
             font-size: 2.2rem; /* Size adjustment */
             color: var(--text-primary);
@@ -42,7 +42,7 @@
             margin: 4px 0 0 0;
         }
         .main-container {
-            width: 100%; max-width: 1800px; display: grid;
+            width: 100%; max-width: 1600px; display: grid; /* Size adjustment */
             grid-template-columns: 260px 1fr; /* Size adjustment */
             grid-template-rows: auto auto 1fr;
             grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; 
@@ -111,6 +111,11 @@
         thead { position: sticky; top: 0; background-color: var(--surface-color); z-index: 10; }
         th { font-weight: 600; color: var(--text-secondary); font-size: 0.75rem; }
         
+        .controls-header { /* ** CRITICAL FIX ** */
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 16px;
+        }
         /* Rastreo View specific */
         .rastreo-controls { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px;}
         .filter-container { display: flex; flex-direction: column; gap: 16px; }
@@ -639,7 +644,7 @@
                     const updateBtn = document.createElement('button');
                     updateBtn.className = 'icon-btn';
                     updateBtn.title = 'Actualizar orden';
-                    updateBtn.innerHTML = `✏️`; // Corrected Icon
+                    updateBtn.innerHTML = `✏️`;
                     updateBtn.onclick = () => {
                         orderToUpdateKey = key;
                         updateFileInput.value = ''; // Reset file input
@@ -650,7 +655,7 @@
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = 'icon-btn';
                     deleteBtn.title = 'Eliminar orden';
-                    deleteBtn.innerHTML = `🗑️`; // Corrected Icon
+                    deleteBtn.innerHTML = `🗑️`;
                     deleteBtn.onclick = () => {
                         loadedOrders.delete(key);
                         if (activeOrderKey === key) activeOrderKey = 'all';
