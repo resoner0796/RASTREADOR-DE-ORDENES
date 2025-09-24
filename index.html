@@ -3,131 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Rastreo de Órdenes</title>
+    <title>Panel de Control de Órdenes</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Teko:wght@600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Custom Styles -->
     <style>
         :root {
-            --bg-dark: #111827;
-            --surface-1: #1F2937;
-            --surface-2: #374151;
-            --border-color: #4B5563;
-            --primary-accent: #38BDF8; /* Light Blue */
-            --danger-accent: #F47174;
-            --warning-accent: #FBBF24;
-            --text-light: #F9FAFB;
-            --text-medium: #D1D5DB;
-            --text-dark: #9CA3AF;
+            --bg-color: #0F172A;
+            --surface-color: #1E293B;
+            --border-color: #334155;
+            --primary-color: #38BDF8;
+            --danger-color: #FB7185;
+            --warning-color: #FBBF24;
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --text-dark: #64748B;
         }
 
         body {
-            font-family: 'Roboto', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-light);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
             margin: 0;
             padding: 24px;
-            display: flex;
-            justify-content: center;
         }
 
         .container {
             width: 100%;
-            max-width: 1600px;
-            display: grid;
-            grid-template-areas:
-                "header header"
-                "controls results";
-            grid-template-columns: 380px 1fr;
-            grid-template-rows: auto 1fr;
+            max-width: 1800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
             gap: 24px;
         }
 
-        .main-header {
-            grid-area: header;
-            text-align: center;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .main-header h1 {
-            font-family: 'Teko', sans-serif;
-            font-size: 3.5rem;
-            margin: 0;
-            color: var(--text-light);
-            letter-spacing: 2px;
-        }
-        .main-header h1 span {
-            color: var(--primary-accent);
+        .controls-header {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
         }
 
         .card {
-            background-color: var(--surface-1);
+            background-color: var(--surface-color);
             border-radius: 12px;
             padding: 24px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-        
-        .control-panel { grid-area: controls; display: flex; flex-direction: column; gap: 24px; }
-        .results-panel { grid-area: results; display: flex; flex-direction: column; }
 
         h2 {
             margin-top: 0;
             margin-bottom: 16px;
-            color: var(--text-medium);
-            font-weight: 500;
-            font-size: 1.25rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 1.1rem;
         }
 
         .file-drop-area {
             border: 2px dashed var(--border-color);
             border-radius: 8px;
-            padding: 40px 20px;
+            padding: 30px 20px;
             text-align: center;
             cursor: pointer;
             transition: background-color 0.2s ease, border-color 0.2s ease;
         }
         .file-drop-area.dragover {
-            background-color: var(--surface-2);
-            border-color: var(--primary-accent);
+            background-color: #334155;
+            border-color: var(--primary-color);
         }
         .file-drop-area p { margin: 0; color: var(--text-dark); }
-        .file-drop-area span { color: var(--primary-accent); font-weight: 500; }
-        #fileName { font-size: 0.8rem; margin-top: 12px; color: var(--text-medium); }
+        .file-drop-area span { color: var(--primary-color); font-weight: 500; }
+        #fileName { font-size: 0.8rem; margin-top: 12px; color: var(--text-secondary); height: 1em; }
 
         textarea, input[type="text"] {
             width: 100%;
-            padding: 12px;
-            background-color: var(--bg-dark);
+            padding: 10px;
+            background-color: var(--bg-color);
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            color: var(--text-light);
-            font-family: 'Roboto', sans-serif;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
             box-sizing: border-box;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
         textarea:focus, input[type="text"]:focus {
             outline: none;
-            border-color: var(--primary-accent);
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.3);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
         }
         
         .btn {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             border: none;
             border-radius: 6px;
-            background-color: var(--primary-accent);
-            color: var(--bg-dark);
+            background-color: var(--primary-color);
+            color: var(--bg-color);
             font-weight: 700;
-            font-size: 1rem;
             cursor: pointer;
             transition: background-color 0.2s;
             margin-top: 16px;
@@ -144,44 +119,61 @@
             padding: 10px;
             border-radius: 6px;
             cursor: pointer;
-            background-color: var(--surface-2);
-            border: 1px solid var(--border-color);
-            color: var(--text-medium);
+            background-color: #334155;
+            border: 1px solid #475569;
+            color: var(--text-secondary);
             font-weight: 500;
             text-align: center;
             transition: all 0.2s;
         }
-        .filter-btn:hover { background-color: var(--border-color); color: var(--text-light); }
+        .filter-btn:hover { background-color: #475569; color: var(--text-primary); }
         .filter-btn.active {
-            background-color: var(--primary-accent);
-            color: var(--bg-dark);
-            border-color: var(--primary-accent);
+            background-color: var(--primary-color);
+            color: var(--bg-color);
+            border-color: var(--primary-color);
             font-weight: 700;
         }
         
-        .results-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
+        .summary-card {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            text-align: center;
         }
-        .stats p { margin: 0; font-size: 1.1rem; color: var(--text-medium); }
-        .stats span { font-weight: 700; color: var(--primary-accent); font-size: 1.25rem; }
+        .stat-item h3 {
+            margin: 0 0 8px 0;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .stat-item p {
+            margin: 0;
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        #statOrderNumber { color: var(--primary-color); }
+        #statPackedQty { color: var(--warning-color); }
 
+        .results-card {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
         #lineCountsContainer { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-        .line-badge { background-color: var(--surface-2); padding: 4px 12px; border-radius: 16px; font-size: 0.8rem; font-weight: 500; color: var(--text-dark); }
-        .line-badge span { font-weight: 700; color: var(--text-medium); }
+        .line-badge { background-color: #334155; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem; font-weight: 500; color: var(--text-dark); }
+        .line-badge span { font-weight: 700; color: var(--text-secondary); }
 
         .table-wrapper { overflow: auto; flex-grow: 1; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
-        thead { position: sticky; top: 0; background-color: var(--surface-1); }
-        th { font-weight: 700; color: var(--text-dark); text-transform: uppercase; font-size: 0.75rem; }
-        tbody tr.is-scrap { background-color: rgba(244, 113, 116, 0.1); }
-        tbody tr.is-scrap td { color: var(--danger-accent); }
+        thead { position: sticky; top: 0; background-color: var(--surface-color); }
+        th { font-weight: 600; color: var(--text-secondary); font-size: 0.8rem; }
+        tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1); }
+        tbody tr.is-scrap td { color: var(--danger-color); }
         tbody tr.not-packed { background-color: rgba(251, 191, 36, 0.1); }
-        tbody tr.not-packed td { color: var(--warning-accent); }
-        tbody tr:not(.is-scrap):not(.not-packed):hover { background-color: var(--surface-2); }
+        tbody tr.not-packed td { color: var(--warning-color); }
+        tbody tr:not(.is-scrap):not(.not-packed):hover { background-color: #334155; }
         
         #loader, #placeholderText { text-align: center; padding: 60px; color: var(--text-dark); font-size: 1.1rem; }
     </style>
@@ -189,11 +181,7 @@
 <body>
 
     <div class="container">
-        <header class="main-header">
-            <h1>Panel de Rastreo <span>de Órdenes</span></h1>
-        </header>
-
-        <aside class="control-panel">
+        <header class="controls-header">
             <div class="card">
                 <h2>1. Cargar Archivo</h2>
                 <div id="fileDropArea" class="file-drop-area">
@@ -201,15 +189,13 @@
                     <p><span>o haz clic para seleccionar</span></p>
                     <p id="fileName"></p>
                 </div>
-                <input type="file" id="fileInput" class="hidden" accept=".xlsx, .xls, .csv" style="display: none;">
+                <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
             </div>
-
             <div class="card">
                 <h2>2. Pegado Manual</h2>
-                <textarea id="dataInput" rows="6" placeholder="Pega los datos de la tabla..."></textarea>
+                <textarea id="dataInput" rows="5" placeholder="Pega aquí los datos de las 11 columnas (la primera fila debe ser el encabezado)..."></textarea>
                 <button id="processButton" class="btn">Procesar Datos</button>
             </div>
-
             <div class="card">
                 <h2>3. Filtros</h2>
                 <div class="filter-buttons">
@@ -219,22 +205,28 @@
                 </div>
                 <input type="text" id="filterInput" placeholder="Buscar por serial, línea, etc...">
             </div>
-        </aside>
+        </header>
 
-        <main class="results-panel card">
-            <div class="results-header">
-                <h2>Resultados</h2>
-                <div class="stats">
-                    <p>Orden: <span id="orderNumber">N/A</span></p>
-                    <p>Total: <span id="serialCount">0</span></p>
-                </div>
+        <section class="summary-card card">
+            <div class="stat-item">
+                <h3>Número de Orden</h3>
+                <p id="statOrderNumber">N/A</p>
             </div>
-            
+            <div class="stat-item">
+                <h3>Cantidad de Orden</h3>
+                <p id="statOrderQty">0</p>
+            </div>
+            <div class="stat-item">
+                <h3>Cantidad Empacada</h3>
+                <p id="statPackedQty">0</p>
+            </div>
+        </section>
+
+        <main class="results-card card">
             <div id="lineCountsContainer"></div>
-            
             <div id="output" class="table-wrapper">
                 <div id="loader" style="display: none;">Procesando archivo...</div>
-                <p id="placeholderText">Sube un archivo o pega los datos para comenzar.</p>
+                <p id="placeholderText">Cargue un archivo o pegue los datos para comenzar.</p>
                 <table id="resultsTable" style="display: none;">
                     <thead></thead>
                     <tbody></tbody>
@@ -249,23 +241,14 @@
             let allData = [];
             let currentFilter = 'all';
 
-            // This mapping is the heart of the data translation.
-            // It links any possible column name from the source file (in lowercase) to our standard internal name.
-            const HEADER_MAP = {
-                'producto serial number': 'Serial',
-                'line': 'Línea',
-                'status': 'Status',
-                'is scrap': 'Es Scrap',
-                'not packed': 'No Empacado',
-                'creation date': 'Fecha Creación',
-                'date registered': 'Fecha Creación', // Allows multiple source columns for the same data
-                'área': 'Área',
-                'employee': 'Empleado',
-                'created by': 'Empleado'
+            // Based on your requirements, we assume these are the key columns for filtering and highlighting.
+            // The system will look for these exact text strings (case-insensitive) in the headers of row 20.
+            const KEY_HEADER_TEXT = {
+                SERIAL: 'Producto Serial Number',
+                LINE: 'Line',
+                IS_SCRAP: 'Is Scrap',
+                NOT_PACKED: 'Not Packed',
             };
-            
-            // This defines the order of columns in our final table.
-            const DISPLAY_HEADERS = ['Serial', 'Línea', 'Status', 'Es Scrap', 'No Empacado', 'Fecha Creación', 'Área', 'Empleado'];
 
             // --- DOM ELEMENT REFERENCES ---
             const fileDropArea = document.getElementById('fileDropArea');
@@ -277,8 +260,9 @@
             const resultsTable = document.getElementById('resultsTable');
             const tableBody = resultsTable.querySelector('tbody');
             const tableHead = resultsTable.querySelector('thead');
-            const serialCount = document.getElementById('serialCount');
-            const orderNumberDisplay = document.getElementById('orderNumber');
+            const statOrderNumber = document.getElementById('statOrderNumber');
+            const statOrderQty = document.getElementById('statOrderQty');
+            const statPackedQty = document.getElementById('statPackedQty');
             const placeholderText = document.getElementById('placeholderText');
             const lineCountsContainer = document.getElementById('lineCountsContainer');
             const loader = document.getElementById('loader');
@@ -298,9 +282,9 @@
             processButton.addEventListener('click', () => {
                 const data = dataInput.value.trim();
                 if (data) {
-                    resetView();
+                    resetView(true); // Soft reset for pasted data
                     const parsedData = parsePastedData(data);
-                    allData = normalizeData(parsedData);
+                    allData = parsedData; // Pasted data is assumed to be clean
                     render();
                 } else {
                     placeholderText.textContent = "El área de pegado manual está vacía.";
@@ -320,8 +304,8 @@
 
             // --- CORE LOGIC ---
             function handleFile(file) {
+                resetView(false); // Hard reset for new file
                 fileNameDisplay.textContent = file.name;
-                resetView();
                 loader.style.display = 'block';
                 placeholderText.style.display = 'none';
 
@@ -330,104 +314,109 @@
                     try {
                         const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
                         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const sheetArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+                        
+                        // 1. Extract Summary Stats from fixed cells
+                        statOrderNumber.textContent = worksheet['B3']?.v || 'N/A';
+                        statOrderQty.textContent = worksheet['O3']?.v || '0';
+                        statPackedQty.textContent = worksheet['U3']?.v || '0';
 
-                        const { order, headerRowIndex } = findOrderAndTable(sheetArray);
-                        orderNumberDisplay.textContent = order || 'No encontrado';
+                        // 2. Extract Table Data from fixed columns
+                        allData = extractTableData(worksheet);
 
-                        if (headerRowIndex > -1) {
-                            // Let SheetJS parse the data starting from the identified header row
-                            const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: headerRowIndex });
-                            allData = normalizeData(jsonData);
+                        if (allData.length > 0) {
                             render();
                         } else {
-                            placeholderText.textContent = "Error: No se pudo detectar una tabla con cabeceras válidas en el archivo.";
+                           placeholderText.textContent = "Se procesó el archivo, pero no se encontró la tabla de datos en la fila 20 o no contiene información.";
                         }
+
                     } catch (error) {
                         console.error("Error processing file:", error);
                         placeholderText.textContent = "Ocurrió un error al procesar el archivo. Verifique que sea un formato válido.";
                     } finally {
                         loader.style.display = 'none';
-                        if(placeholderText.textContent) placeholderText.style.display = 'block';
+                        if(placeholderText.textContent && allData.length === 0) placeholderText.style.display = 'block';
                     }
                 };
                 reader.readAsArrayBuffer(file);
             }
 
-            function findOrderAndTable(sheetArray) {
-                let order = null;
-                let headerRowIndex = -1;
-                
-                const targetHeaders = Object.keys(HEADER_MAP);
+            function extractTableData(worksheet) {
+                const targetCols = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
+                const headers = {};
+                let headerFound = false;
 
-                for (let i = 0; i < sheetArray.length; i++) {
-                    const row = sheetArray[i].map(cell => String(cell).trim());
-                    
-                    if (!order) {
-                        const cellIndex = row.findIndex(cell => cell.toLowerCase() === 'order number');
-                        if (cellIndex !== -1 && sheetArray[i + 1]) {
-                            order = String(sheetArray[i + 1][cellIndex] || '').trim();
-                        }
+                // First, get the headers from row 20 and find our key columns
+                targetCols.forEach(col => {
+                    const cell = worksheet[col + '20'];
+                    if (cell && cell.v) {
+                        headers[col] = cell.v.toString().trim();
+                        headerFound = true;
                     }
-                    
-                    if (headerRowIndex === -1) {
-                        const lowercasedRow = row.map(h => h.toLowerCase());
-                        const foundHeaders = targetHeaders.filter(target => lowercasedRow.includes(target));
-                        
-                        // Confidence check: at least 5 headers must match to be considered the correct table
-                        if (foundHeaders.length >= 5) {
-                            headerRowIndex = i;
+                });
+
+                if (!headerFound) return [];
+
+                const jsonData = [];
+                const range = XLSX.utils.decode_range(worksheet['!ref']);
+                // Start iterating from row 21 (index 20)
+                for (let rowNum = 20; rowNum <= range.e.r; ++rowNum) {
+                    const row = {};
+                    let hasData = false;
+                    targetCols.forEach(col => {
+                        const headerName = headers[col];
+                        if (headerName) {
+                            const cellAddress = col + (rowNum + 1);
+                            const cell = worksheet[cellAddress];
+                            row[headerName] = cell ? cell.v : undefined;
+                            if (cell && cell.v) hasData = true;
                         }
+                    });
+                    if (hasData) {
+                        jsonData.push(row);
                     }
-                    
-                    if (order && headerRowIndex > -1) break;
                 }
-                return { order, headerRowIndex };
+                return jsonData;
             }
             
-            function normalizeData(rawDataArray) {
-                if (!rawDataArray || rawDataArray.length === 0) return [];
-                return rawDataArray
-                    .map(rawRow => {
-                        const normalizedRow = {};
-                        for (const rawKey in rawRow) {
-                            const lowerRawKey = rawKey.trim().toLowerCase();
-                            const standardKey = HEADER_MAP[lowerRawKey];
-                            if (standardKey) {
-                                // Prefer the first value found for a standard key (e.g., 'Creation Date' over 'Date Registered' if both exist)
-                                if (!normalizedRow[standardKey]) {
-                                    normalizedRow[standardKey] = rawRow[rawKey];
-                                }
-                            }
-                        }
-                        return normalizedRow;
-                    })
-                    .filter(row => row.Serial && String(row.Serial).trim() !== ''); // Ensure the row is valid and has a serial
-            }
-
             function parsePastedData(text) {
                 const rows = text.split('\n').filter(r => r.trim() !== '');
                 if (rows.length < 2) return [];
                 const headers = rows[0].split('\t').map(h => h.trim());
                 return rows.slice(1).map(rowText => {
                     const values = rowText.split('\t');
-                    return headers.reduce((obj, header, i) => {
-                        obj[header] = values[i] ? values[i].trim() : '';
-                        return obj;
-                    }, {});
+                    const rowObject = {};
+                    headers.forEach((header, i) => {
+                        rowObject[header] = values[i] ? values[i].trim() : '';
+                    });
+                    return rowObject;
                 });
             }
 
             // --- UI RENDERING ---
             function render() {
-                // Apply all filters
+                if (allData.length === 0) {
+                    resultsTable.style.display = 'none';
+                    lineCountsContainer.innerHTML = '';
+                    if (!loader.style.display) {
+                        placeholderText.style.display = 'block';
+                    }
+                    return;
+                }
+
+                // Find the actual header names for our key columns
+                const headers = Object.keys(allData[0]);
+                const serialHeader = headers.find(h => h.toLowerCase() === KEY_HEADER_TEXT.SERIAL.toLowerCase());
+                const lineHeader = headers.find(h => h.toLowerCase() === KEY_HEADER_TEXT.LINE.toLowerCase());
+                const scrapHeader = headers.find(h => h.toLowerCase() === KEY_HEADER_TEXT.IS_SCRAP.toLowerCase());
+                const notPackedHeader = headers.find(h => h.toLowerCase() === KEY_HEADER_TEXT.NOT_PACKED.toLowerCase());
+
                 const isAffirmative = (val) => ['true', '1', 'yes', true].includes(String(val).toLowerCase());
                 let filteredData = allData;
                 
-                if (currentFilter === 'scrap') {
-                    filteredData = filteredData.filter(row => isAffirmative(row['Es Scrap']));
-                } else if (currentFilter === 'not_packed') {
-                    filteredData = filteredData.filter(row => isAffirmative(row['No Empacado']));
+                if (currentFilter === 'scrap' && scrapHeader) {
+                    filteredData = filteredData.filter(row => isAffirmative(row[scrapHeader]));
+                } else if (currentFilter === 'not_packed' && notPackedHeader) {
+                    filteredData = filteredData.filter(row => isAffirmative(row[notPackedHeader]));
                 }
 
                 const searchText = filterInput.value.toLowerCase();
@@ -437,56 +426,46 @@
                     );
                 }
 
-                // Update UI elements
-                updateTable(filteredData);
-                updateLineCounts(filteredData);
-                serialCount.textContent = filteredData.length;
-
-                // Handle placeholder text visibility
-                if (allData.length === 0 && !loader.style.display) {
-                    if (dataInput.value.trim() || fileNameDisplay.textContent) {
-                        placeholderText.textContent = "Se procesaron los datos, pero no se encontró información válida con un 'Producto Serial Number'.";
-                    } else {
-                        placeholderText.textContent = 'Sube un archivo o pega los datos para comenzar.';
-                    }
-                     placeholderText.style.display = 'block';
-                }
+                updateTable(filteredData, headers, { scrapHeader, notPackedHeader });
+                updateLineCounts(filteredData, lineHeader);
             }
 
-            function updateTable(data) {
+            function updateTable(data, headers, keyHeaders) {
                 tableBody.innerHTML = '';
 
                 if (!data.length) {
                     resultsTable.style.display = 'none';
-                    if (allData.length > 0) {
-                        placeholderText.textContent = 'No se encontraron resultados para los filtros aplicados.';
-                        placeholderText.style.display = 'block';
-                    }
+                    placeholderText.textContent = 'No se encontraron resultados para los filtros aplicados.';
+                    placeholderText.style.display = 'block';
                     return;
                 }
                 
                 resultsTable.style.display = 'table';
                 placeholderText.style.display = 'none';
 
-                tableHead.innerHTML = `<tr>${DISPLAY_HEADERS.map(h => `<th>${h}</th>`).join('')}</tr>`;
+                tableHead.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
 
                 const isAffirmative = (val) => ['true', '1', 'yes', true].includes(String(val).toLowerCase());
                 data.forEach(row => {
                     const tr = document.createElement('tr');
-                    const isScrap = isAffirmative(row['Es Scrap']);
-                    const notPacked = isAffirmative(row['No Empacado']);
+                    const isScrap = keyHeaders.scrapHeader && isAffirmative(row[keyHeaders.scrapHeader]);
+                    const notPacked = keyHeaders.notPackedHeader && isAffirmative(row[keyHeaders.notPackedHeader]);
 
                     if (isScrap) tr.classList.add('is-scrap');
                     else if (notPacked) tr.classList.add('not-packed');
                     
-                    tr.innerHTML = DISPLAY_HEADERS.map(h => `<td>${row[h] || ''}</td>`).join('');
+                    tr.innerHTML = headers.map(h => `<td>${row[h] === undefined ? '' : row[h]}</td>`).join('');
                     tableBody.appendChild(tr);
                 });
             }
 
-            function updateLineCounts(data) {
+            function updateLineCounts(data, lineHeader) {
+                if (!lineHeader) {
+                    lineCountsContainer.innerHTML = '';
+                    return;
+                }
                 const counts = data.reduce((acc, row) => {
-                    const line = row['Línea'];
+                    const line = row[lineHeader];
                     if (line) acc[line] = (acc[line] || 0) + 1;
                     return acc;
                 }, {});
@@ -496,21 +475,24 @@
                 ).join('');
             }
 
-            function resetView() {
+            function resetView(isSoftReset) {
                 allData = [];
+                if (!isSoftReset) {
+                    fileNameDisplay.textContent = '';
+                    dataInput.value = '';
+                    statOrderNumber.textContent = 'N/A';
+                    statOrderQty.textContent = '0';
+                    statPackedQty.textContent = '0';
+                }
                 currentFilter = 'all';
                 filterButtons.forEach(b => b.classList.remove('active'));
                 document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
                 filterInput.value = '';
-                // Do not clear dataInput or fileNameDisplay here, so user sees what was processed
-                orderNumberDisplay.textContent = 'N/A';
-                placeholderText.textContent = 'Sube un archivo o pega los datos para comenzar.';
+                placeholderText.textContent = 'Cargue un archivo o pegue los datos para comenzar.';
                 resultsTable.style.display = 'none';
                 lineCountsContainer.innerHTML = '';
-                serialCount.textContent = '0';
             }
         });
     </script>
 </body>
 </html>
-
