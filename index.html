@@ -138,8 +138,16 @@
             font-size: 0.7rem; transition: transform 0.2s;
         }
         .box-row.expanded td:first-child::before { transform: rotate(90deg); }
-        .serial-row { display: none; background-color: var(--bg-color); }
-        .serial-row td { padding: 12px 20px 12px 40px; border-color: #2a3a5e; }
+        
+        /* === INICIO: SOLUCIÓN CSS PARA TABLA DE EMPAQUE === */
+        .serial-row {
+            display: none;
+        }
+        .box-row.expanded + .serial-row {
+            display: table-row;
+        }
+        .serial-row td { background-color: var(--bg-color); padding: 12px 20px 12px 40px; border-color: #2a3a5e; }
+        /* === FIN: SOLUCIÓN CSS PARA TABLA DE EMPAQUE === */
 
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
@@ -148,7 +156,6 @@
         tbody tr.is-today { background-color: rgba(52, 211, 153, 0.1) !important; }
         tbody tr.is-today td { color: var(--success-color) !important; }
         
-        /* === INICIO: NUEVOS ESTILOS PARA TABLA DE EMPAQUE === */
         .serial-details-container {
             display: flex;
             flex-direction: column;
@@ -188,7 +195,6 @@
         @media (min-width: 500px) {
             .packing-info { text-align: right; }
         }
-        /* === FIN: NUEVOS ESTILOS PARA TABLA DE EMPAQUE === */
 
         #loader, #placeholderText { text-align: center; padding: 60px; color: var(--text-dark); font-size: 1.1rem; }
         
@@ -207,7 +213,12 @@
         .modal-overlay.visible .modal-content { transform: scale(1); }
         .modal-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
         .modal-close { font-size: 1.75rem; color: var(--text-dark); cursor: pointer; line-height: 1; position: absolute; top: 16px; right: 16px; }
-        #modalBody textarea { width: 100%; height: 100px; resize: none; background-color: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;}
+        #modalBody textarea, #modalBody pre { 
+            width: 100%; min-height: 150px; resize: none; background-color: var(--bg-color); 
+            color: var(--text-primary); border: 1px solid var(--border-color); 
+            border-radius: 6px; padding: 12px; font-family: 'Inter', sans-serif;
+            white-space: pre-wrap; word-wrap: break-word; font-size: 0.9rem;
+        }
 
         body.mode-rastreo #empaqueView { display: none !important; }
         body.mode-empaque #rastreoView { display: none !important; }
@@ -292,6 +303,13 @@
                 border: 1px solid var(--border-color);
                 border-radius: 8px;
             }
+
+            /* === INICIO: SOLUCIÓN CSS MÓVIL PARA TABLA DE EMPAQUE === */
+            .box-row.expanded + .serial-row {
+                display: block;
+            }
+            /* === FIN: SOLUCIÓN CSS MÓVIL PARA TABLA DE EMPAQUE === */
+
             #empaqueTable .box-row { margin-bottom: 0; border-radius: 8px 8px 0 0; }
             #empaqueTable .box-row.expanded { border-bottom-color: transparent; }
              #empaqueTable .serial-row { margin-top: -1px; margin-bottom: 1rem; border-radius: 0 0 8px 8px; }
@@ -518,17 +536,30 @@
             });
 
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
-            exportViewButton.addEventListener('click', () => { /* Lógica de handleExport aquí si se necesita */ });
-            exportStatusButton.addEventListener('click', () => { /* Lógica de handleStatusReport aquí si se necesita */ });
+            
+            // === INICIO: LÓGICA PARA BOTONES DE EXPORTACIÓN Y REPORTE ===
+            exportViewButton.addEventListener('click', handleExportView);
+            exportStatusButton.addEventListener('click', handleStatusReport);
+            // === FIN: LÓGICA PARA BOTONES DE EXPORTACIÓN Y REPORTE ===
 
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
             
-            function showModal(title, message, type = 'info', showCopyBtn = false) {
+            function showModal(title, content, type = 'info', showCopyBtn = false) {
                  modalOverlay.querySelector('.modal-content').className = `modal-content ${type}`;
                  modalTitle.textContent = title;
-                 modalBody.innerHTML = message;
+                 modalBody.innerHTML = content; // Can be HTML
                  copyReportBtn.style.display = showCopyBtn ? 'block' : 'none';
+                 if (showCopyBtn) {
+                    copyReportBtn.onclick = () => {
+                        const reportText = modalBody.querySelector('pre, textarea')?.textContent || modalBody.textContent;
+                        navigator.clipboard.writeText(reportText).then(() => {
+                           showModal('Copiado', 'El reporte se ha copiado al portapapeles.', 'success');
+                        }, () => {
+                           showModal('Error', 'No se pudo copiar el reporte.', 'error');
+                        });
+                    };
+                 }
                  modalOverlay.classList.add('visible');
             }
             function hideModal() { modalOverlay.classList.remove('visible'); }
@@ -693,24 +724,17 @@
                  return jsonData;
             }
             
-            // ======================================================================
-            // ========= ✅ INICIO: SOLUCIÓN DEFINITIVA "EN MOVIMIENTO" ✅ ==========
-            // ======================================================================
             function processRastreoData(data) {
                 if (!data || data.length === 0) return [];
-
-                // Obtener la fecha actual en formato YYYY-MM-DD para Reynosa, México.
-                // Esta es la clave para resolver el problema de la zona horaria.
                 const reynosaTodayString = new Date().toLocaleDateString('en-CA', {
                     timeZone: 'America/Matamoros'
                 });
-                
                 const headers = Object.keys(data[0] || {});
                 const scrapHeader = findHeader(headers, TRACKING_KEYS.IS_SCRAP);
                 const dateHeader = findHeader(headers, TRACKING_KEYS.DATE_REGISTERED);
 
                 return data.map(row => {
-                    let status = 'normal'; // Estado por defecto para items sin fecha o con fecha futura
+                    let status = 'normal';
                     const isScrap = String(row[scrapHeader]).trim().toUpperCase() === 'X';
 
                     if (isScrap) {
@@ -720,25 +744,18 @@
                         if (dateSerial) {
                             const decodedDate = XLSX.SSF.parse_date_code(dateSerial);
                             if (decodedDate) {
-                                // Construir la cadena de fecha del serial de Excel en formato YYYY-MM-DD
                                 const serialDateString = `${decodedDate.y}-${String(decodedDate.m).padStart(2, '0')}-${String(decodedDate.d).padStart(2, '0')}`;
-                                
-                                // La comparación de cadenas puras evita todos los problemas de conversión de zona horaria.
                                 if (serialDateString === reynosaTodayString) {
-                                    status = 'today'; // 'En Movimiento'
+                                    status = 'today';
                                 } else if (serialDateString < reynosaTodayString) {
-                                    status = 'delayed'; // 'Sin Movimiento'
+                                    status = 'delayed';
                                 }
-                                // Si serialDateString > reynosaTodayString (fecha futura), el estado permanece 'normal'.
                             }
                         }
                     }
                     return { ...row, status };
                 });
             }
-            // ======================================================================
-            // =========== ✅ FIN: SOLUCIÓN DEFINITIVA "EN MOVIMIENTO" ✅ ============
-            // ======================================================================
 
             function groupEmpaqueData(data) {
                 if (!data || data.length === 0) return new Map();
@@ -881,9 +898,8 @@
                 ordersToProcess.forEach(order => {
                     orderQty += order.orderQty || 0;
                     packedQty += order.packedQty || 0;
-                    if(order.headers && order.headers.rastreo){
-                         const scrapHeader = findHeader(order.headers.rastreo, TRACKING_KEYS.IS_SCRAP);
-                        if(scrapHeader) scrapCount += order.rastreoData.filter(row => String(row[scrapHeader]).trim().toUpperCase() === 'X').length;
+                    if(order.rastreoData) {
+                       scrapCount += order.rastreoData.filter(row => row.status === 'scrap').length;
                     }
                 });
                 statOrderQty.textContent = orderQty;
@@ -913,7 +929,7 @@
                     if (loadedOrders.size > 0) headers = Array.from(loadedOrders.values()).find(o => o.headers.rastreo)?.headers.rastreo;
                 } else if (loadedOrders.has(key)) {
                     const order = loadedOrders.get(key);
-                    dataToShow = order.rastreoData; headers = order.headers.rastreo;
+                    dataToShow = order.rastreoData || []; headers = order.headers.rastreo || [];
                 }
                 createRastreoLineFilters(dataToShow, headers);
                 let filteredData = dataToShow;
@@ -966,7 +982,7 @@
                     headersToRender = headers ? headers.filter(h => !headersToHide.includes(h) && h !== 'status') : [];
                 }
 
-                if (!data || data.length === 0 || headersToRender.length === 0) {
+                if (!data || data.length === 0 || !headersToRender || headersToRender.length === 0) {
                     table.innerHTML = `<thead><tr><th>No se encontraron resultados.</th></tr></thead>`; return;
                 }
                 table.innerHTML = `
@@ -995,16 +1011,13 @@
                 ).join('');
             }
             
-            // =================================================================
-            // ========= ✅ INICIO: CORRECCIÓN TABLA DE EMPAQUE ✅ ==============
-            // =================================================================
             function renderEmpaqueView(key) {
                 let dataToShow = new Map(); let headers = [];
                 if (key === 'all') {
                     loadedOrders.forEach(order => {
                         if(order.empaqueData) order.empaqueData.forEach((serials, boxId) => {
                             if (!dataToShow.has(boxId)) dataToShow.set(boxId, []);
-                            dataToShow.get(boxId).push(...serials);
+                            if(serials && serials.length > 0) dataToShow.get(boxId).push(...serials);
                         });
                     });
                     if (loadedOrders.size > 0) {
@@ -1013,7 +1026,7 @@
                     }
                 } else if (loadedOrders.has(key)) {
                     const order = loadedOrders.get(key);
-                    dataToShow = order.empaqueData; headers = order.headers.empaque;
+                    dataToShow = order.empaqueData || new Map(); headers = order.headers.empaque || [];
                 }
                 
                 const table = document.getElementById('empaqueTable');
@@ -1027,18 +1040,17 @@
                 const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
                 const employeeIdHeader = findHeader(headers, PACKING_KEYS.EMPLOYEE_ID);
 
-                // Verificación de seguridad: Asegurarse que las columnas esenciales existen.
                 if (!boxIdHeader || !serialHeader || !packedDateHeader || !employeeIdHeader) {
-                    table.innerHTML = `<thead><tr><th style="color: var(--warning-color);">Error: Faltan columnas en el archivo Excel. Verifique que existan 'BoxID', 'Serial Number', 'Finish Packed Date' y 'Employee ID'.</th></tr></thead>`;
+                    table.innerHTML = `<thead><tr><th style="color: var(--warning-color);">Error: Columnas de empaque no encontradas en el archivo. Verifique que existan 'BoxID', 'Serial Number', 'Finish Packed Date' y 'Employee ID'.</th></tr></thead>`;
                     return;
                 }
 
                 const filterText = empaqueFilterInput.value.toLowerCase();
-                let tableHTML = `
-                    <thead><tr><th>${boxIdHeader}</th><th>Cantidad</th><th>Último Empaque</th></tr></thead>
-                    <tbody>`;
+                let tableHTML = `<thead><tr><th>${boxIdHeader}</th><th>Cantidad</th><th>Último Empaque</th></tr></thead><tbody>`;
+                
                 for (const [boxId, serials] of dataToShow.entries()) {
-                    const latestDate = Math.max(...serials.map(s => s[packedDateHeader]));
+                    if(!serials || serials.length === 0) continue;
+                    const latestDate = Math.max(...serials.map(s => s[packedDateHeader] || 0));
                     const serialsMatchFilter = serials.some(s => String(s[serialHeader]).toLowerCase().includes(filterText));
                     if (!String(boxId).toLowerCase().includes(filterText) && !serialsMatchFilter) continue;
                     
@@ -1056,8 +1068,7 @@
                                     <span class="detail-label" style="margin-top: 5px;">Fecha:</span>
                                     <span class="detail-value">${formatDateTime(excelSerialToDate(serial[packedDateHeader]))}</span>
                                 </div>
-                            </div>
-                        `;
+                            </div>`;
                     });
                     serialsDetailsHTML += '</div>';
 
@@ -1069,31 +1080,76 @@
                         </tr>
                         <tr class="serial-row" data-parentbox="${boxId}">
                             <td colspan="3">${serialsDetailsHTML}</td>
-                        </tr>
-                        `;
+                        </tr>`;
                 }
                 tableHTML += `</tbody>`;
                 table.innerHTML = tableHTML;
 
                 table.querySelectorAll('.box-row').forEach(row => {
-                    row.addEventListener('click', () => {
-                        row.classList.toggle('expanded');
-                        const boxId = row.dataset.boxid;
-                        const serialRow = table.querySelector(`.serial-row[data-parentbox="${boxId}"]`);
-                        if (serialRow) {
-                            if (row.classList.contains('expanded')) {
-                                const isMobileView = window.innerWidth <= 992;
-                                serialRow.style.display = isMobileView ? 'block' : 'table-row';
-                            } else {
-                                serialRow.style.display = 'none';
-                            }
-                        }
-                    });
+                    row.addEventListener('click', () => row.classList.toggle('expanded'));
                 });
             }
-            // =================================================================
-            // =========== ✅ FIN: CORRECCIÓN TABLA DE EMPAQUE ✅ ===============
-            // =================================================================
+
+            // === INICIO: FUNCIONES DE ACCIONES (EXPORTAR Y REPORTE) ===
+            function handleExportView() {
+                if (currentVisibleData.length === 0) {
+                    showModal('Exportar Vista', 'No hay datos en la vista actual para exportar.', 'warning');
+                    return;
+                }
+                try {
+                    const worksheet = XLSX.utils.json_to_sheet(currentVisibleData);
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, 'Vista Actual');
+                    const orderName = (activeOrderKey && activeOrderKey !== 'all') ? activeOrderKey : 'Multiples_Ordenes';
+                    XLSX.writeFile(workbook, `Reporte_Vista_${orderName}.xlsx`);
+                } catch(e) {
+                    console.error("Error al exportar a Excel:", e);
+                    showModal('Error', 'Ocurrió un error al generar el archivo de Excel.', 'error');
+                }
+            }
+            
+            function handleStatusReport() {
+                if (activeOrderKey === 'all' || !loadedOrders.has(activeOrderKey)) {
+                    showModal('Generar Reporte', 'Por favor, seleccione una sola orden para generar el reporte de estatus.', 'warning');
+                    return;
+                }
+                const order = loadedOrders.get(activeOrderKey);
+                const data = order.rastreoData || [];
+                const total = data.length;
+                const today = data.filter(r => r.status === 'today').length;
+                const delayed = data.filter(r => r.status === 'delayed').length;
+                const scrap = data.filter(r => r.status === 'scrap').length;
+                const normal = data.filter(r => r.status === 'normal').length;
+                
+                let report = `REPORTE DE ESTATUS - ORDEN: ${activeOrderKey}\n`;
+                report += `CATÁLOGO: ${order.catalogNumber || 'N/A'}\n`;
+                report += `--------------------------------------------------\n`;
+                report += `TOTAL DE PIEZAS REGISTRADAS: ${total}\n`;
+                report += `  - En Movimiento (Hoy):     ${today}\n`;
+                report += `  - Sin Movimiento (Retraso): ${delayed}\n`;
+                report += `  - En Scrap:                 ${scrap}\n`;
+                report += `  - Sin Estatus (Normal):     ${normal}\n`;
+                report += `--------------------------------------------------\n`;
+                
+                if (delayed > 0) {
+                    report += `\nDESGLOSE DE PIEZAS SIN MOVIMIENTO:\n`;
+                    const lineHeader = findHeader(order.headers.rastreo, TRACKING_KEYS.LINE);
+                    const stationHeader = findHeader(order.headers.rastreo, TRACKING_KEYS.STATION);
+                    
+                    const delayedByLine = data.filter(r => r.status === 'delayed').reduce((acc, row) => {
+                        const line = row[lineHeader] || 'Sin Línea';
+                        if (!acc[line]) acc[line] = 0;
+                        acc[line]++;
+                        return acc;
+                    }, {});
+
+                    for (const [line, count] of Object.entries(delayedByLine)) {
+                        report += `  - ${line}: ${count} pz\n`;
+                    }
+                }
+                showModal(`Reporte de Estatus: ${activeOrderKey}`, `<pre>${report}</pre>`, 'info', true);
+            }
+            // === FIN: FUNCIONES DE ACCIONES (EXPORTAR Y REPORTE) ===
 
             function formatCell(value, header, isDateTime = false) {
                  if (isDateTime) return formatDateTime(excelSerialToDate(value));
