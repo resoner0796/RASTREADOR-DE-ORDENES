@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control de Órdenes (Exportación Definitiva)</title>
+    <title>Panel de Control de Órdenes (Versión Final Corregida)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
@@ -245,15 +245,19 @@
             // --- GLOBAL STATE AND CONSTANTS ---
             let allData = [];
             let processedData = [];
-            let currentVisibleData = []; // This will hold the data currently displayed in the table
+            let currentVisibleData = []; 
             let currentStatusFilter = 'all';
             let currentLineFilter = 'all';
             let headersCache = {};
 
             const KEY_HEADER_TEXT = {
-                SERIAL: 'Producto Serial Number', IS_SCRAP: 'Is Scrap', 
-                NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', 
-                DATE_REGISTERED: 'Date Registered', LINE: 'Line'
+                // ** CRITICAL FIX **: Corrected the typo from 'Producto' to 'Product'
+                SERIAL: 'Product Serial Number', 
+                IS_SCRAP: 'Is Scrap', 
+                NOT_PACKED: 'Not Packed', 
+                CREATED_BY: 'Created By', 
+                DATE_REGISTERED: 'Date Registered', 
+                LINE: 'Line'
             };
             const TARGET_COLUMNS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
 
@@ -489,7 +493,7 @@
             
             function handleExport() {
                 if (!headersCache.serial) {
-                    showModal('Error de Exportación', 'No se pudo identificar la columna "Producto Serial Number". Verifique el archivo.', 'error');
+                    showModal('Error de Exportación', `No se pudo identificar la columna "${KEY_HEADER_TEXT.SERIAL}". Verifique el archivo.`, 'error');
                     return;
                 }
                 
@@ -518,6 +522,7 @@
                 showModal('Exportación Exitosa', `Se ha generado el archivo "${fileName}" con ${finalData.length} seriales.`, 'success');
             }
 
+
             // --- UI RENDERING ---
             function render() {
                 if (processedData.length === 0) return;
@@ -544,7 +549,6 @@
                 updateTable(filteredData, displayHeaders);
                 updateLineCounts(filteredData);
 
-                // ** CRITICAL FIX **: Update the global variable with the currently visible data
                 currentVisibleData = filteredData;
             }
 
