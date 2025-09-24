@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Control de Producción (Versión Final)</title>
+    <title>Centro de Control de Producción (Versión Definitiva)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
@@ -54,14 +54,15 @@
         .order-item .order-btn { flex-grow: 1; text-align: left; padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); background-color: #334155; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
         .order-item .order-btn:hover { background-color: #475569; color: var(--text-primary); }
         .order-item .order-btn.active { background-color: var(--primary-color); color: var(--bg-color); font-weight: 700; border-color: var(--primary-color); }
-        .order-item .order-btn.is-complete { background-color: var(--success-color); color: var(--bg-color); border-color: var(--success-color); }
+        .order-item .order-btn.is-complete { background-color: var(--success-color); color: var(--bg-color); border-color: var(--success-color); font-weight: 700;}
+        .order-item .order-btn.is-complete:hover { background-color: #4ade80;}
         .order-item .order-btn.is-complete.active { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.4); }
         .order-item .icon-btn {
             background: none; border: none; color: var(--text-dark); cursor: pointer; padding: 4px;
             display: flex; align-items: center; justify-content: center; transition: color 0.2s;
         }
         .order-item .icon-btn:hover { color: var(--text-primary); }
-        .order-item .icon-btn svg { width: 16px; height: 16px; }
+        .order-item .icon-btn svg { width: 20px; height: 20px; }
 
         .mode-switcher {
             display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 4px;
@@ -351,42 +352,83 @@
             }
              function findHeader(headers, keyText) { return headers.find(h => h.toLowerCase() === keyText.toLowerCase()); }
 
+            // --- LOCALSTORAGE ---
+            function saveOrdersToLocalStorage() {
+                const dataToSave = JSON.stringify(Array.from(loadedOrders.entries()));
+                localStorage.setItem('loadedOrdersData', dataToSave);
+            }
+            function loadOrdersFromLocalStorage() {
+                const savedData = localStorage.getItem('loadedOrdersData');
+                if (savedData) {
+                    try {
+                        const parsedData = JSON.parse(savedData);
+                        loadedOrders = new Map(parsedData);
+                        if (loadedOrders.size > 0) {
+                            updateOrderList();
+                            render();
+                        }
+                    } catch(e) {
+                        console.error("Failed to load data from localStorage", e);
+                        localStorage.removeItem('loadedOrdersData');
+                    }
+                }
+            }
+
+
             // --- FILE HANDLING & DATA PROCESSING ---
             function handleFiles(files, isUpdate = false) {
-                const file = files[0]; // Handle one file at a time for simplicity in update logic
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const orderNumber = worksheet['B3']?.v || `Archivo_${file.name.slice(0,10)}`;
-                        
-                        const keyToUpdate = isUpdate ? orderToUpdateKey : orderNumber;
-                        
-                        const rastreoRawData = extractTableData(worksheet, TRACKING_COLS, 20);
-                        const packingRawData = extractTableData(worksheet, Object.values(PACKING_COLS), 20, true);
+                const filePromises = Array.from(files).map(file => processFile(file, isUpdate));
 
-                        const orderData = {
-                            orderQty: parseInt(worksheet['O3']?.v || 0),
-                            packedQty: parseInt(worksheet['U3']?.v || 0),
-                            rastreoData: processRastreoData(rastreoRawData),
-                            empaqueData: groupEmpaqueData(packingRawData),
-                            headers: {
-                                rastreo: Object.keys(rastreoRawData[0] || {}),
-                                empaque: Object.keys(packingRawData[0] || {})
+                Promise.all(filePromises)
+                    .then(results => {
+                        let lastKey = activeOrderKey;
+                        results.forEach(result => {
+                            if (result) {
+                                loadedOrders.set(result.key, result.data);
+                                lastKey = result.key;
                             }
-                        };
-                        
-                        loadedOrders.set(keyToUpdate, orderData);
+                        });
+                        saveOrdersToLocalStorage();
                         updateOrderList();
-                        setActiveOrder(keyToUpdate); // Set the newly added/updated order as active
-                    } catch(err) {
-                        showModal('Error al Cargar', 'El archivo no pudo ser procesado. Verifique el formato.', 'error');
+                        setActiveOrder(lastKey);
+                    })
+                    .catch(err => {
+                        showModal('Error al Cargar', 'Uno o más archivos no pudieron ser procesados.', 'error');
                         console.error(err);
-                    }
-                };
-                reader.readAsArrayBuffer(file);
+                    });
             }
+
+            function processFile(file, isUpdate) {
+                 return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                            const orderNumber = worksheet['B3']?.v || `Archivo_${file.name.slice(0,10)}`;
+                            
+                            const keyToUpdate = isUpdate ? orderToUpdateKey : orderNumber;
+                            
+                            const rastreoRawData = extractTableData(worksheet, TRACKING_COLS, 20);
+                            const packingRawData = extractTableData(worksheet, Object.values(PACKING_COLS), 20, true);
+
+                            const orderData = {
+                                orderQty: parseInt(worksheet['O3']?.v || 0),
+                                packedQty: parseInt(worksheet['U3']?.v || 0),
+                                rastreoData: processRastreoData(rastreoRawData),
+                                empaqueData: groupEmpaqueData(packingRawData),
+                                headers: {
+                                    rastreo: Object.keys(rastreoRawData[0] || {}),
+                                    empaque: Object.keys(packingRawData[0] || {})
+                                }
+                            };
+                            resolve({ key: keyToUpdate, data: orderData });
+                        } catch(err) { reject(err); }
+                    };
+                    reader.readAsArrayBuffer(file);
+                });
+            }
+
 
             function extractTableData(worksheet, targetCols, startRow, isPacking = false) {
                  const headers = {};
@@ -463,7 +505,7 @@
                 const serialHeader = findHeader(headers, TRACKING_KEYS.SERIAL);
                 const stationHeader = findHeader(headers, TRACKING_KEYS.STATION);
                 const dateRegisteredHeader = findHeader(headers, TRACKING_KEYS.DATE_REGISTERED);
-
+                
                 if (!serialHeader || !stationHeader || !dateRegisteredHeader) {
                     showModal('Error de Exportación', `No se pudo identificar una columna clave ("${TRACKING_KEYS.SERIAL}", "${TRACKING_KEYS.STATION}", o "${TRACKING_KEYS.DATE_REGISTERED}"). Verifique el archivo.`, 'error');
                     return;
@@ -528,6 +570,7 @@
                     orderList.appendChild(orderItem);
                 }
                 setActiveOrder(activeOrderKey);
+                saveOrdersToLocalStorage();
             }
             
             function createOrderButton(key, text) {
@@ -542,7 +585,7 @@
                 
                 if (key !== 'all') {
                     const orderData = loadedOrders.get(key);
-                    if (orderData.orderQty > 0 && orderData.orderQty === orderData.packedQty) {
+                    if (orderData.orderQty > 0 && orderData.orderQty <= orderData.packedQty) {
                         btn.classList.add('is-complete');
                     }
                 }
@@ -552,7 +595,7 @@
                     const updateBtn = document.createElement('button');
                     updateBtn.className = 'icon-btn';
                     updateBtn.title = 'Actualizar orden';
-                    updateBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.342a1.25 1.25 0 0 1 .188 2.316l-3.5 1.75a1.25 1.25 0 1 1-1.118-2.236l1.22-.61a.75.75 0 0 0-.56-1.392l-1.22.61a1.25 1.25 0 0 1-1.118-2.236l3.5-1.75a1.25 1.25 0 0 1 2.128.158Z M10 4.5a1.25 1.25 0 0 1-2.316-.188l-3.5-1.75a1.25 1.25 0 1 1 1.118-2.236l1.22.61a.75.75 0 0 0 .56-1.392l-1.22-.61a1.25 1.25 0 0 1 1.118-2.236l3.5 1.75A1.25 1.25 0 0 1 10 4.5Z M4.688 8.658a1.25 1.25 0 0 1-2.128-.158l-1.75-3.5a1.25 1.25 0 0 1 2.236-1.118l.61 1.22a.75.75 0 0 0 1.392-.56l-.61-1.22a1.25 1.25 0 0 1 2.236-1.118l-1.75 3.5a1.25 1.25 0 0 1-.158 2.128Z" clip-rule="evenodd" /></svg>`;
+                    updateBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 2ZM10 15a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 15ZM10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM15.39 12.34a.75.75 0 0 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 1.06l-1.06 1.06ZM4.66 6.39a.75.75 0 0 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 1.06l-1.06 1.06ZM17.25 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 .75.75ZM5.25 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5a.75.75 0 0 1 .75.75ZM13.61 6.39a.75.75 0 0 1 1.06-1.06l1.06 1.06a.75.75 0 0 1-1.06 1.06l-1.06-1.06ZM6.39 13.61a.75.75 0 0 1 1.06-1.06l-1.06-1.06a.75.75 0 0 1-1.06 1.06l1.06 1.06Z"/></svg>`;
                     updateBtn.onclick = () => {
                         orderToUpdateKey = key;
                         updateFileInput.click();
@@ -589,6 +632,9 @@
                     document.getElementById('rastreoTable').innerHTML = '';
                     document.getElementById('empaqueTable').innerHTML = '';
                     exportButton.disabled = true;
+                    rastreoLineFiltersPlaceholder.textContent = 'Cargue un archivo para ver los filtros.';
+                    rastreoLineFilters.innerHTML = '';
+                    lineCountsContainer.innerHTML = '';
                     return;
                 }
                 placeholderText.style.display = 'none';
@@ -688,7 +734,7 @@
                     lineBtn.dataset.filter = line;
                     rastreoLineFilters.appendChild(lineBtn);
                 });
-                // Set active class after creation
+                
                 const activeBtn = rastreoLineFilters.querySelector(`[data-filter="${rastreoLineFilter}"]`) || rastreoLineFilters.querySelector('[data-filter="all"]');
                 if(activeBtn) activeBtn.classList.add('active');
             }
@@ -815,12 +861,14 @@
             }
 
             function resetView() {
-                // Soft reset, keeps loaded orders unless all are deleted
                 activeOrderKey = 'all';
                 currentMode = 'rastreo';
                 updateOrderList();
                 render();
             }
+
+             // Initialize view
+            loadOrdersFromLocalStorage();
 
         });
     </script>
