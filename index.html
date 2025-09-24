@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control de Órdenes (Exportación Avanzada)</title>
+    <title>Panel de Control de Órdenes (Exportación Definitiva)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
@@ -372,8 +372,7 @@
                         allData = extractTableData(worksheet);
 
                         if (allData.length > 0) {
-                            const headers = Object.keys(allData[0]);
-                            cacheHeaders(headers);
+                            cacheHeaders(Object.keys(allData[0]));
                             const scrapCount = allData.filter(row => String(row[headersCache.scrap]).trim().toUpperCase() === 'X').length;
                             statScrapQty.textContent = scrapCount;
                             
@@ -489,8 +488,9 @@
             }
             
             function handleExport() {
-                if (!headersCache.serial) {
-                    showModal('Error de Exportación', 'No se pudo encontrar la columna de seriales para exportar.', 'error');
+                // This function is now completely independent and robust.
+                if (allData.length === 0 || !headersCache.serial) {
+                    showModal('Error de Exportación', 'No hay datos cargados o no se pudo encontrar la columna de seriales.', 'error');
                     return;
                 }
 
