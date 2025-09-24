@@ -20,57 +20,59 @@
         }
         body {
             font-family: 'Inter', sans-serif; background-color: var(--bg-color);
-            color: var(--text-primary); margin: 0; padding: 24px;
+            color: var(--text-primary); margin: 0; padding: 16px; /* Size adjustment */
             display: flex; justify-content: center;
         }
         .app-header {
             text-align: center;
-            margin-bottom: 24px;
+            margin-bottom: 16px; /* Size adjustment */
         }
         .app-branding {
             font-family: 'Tinos', serif; /* Times New Roman Fallback */
             font-weight: 400;
-            font-size: 2.5rem;
+            font-size: 2.2rem; /* Size adjustment */
             color: var(--text-primary);
             letter-spacing: 2px;
             margin: 0;
         }
         .app-title {
-            font-size: 1.5rem;
+            font-size: 1.25rem; /* Size adjustment */
             font-weight: 600;
             color: var(--text-secondary);
             margin: 4px 0 0 0;
         }
         .main-container {
             width: 100%; max-width: 1800px; display: grid;
-            grid-template-columns: 280px 1fr; grid-template-rows: auto auto 1fr;
-            grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; gap: 24px;
+            grid-template-columns: 260px 1fr; /* Size adjustment */
+            grid-template-rows: auto auto 1fr;
+            grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; 
+            gap: 16px; /* Size adjustment */
         }
         .sidebar {
             grid-area: sidebar; background-color: var(--surface-color); border-radius: 12px;
-            padding: 24px; display: flex; flex-direction: column; gap: 16px;
+            padding: 20px; display: flex; flex-direction: column; gap: 16px;
         }
         .global-header { grid-area: global-header; }
         .header { grid-area: header; }
-        .main-content { grid-area: main; display: flex; flex-direction: column; gap: 24px; }
+        .main-content { grid-area: main; display: flex; flex-direction: column; gap: 16px; }
         .card {
             background-color: var(--surface-color); border-radius: 12px;
-            padding: 24px; border: 1px solid var(--border-color);
+            padding: 20px; border: 1px solid var(--border-color);
         }
         h2, h3 {
-            margin-top: 0; margin-bottom: 16px; color: var(--text-secondary);
-            font-weight: 600; font-size: 1.1rem;
+            margin-top: 0; margin-bottom: 12px; color: var(--text-secondary);
+            font-weight: 600; font-size: 1rem;
         }
         h3 { font-size: 0.9rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;}
         .file-drop-area {
-            border: 2px dashed var(--border-color); border-radius: 8px; padding: 30px 20px;
+            border: 2px dashed var(--border-color); border-radius: 8px; padding: 24px 20px;
             text-align: center; cursor: pointer; transition: all 0.2s ease;
         }
         .file-drop-area.dragover { background-color: #334155; border-color: var(--primary-color); }
         .file-drop-area p { margin: 0; color: var(--text-dark); }
         .file-drop-area span { color: var(--primary-color); font-weight: 500; }
         .order-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .order-item .order-btn { flex-grow: 1; text-align: left; padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); background-color: #334155; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+        .order-item .order-btn { flex-grow: 1; text-align: left; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); background-color: #334155; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
         .order-item .order-btn:hover { background-color: #475569; color: var(--text-primary); }
         .order-item .order-btn.active { background-color: var(--primary-color); color: var(--bg-color); font-weight: 700; border-color: var(--primary-color); }
         .order-item .order-btn.is-complete { background-color: var(--success-color); color: var(--bg-color); border-color: var(--success-color); font-weight: 700;}
@@ -78,11 +80,12 @@
         .order-item .order-btn.is-complete.active { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.4); }
         .order-item .icon-btn {
             background: none; border: none; color: var(--text-dark); cursor: pointer; padding: 4px;
-            display: flex; align-items: center; justify-content: center; transition: color 0.2s;
+            display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+            font-size: 1.2rem; /* EMOJI: Size control */
+            filter: grayscale(1) opacity(0.6); /* EMOJI: Style */
         }
-        .order-item .icon-btn:hover { color: var(--text-primary); }
-        .order-item .icon-btn svg { width: 20px; height: 20px; }
-
+        .order-item .icon-btn:hover { color: var(--text-primary); filter: grayscale(0) opacity(1); }
+        
         .mode-switcher {
             display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 4px;
             background-color: var(--bg-color); border-radius: 8px; margin-bottom: 16px;
@@ -94,32 +97,32 @@
         .mode-switcher button.active { background-color: var(--surface-color); color: var(--primary-color); }
         
         .summary-card, .global-dashboard-card {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 24px; text-align: center;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px; text-align: center;
         }
-        .stat-item h3 { margin: 0 0 8px 0; font-size: 1rem; font-weight: 500; }
-        .stat-item p { margin: 0; font-size: 2rem; font-weight: 700; }
+        .stat-item h3 { margin: 0 0 8px 0; font-size: 0.9rem; font-weight: 500; }
+        .stat-item p { margin: 0; font-size: 1.75rem; font-weight: 700; } /* Size adjustment */
         #statOrderNumber { color: var(--primary-color); } #statPackedQty { color: var(--success-color); }
         #statRemainingQty { color: var(--warning-color); } #statScrapQty { color: var(--danger-color); }
 
         .table-wrapper { overflow: auto; flex-grow: 1; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; font-size: 0.9rem;}
         thead { position: sticky; top: 0; background-color: var(--surface-color); z-index: 10; }
-        th { font-weight: 600; color: var(--text-secondary); font-size: 0.8rem; }
+        th { font-weight: 600; color: var(--text-secondary); font-size: 0.75rem; }
         
         /* Rastreo View specific */
-        .rastreo-controls { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;}
+        .rastreo-controls { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px;}
         .filter-container { display: flex; flex-direction: column; gap: 16px; }
         .filter-group { display: flex; flex-wrap: wrap; gap: 10px; }
         .btn, .filter-btn {
-            padding: 8px 16px; border-radius: 6px; cursor: pointer; background-color: #334155;
+            padding: 8px 14px; border-radius: 6px; cursor: pointer; background-color: #334155;
             border: 1px solid #475569; color: var(--text-secondary); font-weight: 500;
-            text-align: center; transition: all 0.2s;
+            text-align: center; transition: all 0.2s; font-size: 0.9rem;
         }
         .btn:hover, .filter-btn:hover { background-color: #475569; color: var(--text-primary); }
         .filter-btn.active { color: var(--bg-color); font-weight: 700; background-color: var(--primary-color); border-color: var(--primary-color); }
-        .btn { width: 100%; padding: 12px; background-color: var(--primary-color); color: var(--bg-color); font-weight: 700;}
+        .btn { width: 100%; padding: 10px; background-color: var(--primary-color); color: var(--bg-color); font-weight: 700;}
         .btn:disabled { background-color: #334155; color: var(--text-dark); cursor: not-allowed; border-color: #475569;}
         .btn:hover:not(:disabled) { background-color: #67CFFB;}
         #lineCountsContainer { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
@@ -218,7 +221,7 @@
             </section>
     
             <main class="main-content">
-                <div id="rastreoView" style="display:flex; flex-direction:column; gap:24px;">
+                <div id="rastreoView" style="display:flex; flex-direction:column; gap:16px;">
                     <div class="card rastreo-controls">
                         <div class="filter-container">
                             <div>
@@ -636,7 +639,7 @@
                     const updateBtn = document.createElement('button');
                     updateBtn.className = 'icon-btn';
                     updateBtn.title = 'Actualizar orden';
-                    updateBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.342a1.25 1.25 0 0 1 .188 2.316l-3.5 1.75a1.25 1.25 0 1 1-1.118-2.236l1.22-.61a.75.75 0 0 0-.56-1.392l-1.22.61a1.25 1.25 0 0 1-1.118-2.236l3.5-1.75a1.25 1.25 0 0 1 2.128.158Z M10 4.5a1.25 1.25 0 0 1-2.316-.188l-3.5-1.75a1.25 1.25 0 1 1 1.118-2.236l1.22.61a.75.75 0 0 0 .56-1.392l-1.22-.61a1.25 1.25 0 0 1 1.118-2.236l3.5 1.75A1.25 1.25 0 0 1 10 4.5Z" clip-rule="evenodd" /></svg>`;
+                    updateBtn.innerHTML = `✏️`; // Corrected Icon
                     updateBtn.onclick = () => {
                         orderToUpdateKey = key;
                         updateFileInput.value = ''; // Reset file input
@@ -647,7 +650,7 @@
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = 'icon-btn';
                     deleteBtn.title = 'Eliminar orden';
-                    deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75V4.5h8V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 6a.75.75 0 0 1 .75.75v7.5a.75.75 0 0 1-1.5 0v-7.5A.75.75 0 0 1 10 6ZM4.5 6a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-11Z" clip-rule="evenodd" /></svg>`;
+                    deleteBtn.innerHTML = `🗑️`; // Corrected Icon
                     deleteBtn.onclick = () => {
                         loadedOrders.delete(key);
                         if (activeOrderKey === key) activeOrderKey = 'all';
@@ -676,6 +679,7 @@
                     document.getElementById('empaqueTable').innerHTML = '';
                     exportButton.disabled = true;
                     rastreoLineFiltersPlaceholder.textContent = 'Cargue un archivo para ver los filtros.';
+                    rastreoLineFiltersPlaceholder.style.display = 'block';
                     rastreoLineFilters.innerHTML = '';
                     lineCountsContainer.innerHTML = '';
                     renderSummary();
@@ -706,6 +710,7 @@
                     activeOrderKey = 'all';
                     ordersToProcess = Array.from(loadedOrders.values());
                     statOrderNumber.textContent = 'Múltiples';
+                    setActiveOrder('all');
                 }
 
                 ordersToProcess.forEach(order => {
