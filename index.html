@@ -9,7 +9,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Tinos&display=swap" rel="stylesheet">
     <!-- Custom Styles -->
     <style>
         :root {
@@ -22,6 +22,24 @@
             font-family: 'Inter', sans-serif; background-color: var(--bg-color);
             color: var(--text-primary); margin: 0; padding: 24px;
             display: flex; justify-content: center;
+        }
+        .app-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .app-branding {
+            font-family: 'Tinos', serif; /* Times New Roman Fallback */
+            font-weight: 400;
+            font-size: 2.5rem;
+            color: var(--text-primary);
+            letter-spacing: 2px;
+            margin: 0;
+        }
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: 4px 0 0 0;
         }
         .main-container {
             width: 100%; max-width: 1800px; display: grid;
@@ -63,7 +81,7 @@
             display: flex; align-items: center; justify-content: center; transition: color 0.2s;
         }
         .order-item .icon-btn:hover { color: var(--text-primary); }
-        .order-item .icon-btn svg { width: 18px; height: 18px; }
+        .order-item .icon-btn svg { width: 20px; height: 20px; }
 
         .mode-switcher {
             display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 4px;
@@ -147,98 +165,103 @@
     </style>
 </head>
 <body>
-
-    <div class="main-container">
-        <aside class="sidebar">
-            <h2>Panel de Control</h2>
-            <div class="card">
-                <h3>Cargar Órdenes</h3>
-                <div id="fileDropArea" class="file-drop-area">
-                    <p>Arrastra archivos aquí</p>
-                    <p><span>o haz clic para seleccionar</span></p>
-                </div>
-                <input type="file" id="fileInput" accept=".xlsx, .xls" multiple style="display: none;">
-                <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
-            </div>
-            <div class="card" style="flex-grow: 1;">
-                <h3>Órdenes Cargadas</h3>
-                <div id="orderList">
-                    <p class="text-dark" style="font-size:0.9rem;">Cargue uno o más archivos para comenzar.</p>
-                </div>
-            </div>
-        </aside>
-
-        <header class="global-header card">
-            <div class="global-dashboard-card">
-                 <div class="stat-item">
-                    <h3>Órdenes del Día</h3>
-                    <p id="totalOrdersStat">0</p>
-                </div>
-                 <div class="stat-item">
-                    <h3>Órdenes Terminadas</h3>
-                    <p id="completedOrdersStat">0</p>
-                </div>
-            </div>
+    <div style="width: 100%; max-width: 1800px;">
+        <header class="app-header">
+            <h1 class="app-branding">CORNING</h1>
+            <h2 class="app-title">Centro de Rastreo de Órdenes</h2>
         </header>
-
-        <section class="header card">
-             <div class="mode-switcher">
-                <button id="modeRastreo" class="active">Rastreo</button>
-                <button id="modeEmpaque">Empaque</button>
-            </div>
-            <div id="summaryCard" class="summary-card">
-                 <div class="stat-item"><h3># de Orden</h3><p id="statOrderNumber">N/A</p></div>
-                 <div class="stat-item"><h3>Cant. Orden</h3><p id="statOrderQty">0</p></div>
-                 <div class="stat-item"><h3>Cant. Empacada</h3><p id="statPackedQty">0</p></div>
-                 <div class="stat-item"><h3>Restante</h3><p id="statRemainingQty">0</p></div>
-                 <div class="stat-item"><h3>Cant. en Scrap</h3><p id="statScrapQty">0</p></div>
-            </div>
-        </section>
-
-        <main class="main-content">
-            <div id="rastreoView" style="display:flex; flex-direction:column; gap:24px;">
-                <div class="card rastreo-controls">
-                    <div class="filter-container">
-                        <div>
-                            <h3>Filtrar por Estado</h3>
-                            <div id="rastreoStatusFilters" class="filter-group">
-                                <button class="filter-btn active" data-filter="all">Todos</button>
-                                <button class="filter-btn" data-filter="today">En Movimiento</button>
-                                <button class="filter-btn" data-filter="delayed">Sin Movimiento</button>
-                                <button class="filter-btn" data-filter="scrap">Scrap</button>
+        <div class="main-container">
+            <aside class="sidebar">
+                <h2>Panel de Control</h2>
+                <div class="card">
+                    <h3>Cargar Órdenes</h3>
+                    <div id="fileDropArea" class="file-drop-area">
+                        <p>Arrastra archivos aquí</p>
+                        <p><span>o haz clic para seleccionar</span></p>
+                    </div>
+                    <input type="file" id="fileInput" accept=".xlsx, .xls" multiple style="display: none;">
+                    <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
+                </div>
+                <div class="card" style="flex-grow: 1;">
+                    <h3>Órdenes Cargadas</h3>
+                    <div id="orderList">
+                        <p class="text-dark" style="font-size:0.9rem;">Cargue uno o más archivos para comenzar.</p>
+                    </div>
+                </div>
+            </aside>
+    
+            <header class="global-header card">
+                <div class="global-dashboard-card">
+                     <div class="stat-item">
+                        <h3>Órdenes del Día</h3>
+                        <p id="totalOrdersStat">0</p>
+                    </div>
+                     <div class="stat-item">
+                        <h3>Órdenes Terminadas</h3>
+                        <p id="completedOrdersStat">0</p>
+                    </div>
+                </div>
+            </header>
+    
+            <section class="header card">
+                 <div class="mode-switcher">
+                    <button id="modeRastreo" class="active">Rastreo</button>
+                    <button id="modeEmpaque">Empaque</button>
+                </div>
+                <div id="summaryCard" class="summary-card">
+                     <div class="stat-item"><h3># de Orden</h3><p id="statOrderNumber">N/A</p></div>
+                     <div class="stat-item"><h3>Cant. Orden</h3><p id="statOrderQty">0</p></div>
+                     <div class="stat-item"><h3>Cant. Empacada</h3><p id="statPackedQty">0</p></div>
+                     <div class="stat-item"><h3>Restante</h3><p id="statRemainingQty">0</p></div>
+                     <div class="stat-item"><h3>Cant. en Scrap</h3><p id="statScrapQty">0</p></div>
+                </div>
+            </section>
+    
+            <main class="main-content">
+                <div id="rastreoView" style="display:flex; flex-direction:column; gap:24px;">
+                    <div class="card rastreo-controls">
+                        <div class="filter-container">
+                            <div>
+                                <h3>Filtrar por Estado</h3>
+                                <div id="rastreoStatusFilters" class="filter-group">
+                                    <button class="filter-btn active" data-filter="all">Todos</button>
+                                    <button class="filter-btn" data-filter="today">En Movimiento</button>
+                                    <button class="filter-btn" data-filter="delayed">Sin Movimiento</button>
+                                    <button class="filter-btn" data-filter="scrap">Scrap</button>
+                                </div>
+                            </div>
+                            <div>
+                                <h3>Filtrar por Línea</h3>
+                                <div id="rastreoLineFilters" class="filter-group">
+                                    <p id="rastreoLineFiltersPlaceholder" class="text-dark" style="font-size: 0.9rem;">Cargue un archivo para ver los filtros.</p>
+                                </div>
                             </div>
                         </div>
                         <div>
-                            <h3>Filtrar por Línea</h3>
-                            <div id="rastreoLineFilters" class="filter-group">
-                                <p id="rastreoLineFiltersPlaceholder" class="text-dark" style="font-size: 0.9rem;">Cargue un archivo para ver los filtros.</p>
-                            </div>
+                             <h3>Exportar Reportes</h3>
+                             <p class="text-dark" style="font-size: 0.9rem; margin-top: 0; margin-bottom: 16px;">Exporta los datos que se muestran actualmente en la tabla.</p>
+                             <button id="exportButton" class="btn" disabled>Exportar Vista Actual</button>
                         </div>
                     </div>
-                    <div>
-                         <h3>Exportar Reportes</h3>
-                         <p class="text-dark" style="font-size: 0.9rem; margin-top: 0; margin-bottom: 16px;">Exporta los datos que se muestran actualmente en la tabla.</p>
-                         <button id="exportButton" class="btn" disabled>Exportar Vista Actual</button>
+                    <div class="card" style="flex-grow:1; display:flex; flex-direction:column;">
+                        <input type="text" id="rastreoFilterInput" placeholder="Buscar en la tabla por serial, status, etc..." style="margin-bottom: 16px;">
+                        <div id="lineCountsContainer"></div>
+                        <div class="table-wrapper">
+                             <table id="rastreoTable"></table>
+                             <p id="placeholderText">Cargue archivos para ver los datos de rastreo.</p>
+                        </div>
                     </div>
                 </div>
-                <div class="card" style="flex-grow:1; display:flex; flex-direction:column;">
-                    <input type="text" id="rastreoFilterInput" placeholder="Buscar en la tabla por serial, status, etc..." style="margin-bottom: 16px;">
-                    <div id="lineCountsContainer"></div>
-                    <div class="table-wrapper">
-                         <table id="rastreoTable"></table>
-                         <p id="placeholderText">Cargue archivos para ver los datos de rastreo.</p>
+                <div id="empaqueView" style="display: none;">
+                    <div class="card" style="height:100%; display:flex; flex-direction:column;">
+                        <input type="text" id="empaqueFilterInput" placeholder="Buscar por Serial o BoxID..." style="margin-bottom:16px">
+                        <div class="table-wrapper">
+                             <table id="empaqueTable"></table>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div id="empaqueView" style="display: none;">
-                <div class="card" style="height:100%; display:flex; flex-direction:column;">
-                    <input type="text" id="empaqueFilterInput" placeholder="Buscar por Serial o BoxID..." style="margin-bottom:16px">
-                    <div class="table-wrapper">
-                         <table id="empaqueTable"></table>
-                    </div>
-                </div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
     
     <!-- Modal HTML -->
@@ -613,7 +636,7 @@
                     const updateBtn = document.createElement('button');
                     updateBtn.className = 'icon-btn';
                     updateBtn.title = 'Actualizar orden';
-                    updateBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183m-4.991-2.69v4.992" /></svg>`;
+                    updateBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.342a1.25 1.25 0 0 1 .188 2.316l-3.5 1.75a1.25 1.25 0 1 1-1.118-2.236l1.22-.61a.75.75 0 0 0-.56-1.392l-1.22.61a1.25 1.25 0 0 1-1.118-2.236l3.5-1.75a1.25 1.25 0 0 1 2.128.158Z M10 4.5a1.25 1.25 0 0 1-2.316-.188l-3.5-1.75a1.25 1.25 0 1 1 1.118-2.236l1.22.61a.75.75 0 0 0 .56-1.392l-1.22-.61a1.25 1.25 0 0 1 1.118-2.236l3.5 1.75A1.25 1.25 0 0 1 10 4.5Z" clip-rule="evenodd" /></svg>`;
                     updateBtn.onclick = () => {
                         orderToUpdateKey = key;
                         updateFileInput.value = ''; // Reset file input
@@ -624,7 +647,7 @@
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = 'icon-btn';
                     deleteBtn.title = 'Eliminar orden';
-                    deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>`;
+                    deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75V4.5h8V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 6a.75.75 0 0 1 .75.75v7.5a.75.75 0 0 1-1.5 0v-7.5A.75.75 0 0 1 10 6ZM4.5 6a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-11Z" clip-rule="evenodd" /></svg>`;
                     deleteBtn.onclick = () => {
                         loadedOrders.delete(key);
                         if (activeOrderKey === key) activeOrderKey = 'all';
@@ -655,6 +678,7 @@
                     rastreoLineFiltersPlaceholder.textContent = 'Cargue un archivo para ver los filtros.';
                     rastreoLineFilters.innerHTML = '';
                     lineCountsContainer.innerHTML = '';
+                    renderSummary();
                     updateGlobalDashboard();
                     return;
                 }
@@ -678,6 +702,10 @@
                 } else if (loadedOrders.has(activeOrderKey)) {
                     ordersToProcess = [loadedOrders.get(activeOrderKey)];
                     statOrderNumber.textContent = activeOrderKey;
+                } else { // Handle case where active order was deleted
+                    activeOrderKey = 'all';
+                    ordersToProcess = Array.from(loadedOrders.values());
+                    statOrderNumber.textContent = 'Múltiples';
                 }
 
                 ordersToProcess.forEach(order => {
@@ -733,7 +761,7 @@
                 }
 
                 currentVisibleData = filteredData;
-                exportButton.disabled = false;
+                exportButton.disabled = dataToShow.length === 0;
 
                 updateRastreoTable(filteredData, headers);
                 updateLineCounts(filteredData, headers);
@@ -897,6 +925,7 @@
                 updateOrderList();
                 render();
             }
+
              // Initialize view
             loadOrdersFromLocalStorage();
 
