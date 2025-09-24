@@ -654,48 +654,60 @@
                  return jsonData;
             }
             
-            // =============================================================
-            // ========= ✅ INICIO: CORRECCIÓN "EN MOVIMIENTO" ✅ ==========
-            // =============================================================
+            // ======================================================================
+            // ========= ✅ INICIO: SOLUCIÓN DEFINITIVA "EN MOVIMIENTO" ✅ ==========
+            // ======================================================================
             function processRastreoData(data) {
                 if (!data || data.length === 0) return [];
-                const today = new Date();
-                today.setHours(0, 0, 0, 0); // Normaliza la fecha de hoy a medianoche para una comparación precisa
-
+            
+                // Obtener los componentes de la fecha actual (año, mes, día) una sola vez.
+                const now = new Date();
+                const todayYear = now.getFullYear();
+                const todayMonth = now.getMonth() + 1; // JS los meses son 0-11, así que sumamos 1
+                const todayDay = now.getDate();
+            
+                // Para la comparación de "retrasado", necesitamos el inicio del día de hoy.
+                const startOfToday = new Date();
+                startOfToday.setHours(0, 0, 0, 0);
+            
                 const headers = Object.keys(data[0]);
                 const scrapHeader = findHeader(headers, TRACKING_KEYS.IS_SCRAP);
                 const dateHeader = findHeader(headers, TRACKING_KEYS.DATE_REGISTERED);
-                
+            
                 return data.map(row => {
                     let status = 'normal';
                     const isScrap = String(row[scrapHeader]).trim().toUpperCase() === 'X';
-                    if (isScrap) { 
-                        status = 'scrap'; 
+            
+                    if (isScrap) {
+                        status = 'scrap';
                     } else {
-                        const registeredDate = excelSerialToDate(row[dateHeader]);
-                        if (registeredDate instanceof Date) {
-                            // Crea un nuevo objeto Date a partir de los componentes UTC de la fecha de Excel.
-                            // El constructor new Date() interpretará estos componentes en la zona horaria local,
-                            // alineando efectivamente la fecha de Excel con la fecha local 'today' para una comparación directa.
-                            const localRegisteredDate = new Date(
-                                registeredDate.getUTCFullYear(),
-                                registeredDate.getUTCMonth(),
-                                registeredDate.getUTCDate()
-                            );
-
-                            if (localRegisteredDate.getTime() === today.getTime()) {
-                                status = 'today'; // La fecha es hoy
-                            } else if (localRegisteredDate < today) {
-                                status = 'delayed'; // La fecha es anterior a hoy
+                        const dateSerial = row[dateHeader];
+                        // Decodifica el serial de Excel para obtener sus componentes (y, m, d)
+                        const decodedDate = dateSerial ? XLSX.SSF.parse_date_code(dateSerial) : null;
+            
+                        if (decodedDate) {
+                            // Comparación numérica directa: infalible y sin zonas horarias.
+                            const isToday = decodedDate.y === todayYear &&
+                                          decodedDate.m === todayMonth &&
+                                          decodedDate.d === todayDay;
+            
+                            if (isToday) {
+                                status = 'today';
+                            } else {
+                                // Para "retrasado", sí necesitamos comparar objetos Date
+                                const registeredDateObject = excelSerialToDate(dateSerial);
+                                if (registeredDateObject && registeredDateObject < startOfToday) {
+                                    status = 'delayed';
+                                }
                             }
                         }
                     }
                     return { ...row, status };
                 });
             }
-            // =============================================================
-            // =========== ✅ FIN: CORRECCIÓN "EN MOVIMIENTO" ✅ ============
-            // =============================================================
+            // ======================================================================
+            // =========== ✅ FIN: SOLUCIÓN DEFINITIVA "EN MOVIMIENTO" ✅ ============
+            // ======================================================================
 
             function groupEmpaqueData(data) {
                 if (!data || data.length === 0) return new Map();
@@ -952,9 +964,6 @@
                 ).join('');
             }
             
-            // =============================================================
-            // ========= ✅ INICIO: CORRECCIÓN TABLA DE EMPAQUE ✅ ==========
-            // =============================================================
             function renderEmpaqueView(key) {
                 let dataToShow = new Map(); let headers = [];
                 if (key === 'all') {
@@ -992,7 +1001,6 @@
                             <td data-label="Último Empaque">${formatDateTime(excelSerialToDate(latestDate))}</td>
                         </tr>`;
                     serials.forEach(serial => {
-                         // Se agrega style="display: none;" para asegurar que las filas inicien ocultas
                          tableHTML += `
                             <tr class="serial-row" data-parentbox="${boxId}" style="display: none;">
                                 <td colspan="3">
@@ -1010,7 +1018,6 @@
                         row.classList.toggle('expanded');
                         const boxId = row.dataset.boxid;
                         const isMobile = window.innerWidth <= 992;
-                        // Determina el estilo de display correcto (block para móvil, table-row para desktop)
                         const newDisplay = row.classList.contains('expanded') ? (isMobile ? 'block' : 'table-row') : 'none';
                         
                         table.querySelectorAll(`.serial-row[data-parentbox="${boxId}"]`).forEach(serialRow => {
@@ -1019,9 +1026,6 @@
                     });
                 });
             }
-            // =============================================================
-            // =========== ✅ FIN: CORRECCIÓN TABLA DE EMPAQUE ✅ ===========
-            // =============================================================
 
             function formatCell(value, header, isDateTime = false) {
                  if (isDateTime) return formatDateTime(excelSerialToDate(value));
