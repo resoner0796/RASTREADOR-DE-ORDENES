@@ -141,12 +141,12 @@
         .serial-row { display: none; background-color: var(--bg-color); }
         .serial-row td { padding-left: 40px; border-color: #2a3a5e; }
 
-        tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1); }
-        tbody tr.is-scrap td { color: var(--danger-color); }
-        tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1); }
-        tbody tr.is-delayed td { color: var(--warning-color); }
-        tbody tr.is-today { background-color: rgba(52, 211, 153, 0.1); }
-        tbody tr.is-today td { color: var(--success-color); }
+        tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
+        tbody tr.is-scrap td { color: var(--danger-color) !important; }
+        tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
+        tbody tr.is-delayed td { color: var(--warning-color) !important; }
+        tbody tr.is-today { background-color: rgba(52, 211, 153, 0.1) !important; }
+        tbody tr.is-today td { color: var(--success-color) !important; }
         
         #loader, #placeholderText { text-align: center; padding: 60px; color: var(--text-dark); font-size: 1.1rem; }
         
@@ -194,13 +194,9 @@
         @media (max-width: 992px) {
             body { padding: 8px; }
             .main-container {
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
+                display: flex; flex-direction: column; gap: 12px;
             }
-            .sidebar, .main-content, #rastreoView {
-                display: contents !important; 
-            }
+            .sidebar, .main-content, #rastreoView { display: contents !important; }
             .sidebar > h2 { display: none; }
             
             .global-header { order: 1; }
@@ -219,9 +215,7 @@
             }
             .stat-item p { font-size: 1.5rem; }
             
-            .card.mobile-collapsible .card-content {
-                display: none; padding-top: 16px;
-            }
+            .card.mobile-collapsible .card-content { display: none; padding-top: 16px; }
             .card.mobile-collapsible.expanded .card-content { display: block; }
             .card.mobile-collapsible h3.mobile-trigger {
                 margin-bottom: 0; cursor: pointer; user-select: none;
@@ -234,22 +228,48 @@
             .card.mobile-collapsible.expanded h3.mobile-trigger::after { transform: rotate(90deg); }
             
             #rastreoTable thead, #empaqueTable thead { display: none; }
-            #rastreoTable tr, #empaqueTable tr { 
+            
+            #rastreoTable tr { 
                 display: block; margin-bottom: 1rem; border-radius: 8px; 
                 border: 1px solid var(--border-color); padding: 1rem; 
             }
-            #rastreoTable td, #empaqueTable td { 
+            #rastreoTable td { 
                 display: flex; justify-content: space-between; text-align: right; 
                 border: none; padding: 0.5rem 0; white-space: normal;
                 border-bottom: 1px solid #0f172a80;
             }
-            #rastreoTable tr td:last-child, #empaqueTable tr td:last-child { border-bottom: none; }
-            #rastreoTable td::before, #empaqueTable td::before { 
+            #rastreoTable tr td:last-child { border-bottom: none; }
+            #rastreoTable td::before { 
                 content: attr(data-label); float: left; font-weight: bold; 
                 text-align: left; margin-right: 1rem; color: var(--text-secondary);
             }
-            #empaqueTable .serial-row td { justify-content: flex-start; }
-            #empaqueTable .serial-row td::before { display: none; }
+
+            /* SOLUCIÓN TABLA EMPAQUE ROTA */
+            #empaqueTable, #empaqueTable tbody { display: block; }
+            #empaqueTable .box-row { 
+                display: block; border: 1px solid var(--border-color);
+                border-radius: 8px 8px 0 0; padding: 1rem; margin-bottom:0;
+            }
+            #empaqueTable .box-row td {
+                 display: flex; justify-content: space-between; text-align: right; 
+                border: none; padding: 0.5rem 0; white-space: normal;
+                border-bottom: 1px solid #0f172a80;
+            }
+            #empaqueTable .box-row td:last-child { border-bottom: none; }
+            #empaqueTable .box-row td::before {
+                content: attr(data-label); float: left; font-weight: bold; 
+                text-align: left; margin-right: 1rem; color: var(--text-secondary);
+            }
+            #empaqueTable .serial-row {
+                display: block; background-color: var(--bg-color);
+                padding: 0.75rem 1rem 0.75rem 2rem;
+                border-radius: 0 0 8px 8px; border: 1px solid var(--border-color);
+                border-top: none; margin-bottom: 1rem; font-size: 0.8rem;
+            }
+             #empaqueTable .serial-row td {
+                display: block; padding: 0; border: none; text-align: left;
+             }
+             #empaqueTable .serial-row td::before { display: none; }
         }
     </style>
 </head>
@@ -395,8 +415,6 @@
 
             const TRACKING_KEYS = { SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', DATE_REGISTERED: 'Date Registered', LINE: 'Line', STATION: 'Station' };
             const PACKING_KEYS = { SERIAL: 'Serial Number', EMPLOYEE_ID: 'Employee ID', PACKED_DATE: 'Finish Packed Date', BOX_ID: 'BoxID' };
-            const TRACKING_COLS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
-            const PACKING_COLS = { SERIAL: 'AE', EMPLOYEE_ID: 'AF', PACKED_DATE: 'AK', BOX_ID: 'AO' };
             
             const fileDropArea = document.getElementById('fileDropArea');
             const fileInput = document.getElementById('fileInput');
@@ -427,8 +445,6 @@
             const modalClose = document.getElementById('modalClose');
             const copyReportBtn = document.getElementById('copyReportBtn');
 
-            // --- INICIO DE CÓDIGO COMPLETO (SIN OMISIONES) ---
-            
             fileDropArea.addEventListener('click', () => fileInput.click());
             fileDropArea.addEventListener('dragover', (e) => { e.preventDefault(); fileDropArea.classList.add('dragover'); });
             fileDropArea.addEventListener('dragleave', () => fileDropArea.classList.remove('dragover'));
@@ -463,8 +479,8 @@
             });
 
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
-            exportViewButton.addEventListener('click', handleExport);
-            exportStatusButton.addEventListener('click', handleStatusReport);
+            exportViewButton.addEventListener('click', () => { /* Lógica de handleExport aquí si se necesita */ });
+            exportStatusButton.addEventListener('click', () => { /* Lógica de handleStatusReport aquí si se necesita */ });
 
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
@@ -500,7 +516,7 @@
                 const minutes = String(date.getUTCMinutes()).padStart(2, '0');
                 return `${day}/${month}/${year} ${hours}:${minutes}`;
             }
-            function findHeader(headers, keyText) { return headers.find(h => h && h.toLowerCase() === keyText.toLowerCase()); }
+            function findHeader(headers, keyText) { return headers && headers.find(h => h && h.toLowerCase() === keyText.toLowerCase()); }
             
             async function loadOrdersFromFirebase() {
                 try {
@@ -529,7 +545,7 @@
                 try {
                     const empaqueDataForDB = Array.from(orderData.empaqueData.entries()).map(([boxId, serials]) => ({ boxId, serials }));
                     const dataToSave = { ...orderData, empaqueData: empaqueDataForDB, lastUpdated: new Date() };
-                    await db.collection('production_orders').doc(orderKey).set(dataToSave);
+                    await db.collection('production_orders').doc(orderKey).set(dataToSave, { merge: true });
                 } catch (e) {
                     console.error("Error al guardar en Firebase: ", e);
                     showModal('Error al Guardar', `No se pudo guardar la orden ${orderKey}.`, 'error');
@@ -580,8 +596,10 @@
                         try {
                             const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
                             const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                            const orderNumber = worksheet['B3']?.v || `Archivo_${file.name.slice(0,10)}`;
+                            const orderNumber = String(worksheet['B3']?.v || `Archivo_${file.name.slice(0,10)}`);
                             const keyToUse = isUpdate ? orderToUpdateKey : orderNumber;
+                            const TRACKING_COLS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
+                            const PACKING_COLS = { SERIAL: 'AE', EMPLOYEE_ID: 'AF', PACKED_DATE: 'AK', BOX_ID: 'AO' };
                             const rastreoRawData = extractTableData(worksheet, TRACKING_COLS, 20);
                             const packingRawData = extractTableData(worksheet, Object.values(PACKING_COLS), 20, true);
                             const orderData = {
@@ -605,13 +623,12 @@
 
             function extractTableData(worksheet, targetCols, startRow, isPacking = false) {
                  const headers = {};
-                 const colsToUse = isPacking ? Object.keys(PACKING_COLS) : targetCols;
+                 const colsToUse = isPacking ? Object.keys(PACKING_KEYS) : targetCols;
                  colsToUse.forEach(key => {
-                     const col = isPacking ? PACKING_COLS[key] : key;
+                     const col = isPacking ? PACKING_KEYS[key] : key;
                      const cell = worksheet[col + startRow];
                      if(cell && cell.v) headers[col] = cell.v.toString().trim();
                  });
-
                  if (Object.keys(headers).length === 0) return [];
                  const jsonData = [];
                  const range = XLSX.utils.decode_range(worksheet['!ref']);
@@ -619,7 +636,7 @@
                      const row = {};
                      let hasData = false;
                      colsToUse.forEach(key => {
-                         const col = isPacking ? PACKING_COLS[key] : key;
+                         const col = isPacking ? PACKING_KEYS[key] : key;
                          const headerName = headers[col];
                          if (headerName) {
                             const cellAddress = col + (rowNum + 1);
@@ -647,12 +664,21 @@
                 return data.map(row => {
                     let status = 'normal';
                     const isScrap = String(row[scrapHeader]).trim().toUpperCase() === 'X';
-                     if (isScrap) { status = 'scrap'; } 
-                     else {
+                     if (isScrap) { 
+                        status = 'scrap'; 
+                     } else {
                         const registeredDate = excelSerialToDate(row[dateHeader]);
                         if (registeredDate instanceof Date) {
-                            if (registeredDate.toDateString() === today.toDateString()) status = 'today';
-                            else if (registeredDate < today) status = 'delayed';
+                            // SOLUCIÓN BUG "EN MOVIMIENTO": Comparar componentes de fecha en UTC
+                            const isSameDay = registeredDate.getUTCFullYear() === today.getUTCFullYear() &&
+                                              registeredDate.getUTCMonth() === today.getUTCMonth() &&
+                                              registeredDate.getUTCDate() === today.getUTCDate();
+                            
+                            if (isSameDay) {
+                                status = 'today';
+                            } else if (registeredDate < today) {
+                                status = 'delayed';
+                            }
                         }
                     }
                     return { ...row, status };
@@ -671,14 +697,6 @@
                     }
                     return acc;
                 }, new Map());
-            }
-            
-            function handleExport() {
-                // Función completa
-            }
-            
-             function handleStatusReport() {
-                // Función completa
             }
             
             function switchMode(mode) {
@@ -700,9 +718,7 @@
                 for (const [key, order] of loadedOrders.entries()) {
                     const date = order.orderDate || new Date();
                     const dateString = formatDate(date);
-                    if (!groupedByDate.has(dateString)) {
-                        groupedByDate.set(dateString, []);
-                    }
+                    if (!groupedByDate.has(dateString)) groupedByDate.set(dateString, []);
                     groupedByDate.get(dateString).push({ key, ...order });
                 }
                 const sortedDates = Array.from(groupedByDate.keys()).sort((a, b) => {
@@ -719,16 +735,10 @@
                     if (isToday) groupDiv.classList.add('expanded');
                     const headerBtn = document.createElement('button');
                     headerBtn.className = 'date-header';
-                    headerBtn.innerHTML = `
-                        <span>📅 ${dateString}</span>
-                        ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''}
-                        <span class="collapse-icon">►</span>
-                    `;
+                    headerBtn.innerHTML = `<span>📅 ${dateString}</span> ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''} <span class="collapse-icon">►</span>`;
                     const ordersContainer = document.createElement('div');
                     ordersContainer.className = 'orders-for-date';
-                    orders.forEach(order => {
-                        ordersContainer.appendChild(createOrderButton(order.key, order.key));
-                    });
+                    orders.forEach(order => ordersContainer.appendChild(createOrderButton(order.key, order.key)));
                     groupDiv.appendChild(headerBtn);
                     groupDiv.appendChild(ordersContainer);
                     orderList.appendChild(groupDiv);
@@ -845,7 +855,7 @@
                 let dataToShow = []; let headers = [];
                 if (key === 'all') {
                     loadedOrders.forEach(order => { if(order.rastreoData) dataToShow.push(...order.rastreoData) });
-                    if (loadedOrders.size > 0) headers = loadedOrders.values().next().value.headers.rastreo;
+                    if (loadedOrders.size > 0) headers = Array.from(loadedOrders.values()).find(o => o.headers.rastreo)?.headers.rastreo;
                 } else if (loadedOrders.has(key)) {
                     const order = loadedOrders.get(key);
                     dataToShow = order.rastreoData; headers = order.headers.rastreo;
@@ -863,7 +873,7 @@
             }
 
             function createRastreoLineFilters(data, headers) {
-                if (!headers) { headers = []; }
+                if (!headers) headers = [];
                 const lineHeader = findHeader(headers, TRACKING_KEYS.LINE);
                 if (!lineHeader || !data || data.length === 0) {
                     rastreoLineFiltersPlaceholder.textContent = "No hay datos para filtrar.";
@@ -916,7 +926,7 @@
             }
 
             function updateLineCounts(data, headers) {
-                if (!headers) { headers = []; }
+                if (!headers) headers = [];
                 const lineHeader = findHeader(headers, TRACKING_KEYS.LINE);
                 if (!lineHeader) { lineCountsContainer.innerHTML = ''; return; }
                 const counts = data.reduce((acc, row) => {
@@ -939,7 +949,7 @@
                             dataToShow.get(boxId).push(...serials);
                         });
                     });
-                    if (loadedOrders.size > 0) headers = loadedOrders.values().next().value.headers.empaque;
+                    if (loadedOrders.size > 0) headers = Array.from(loadedOrders.values()).find(o => o.headers.empaque)?.headers.empaque;
                 } else if (loadedOrders.has(key)) {
                     const order = loadedOrders.get(key);
                     dataToShow = order.empaqueData; headers = order.headers.empaque;
