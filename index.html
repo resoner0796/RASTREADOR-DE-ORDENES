@@ -1,530 +1,429 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Analizador de Órdenes — Rastreo de Seriales</title>
-
-<!-- Estilos: limpio, profesional y legible -->
-<style>
-  :root{
-    --bg:#f5f7fb;
-    --card:#ffffff;
-    --muted:#6b7a90;
-    --accent:#2563eb;
-    --success:#10b981;
-    --danger:#ef4444;
-    --warn:#f59e0b;
-    --glass: rgba(37,99,235,0.06);
-    --radius:12px;
-    font-family: Inter, "Segoe UI", Roboto, system-ui, Arial, sans-serif;
-    color-scheme: light;
-  }
-  html,body{height:100%; margin:0; background:var(--bg); color:#0f1724;}
-  .wrap{max-width:1200px; margin:28px auto; padding:20px;}
-  header{display:flex; align-items:center; gap:18px; margin-bottom:18px;}
-  .brand{display:flex; flex-direction:column;}
-  h1{font-size:20px; margin:0; color:#0b1220;}
-  p.lead{margin:0;color:var(--muted);font-size:13px;}
-  .top-row{display:flex; gap:14px; align-items:flex-start;}
-  .panel{background:var(--card); border-radius:var(--radius); padding:16px; box-shadow: 0 8px 28px rgba(15,23,42,0.06); flex:1;}
-  .side{width:320px; min-width:240px;}
-  label{display:block;font-size:13px;color:var(--muted); margin-bottom:8px;}
-  input[type=file]{width:100%;}
-  textarea{width:100%; min-height:120px; border-radius:10px; border:1px solid #e6eef8; padding:10px; font-size:13px; color:#08203a; resize:vertical;}
-  .controls{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
-  button{background:var(--accent); color:white; border:none; padding:10px 12px; border-radius:10px; cursor:pointer; font-weight:600;}
-  button.ghost{background:transparent; border:1px solid rgba(15,23,42,0.06); color:#0b1220;}
-  button.small{padding:8px 10px; font-size:13px; border-radius:8px;}
-  .cards{display:grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-top:14px;}
-  .card{background:linear-gradient(180deg, rgba(255,255,255,1), rgba(250,252,255,1)); border-radius:10px; padding:12px; border:1px solid rgba(15,23,42,0.04);}
-  .card .title{font-size:12px; color:var(--muted);}
-  .card .value{font-size:20px; font-weight:800; margin-top:6px;}
-  .filters{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px;}
-  select, .small-input{padding:8px 10px; border-radius:8px; border:1px solid #e6eef8; background:white; color:#0b1220; font-size:13px;}
-  .table-wrap{margin-top:14px; border-radius:10px; overflow:auto; box-shadow: 0 4px 20px rgba(15,23,42,0.04); background:var(--card); border:1px solid rgba(15,23,42,0.03);}
-  table{width:100%; border-collapse:collapse; min-width:900px;}
-  thead th{background:#0f1724; color:white; position:sticky; top:0; padding:12px; text-align:left; font-size:13px;}
-  tbody td{padding:10px 12px; border-bottom:1px solid rgba(15,23,42,0.03); font-size:13px; color:#0b1220;}
-  tbody tr:nth-child(even){background:rgba(15,23,42,0.02);}
-  tbody tr:hover{background:rgba(37,99,235,0.04);}
-  /* Highlights */
-  .row-scrap td{ background: linear-gradient(90deg, rgba(239,68,68,0.06), rgba(239,68,68,0.03)); }
-  .row-no-mov td{ background: linear-gradient(90deg, rgba(245,158,11,0.06), rgba(245,158,11,0.03)); }
-  .legend{display:flex; gap:8px; align-items:center; margin-left:auto; color:var(--muted); font-size:13px;}
-  .tag{display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; font-weight:700; font-size:13px;}
-  .tag.danger{background:rgba(239,68,68,0.08); color:var(--danger);}
-  .tag.warn{background:rgba(245,158,11,0.08); color:var(--warn);}
-  .footer{margin-top:12px; color:var(--muted); font-size:13px;}
-  @media (max-width:980px){ .top-row{flex-direction:column;} .side{width:100%} .panel{width:100%} }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rastreador de Órdenes Avanzado</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS (xlsx) Library for reading Excel/CSV files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Custom Styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .file-drop-area {
+            transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+        }
+        .file-drop-area.dragover {
+            background-color: #e0f2fe;
+            border-color: #38bdf8;
+        }
+        /* Spinner Animation */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+     <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 </head>
-<body>
-  <div class="wrap">
-    <header>
-      <div class="brand">
-        <h1>Analizador de Órdenes — Rastreo de Seriales</h1>
-        <p class="lead">Sube tu Excel o pega la tabla (desde Excel: Ctrl+C → Ctrl+V). Detecta scrap, sin movimiento y facilita reimpresiones.</p>
-      </div>
-      <div class="legend" aria-hidden="true" style="margin-left:auto">
-        <div class="tag danger">SCRAP</div>
-        <div class="tag warn">Sin movimiento (últimos 2 días)</div>
-      </div>
-    </header>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200">
 
-    <div class="top-row">
-      <!-- LEFT: Upload & Paste -->
-      <aside class="side panel" aria-label="Carga y pegado">
-        <label for="file">Subir archivo (.xlsx / .xls / .csv)</label>
-        <input id="file" type="file" accept=".xlsx,.xls,.csv" />
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-sky-600 dark:text-sky-400">Rastreador de Órdenes Avanzado</h1>
+            <p class="mt-2 text-lg text-slate-600 dark:text-slate-400">Sube, pega y analiza los datos de tus órdenes de producción.</p>
+        </header>
 
-        <label style="margin-top:12px">Pegar datos (desde Excel: seleccionar -> Ctrl+C -> aquí Ctrl+V)</label>
-        <textarea id="pasteArea" placeholder="Pegado: incluye encabezados (Serial, Creation Date, Created By, NotPacked, IsScrap, Área, Línea, Station, Status, Date registered)"></textarea>
+        <!-- Main Content -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-        <div class="controls">
-          <button id="analyze" class="small">Analizar datos</button>
-          <button id="clear" class="small ghost">Limpiar</button>
-          <button id="sample" class="small ghost">Cargar ejemplo</button>
-          <button id="help" class="small ghost">¿Cómo pegar?</button>
-        </div>
+            <!-- Left Column: Inputs -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- File Upload Card -->
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md">
+                    <h2 class="text-xl font-semibold mb-4 border-b border-slate-200 dark:border-slate-700 pb-3">1. Cargar Archivo</h2>
+                    <div id="fileDropArea" class="file-drop-area border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center cursor-pointer">
+                        <svg class="mx-auto h-12 w-12 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                            <span class="font-semibold text-sky-600 dark:text-sky-400">Arrastra y suelta</span> un archivo Excel o CSV aquí
+                        </p>
+                        <p class="text-xs text-slate-500 dark:text-slate-500">o haz clic para seleccionar</p>
+                    </div>
+                    <input type="file" id="fileInput" class="hidden" accept=".xlsx, .xls, .csv">
+                    <p id="fileName" class="text-center mt-3 text-sm text-slate-500"></p>
+                </div>
 
-        <div class="footer" style="margin-top:12px">
-          Zona horaria: <strong>America/Monterrey</strong> — El análisis compara fechas (hoy/ayer/anteayer).
-        </div>
-      </aside>
-
-      <!-- RIGHT: Results -->
-      <section class="panel" aria-label="Resultados">
-        <div style="display:flex; gap:12px; align-items:center; justify-content:space-between;">
-          <div style="display:flex; gap:12px; align-items:center;">
-            <div style="font-weight:700; color:#0b1220">Resumen</div>
-            <div style="color:var(--muted)">Vista rápida de métricas</div>
-          </div>
-
-          <div style="display:flex; gap:8px; align-items:center;">
-            <div class="filters" style="margin:0;">
-              <select id="areaFilter"><option value="">Todas las Áreas</option></select>
-              <select id="lineFilter"><option value="">Todas las Líneas</option></select>
-              <select id="stationFilter"><option value="">Todas las Stations</option></select>
-              <select id="statusFilter"><option value="">Todos los Status</option></select>
+                <!-- Manual Paste Card -->
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md">
+                    <h2 class="text-xl font-semibold mb-4 border-b border-slate-200 dark:border-slate-700 pb-3">2. Pegar Datos Manualmente</h2>
+                    <textarea id="dataInput" rows="8" class="w-full p-3 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition" placeholder="Pega aquí los datos de la tabla..."></textarea>
+                    <button id="processButton" class="w-full mt-4 bg-sky-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition duration-300">
+                        Procesar Datos Pegados
+                    </button>
+                </div>
+                 <!-- Filter Card -->
+                 <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md">
+                    <h2 class="text-xl font-semibold mb-4 border-b border-slate-200 dark:border-slate-700 pb-3">3. Filtrar Seriales</h2>
+                    <input type="text" id="filterInput" class="w-full p-3 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition" placeholder="Buscar por serial, línea, estación...">
+                </div>
             </div>
-            <button id="exportCSV" class="small ghost">Copiar tabla</button>
-          </div>
-        </div>
 
-        <div id="summary" class="cards" aria-live="polite"></div>
+            <!-- Right Column: Results -->
+            <div class="lg:col-span-2">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md min-h-[400px]">
+                    <div id="resultsHeader" class="flex flex-wrap justify-between items-center mb-4 border-b border-slate-200 dark:border-slate-700 pb-3">
+                         <h2 class="text-xl font-semibold">Resultados</h2>
+                        <div class="text-right">
+                           <p class="font-semibold text-lg">Orden: <span id="orderNumber" class="text-sky-600 dark:text-sky-400 font-bold">N/A</span></p>
+                           <p class="text-sm text-slate-500 dark:text-slate-400">Total de seriales: <span id="serialCount" class="font-bold">0</span></p>
+                        </div>
+                    </div>
 
-        <div class="table-wrap" role="region" aria-label="Tabla de resultados" style="margin-top:12px; padding:0;">
-          <table id="resultsTable" role="table" aria-label="Resultados">
-            <thead>
-              <tr>
-                <th style="min-width:160px">Serial</th>
-                <th>Área</th>
-                <th>Línea</th>
-                <th>Station</th>
-                <th>Status</th>
-                <th>NotPacked</th>
-                <th>IsScrap</th>
-                <th>Date registered</th>
-                <th>Comentario</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
+                    <!-- Line Counts Display -->
+                    <div id="lineCounts" class="mb-4 hidden">
+                        <h3 class="font-semibold text-md mb-2">Conteo por Línea:</h3>
+                        <div id="lineCountsContainer" class="flex flex-wrap gap-2"></div>
+                    </div>
+                    
+                    <div id="loader" class="hidden justify-center items-center py-16">
+                        <div class="loader"></div>
+                        <p class="ml-4 text-slate-500 dark:text-slate-400">Procesando archivo...</p>
+                    </div>
 
-        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
-          <button id="exportExcel" class="small ghost" title="Descargar .xlsx (opcional)">Exportar .xlsx</button>
-          <button id="copyBtn" class="small">Copiar visible</button>
-        </div>
-      </section>
+                    <div id="output" class="overflow-x-auto">
+                        <p id="placeholderText" class="text-center text-slate-500 dark:text-slate-400 py-16">
+                            Los resultados del rastreo aparecerán aquí.
+                        </p>
+                        <table id="resultsTable" class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 hidden">
+                            <thead class="bg-slate-50 dark:bg-slate-700">
+                                <!-- Headers will be dynamically inserted here -->
+                            </thead>
+                            <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                                <!-- Rows will be dynamically inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
     </div>
-  </div>
 
-  <!-- SheetJS para leer Excel en el navegador -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fileDropArea = document.getElementById('fileDropArea');
+            const fileInput = document.getElementById('fileInput');
+            const fileNameDisplay = document.getElementById('fileName');
+            const dataInput = document.getElementById('dataInput');
+            const processButton = document.getElementById('processButton');
+            const filterInput = document.getElementById('filterInput');
+            const resultsTable = document.getElementById('resultsTable');
+            const tableBody = resultsTable.querySelector('tbody');
+            const tableHead = resultsTable.querySelector('thead');
+            const serialCount = document.getElementById('serialCount');
+            const orderNumberDisplay = document.getElementById('orderNumber');
+            const placeholderText = document.getElementById('placeholderText');
+            const lineCounts = document.getElementById('lineCounts');
+            const lineCountsContainer = document.getElementById('lineCountsContainer');
+            const loader = document.getElementById('loader');
 
-  <script>
-  (function(){
-    // Zona horaria a usar
-    const TZ = 'America/Monterrey';
+            let allData = [];
 
-    // Variantes de encabezado (busca por subcadenas)
-    const canonical = {
-      serial: ['serial','id','serial number','serialno'],
-      creationDate: ['creation date','created date','date created','creationdate'],
-      createdBy: ['created by','creator'],
-      notPacked: ['notpacked','not packed','not_packed'],
-      isScrap: ['isscrap','is scrap','scrap','is_scrap','isscrapped'],
-      area: ['área','area','department'],
-      line: ['línea','line','linea'],
-      station: ['station','estacion','estación'],
-      status: ['status','estado'],
-      dateRegistered: ['date registered','date_registered','registered date','fecha registrada','date']
-    };
+            // --- File Drag and Drop Logic ---
+            fileDropArea.addEventListener('click', () => fileInput.click());
+            fileDropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fileDropArea.classList.add('dragover');
+            });
+            fileDropArea.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fileDropArea.classList.remove('dragover');
+            });
+            fileDropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fileDropArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length) {
+                    handleFile(files[0]);
+                }
+            });
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFile(e.target.files[0]);
+                }
+            });
 
-    // UI refs
-    const fileInput = document.getElementById('file');
-    const pasteArea = document.getElementById('pasteArea');
-    const analyzeBtn = document.getElementById('analyze');
-    const clearBtn = document.getElementById('clear');
-    const sampleBtn = document.getElementById('sample');
-    const helpBtn = document.getElementById('help');
-    const summaryEl = document.getElementById('summary');
-    const resultsTbody = document.querySelector('#resultsTable tbody');
-    const areaFilter = document.getElementById('areaFilter');
-    const lineFilter = document.getElementById('lineFilter');
-    const stationFilter = document.getElementById('stationFilter');
-    const statusFilter = document.getElementById('statusFilter');
-    const exportCSV = document.getElementById('exportCSV');
-    const copyBtn = document.getElementById('copyBtn');
-    const exportExcelBtn = document.getElementById('exportExcel');
+            // --- Core Logic Handlers ---
+            processButton.addEventListener('click', () => {
+                const data = dataInput.value.trim();
+                if(data) {
+                    resetView();
+                    const parsedData = parsePastedData(data);
+                    allData = parsedData;
+                    displayData(allData);
+                } else {
+                    alert("Por favor, pega algunos datos en el área de texto.");
+                }
+            });
 
-    let parsedRows = []; // array canonical objects
+            filterInput.addEventListener('input', () => {
+                const filterText = filterInput.value.toLowerCase();
+                if (!allData.length) return;
 
-    // --- Helpers ---
-    function findColMap(headers){
-      const map = {};
-      const lcHeaders = headers.map(h => (h||'').toString().trim().toLowerCase());
-      for (let i=0;i<lcHeaders.length;i++){
-        const h = lcHeaders[i];
-        for (const [key, variants] of Object.entries(canonical)){
-          for (const v of variants){
-            const vs = v.toLowerCase();
-            if (h === vs || h.includes(vs) || vs.includes(h) && h.length>0) {
-              map[key] = i;
+                const filteredData = allData.filter(row => 
+                    Object.values(row).some(value => 
+                        String(value).toLowerCase().includes(filterText)
+                    )
+                );
+                displayData(filteredData, false); // false to avoid re-creating headers
+                updateLineCounts(filteredData);
+            });
+            
+            function handleFile(file) {
+                fileNameDisplay.textContent = `Archivo: ${file.name}`;
+                resetView();
+                loader.style.display = 'flex';
+                placeholderText.style.display = 'none';
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // Convert sheet to an array of arrays to scan for order and headers
+                    const sheetAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    const { order, headers, dataStartIndex } = findOrderAndTable(sheetAsArray);
+                    
+                    orderNumberDisplay.textContent = order || 'No encontrado';
+                    
+                    if(headers) {
+                       // Now convert sheet to JSON with detected headers
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+                            range: dataStartIndex -1 // SheetJS range is 0-indexed, but we found row number
+                        });
+
+                        // Standardize keys to lowercase for easier access
+                        const standardizedData = jsonData.map(row => {
+                           const newRow = {};
+                           for (const key in row) {
+                               newRow[key.trim().toLowerCase()] = row[key];
+                           }
+                           return newRow;
+                        });
+
+                        allData = extractRelevantData(standardizedData);
+                        displayData(allData);
+                    } else {
+                        placeholderText.textContent = "No se pudo detectar una tabla con cabeceras válidas (ej. 'Serial', 'Linea').";
+                        placeholderText.style.display = 'block';
+                    }
+                    loader.style.display = 'none';
+                };
+                reader.readAsArrayBuffer(file);
             }
-          }
-        }
-      }
-      return map;
-    }
+            
+            /**
+             * Scans the sheet (as an array) to find the order number and the table's header row.
+             * Returns the order number, the detected headers, and the starting row index of data.
+             */
+            function findOrderAndTable(sheetArray) {
+                let order = null;
+                let headers = null;
+                let dataStartIndex = -1;
+                const MAX_SCAN_ROWS = 20; // Scan up to 20 rows for order/headers
+                const REQUIRED_HEADERS = ['serial', 'linea', 'estacion'];
 
-    function truthy(val){
-      if (val === undefined || val === null) return false;
-      const s = String(val).trim().toLowerCase();
-      return ['true','1','si','sí','yes','y','x','t'].includes(s);
-    }
+                for (let i = 0; i < sheetArray.length && i < MAX_SCAN_ROWS; i++) {
+                    const row = sheetArray[i];
+                    
+                    // 1. Look for order number
+                    if (!order) {
+                        for(const cell of row) {
+                            const cellStr = String(cell).toLowerCase();
+                            if(cellStr.includes('orden') || cellStr.includes('order')) {
+                                // Find the value in the same cell or the next one
+                                const match = String(cell).match(/:\s*(\w+)|(\d+)/);
+                                if(match && match[1]) {
+                                    order = match[1];
+                                } else if (row[row.indexOf(cell) + 1]) {
+                                    order = row[row.indexOf(cell) + 1];
+                                }
+                                break; 
+                            }
+                        }
+                    }
 
-    // Return yyyy-mm-dd in TZ (string) or null
-    function toTZDateString(dateInput){
-      if (!dateInput) return null;
-      const d = (dateInput instanceof Date) ? dateInput : new Date(dateInput);
-      if (isNaN(d)) return null;
-      try {
-        const parts = new Intl.DateTimeFormat('en', { timeZone: TZ, year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(d);
-        const y = parts.find(p=>p.type==='year').value;
-        const m = parts.find(p=>p.type==='month').value;
-        const day = parts.find(p=>p.type==='day').value;
-        return `${y}-${m}-${day}`;
-      } catch(e){
-        const iso = d.toISOString();
-        return iso.split('T')[0];
-      }
-    }
+                    // 2. Look for header row
+                    if (!headers) {
+                        const lowercasedRow = row.map(h => String(h).trim().toLowerCase());
+                        let foundHeaders = 0;
+                        REQUIRED_HEADERS.forEach(reqHeader => {
+                            if(lowercasedRow.includes(reqHeader)) {
+                                foundHeaders++;
+                            }
+                        });
 
-    // today/yesterday/anteayer in TZ as yyyy-mm-dd
-    function getRelativeDates(){
-      const tzNowStr = new Date().toLocaleString('en-US', { timeZone: TZ });
-      const tzNow = new Date(tzNowStr);
-      const day0 = new Date(tzNow.getFullYear(), tzNow.getMonth(), tzNow.getDate());
-      const day1 = new Date(day0); day1.setDate(day0.getDate()-1);
-      const day2 = new Date(day0); day2.setDate(day0.getDate()-2);
-      const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      return { today: fmt(day0), yesterday: fmt(day1), anteayer: fmt(day2) };
-    }
+                        if (foundHeaders >= 2) { // Be flexible, require at least 2 key headers
+                            headers = row.map(h => String(h).trim());
+                            dataStartIndex = i + 1; // Data starts on the next row
+                        }
+                    }
 
-    // Parse pasted CSV/TSV/text using SheetJS if possible, fallback to simple parse
-    function parseClipboardText(text){
-      try {
-        // Let SheetJS try to parse (CSV/TSV/xsv)
-        const wb = XLSX.read(text, { type:'string', raw:false, codepage:65001 });
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        const arr = XLSX.utils.sheet_to_json(sheet, { raw:false, defval:'' });
-        return { headers: Object.keys(arr[0]||{}), rows: arr };
-      } catch(e){
-        const lines = text.trim().split(/\r\n|\n/).filter(l=>l.trim());
-        if (lines.length<1) return { headers:[], rows:[] };
-        const delim = lines[0].includes('\t') ? '\t' : (lines[0].includes(',') ? ',' : null);
-        const headers = delim ? lines.shift().split(delim).map(h=>h.trim()) : [];
-        const rows = lines.map(l => {
-          const cols = delim ? l.split(delim) : [l];
-          const obj = {};
-          headers.forEach((h,i)=> obj[h]=cols[i] ? cols[i].trim() : '');
-          return obj;
+                    if (order && headers) break;
+                }
+
+                return { order, headers, dataStartIndex };
+            }
+            
+            /**
+             * Takes the raw JSON data and extracts/maps it to a consistent format.
+             */
+            function extractRelevantData(data) {
+                const MAPPING = {
+                    'serial': ['serial', 'serial number', 'numero de serie'],
+                    'linea': ['linea', 'line'],
+                    'estacion': ['estacion', 'station'],
+                    'fecha': ['fecha', 'date', 'timestamp'],
+                    'status': ['status', 'estado']
+                };
+
+                return data.map(rawRow => {
+                    const newRow = {};
+                    for (const standardKey in MAPPING) {
+                        for (const possibleKey of MAPPING[standardKey]) {
+                            if (rawRow[possibleKey] !== undefined) {
+                                newRow[standardKey.charAt(0).toUpperCase() + standardKey.slice(1)] = rawRow[possibleKey];
+                                break;
+                            }
+                        }
+                    }
+                    return newRow;
+                }).filter(row => row.Serial); // Only include rows that have a serial number
+            }
+            
+            function parsePastedData(pastedText) {
+                const rows = pastedText.split('\n').filter(row => row.trim() !== '');
+                if (rows.length < 2) return [];
+
+                const headers = rows[0].split('\t').map(h => h.trim());
+                return rows.slice(1).map(rowText => {
+                    const values = rowText.split('\t');
+                    const rowObject = {};
+                    headers.forEach((header, index) => {
+                        rowObject[header] = values[index] ? values[index].trim() : '';
+                    });
+                    return rowObject;
+                });
+            }
+
+            function displayData(data, createHeaders = true) {
+                tableBody.innerHTML = '';
+
+                if (data.length === 0) {
+                    serialCount.textContent = '0';
+                    resultsTable.style.display = 'none';
+                    placeholderText.textContent = 'No se encontraron datos que coincidan con la búsqueda.';
+                    placeholderText.style.display = 'block';
+                    lineCounts.style.display = 'none';
+                    return;
+                }
+                
+                resultsTable.style.display = 'table';
+                placeholderText.style.display = 'none';
+                
+                // --- Create Table Headers (only once) ---
+                if (createHeaders && data.length > 0) {
+                    const headers = Object.keys(data[0]);
+                    tableHead.innerHTML = `<tr>${headers.map(h => `<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">${h}</th>`).join('')}</tr>`;
+                }
+
+                // --- Populate Table Body ---
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    
+                    // Apply conditional coloring
+                    const status = (row.Status || row.status || '').toLowerCase();
+                    if (status.includes('scrap')) {
+                        tr.className = 'bg-red-100 dark:bg-red-900/50 hover:bg-red-200 dark:hover:bg-red-900/70';
+                    } else if (status.includes('sin movimiento')) {
+                         tr.className = 'bg-yellow-100 dark:bg-yellow-900/50 hover:bg-yellow-200 dark:hover:bg-yellow-900/70';
+                    } else {
+                        tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-700/50';
+                    }
+
+                    // Create cells
+                    const headers = Object.keys(data[0]);
+                    tr.innerHTML = headers.map(header => `<td class="px-6 py-4 whitespace-nowrap text-sm">${row[header] || ''}</td>`).join('');
+                    tableBody.appendChild(tr);
+                });
+                
+                serialCount.textContent = data.length;
+                updateLineCounts(data);
+            }
+            
+            function updateLineCounts(data) {
+                if (data.length === 0) {
+                    lineCounts.style.display = 'none';
+                    return;
+                }
+
+                const counts = data.reduce((acc, row) => {
+                    const line = row.Linea || row.linea;
+                    if(line) {
+                       acc[line] = (acc[line] || 0) + 1;
+                    }
+                    return acc;
+                }, {});
+
+                if (Object.keys(counts).length > 0) {
+                    lineCountsContainer.innerHTML = Object.entries(counts).map(([line, count]) => 
+                        `<div class="bg-sky-100 dark:bg-sky-900/70 text-sky-800 dark:text-sky-200 text-xs font-semibold mr-2 px-2.5 py-1 rounded-full">
+                            ${line}: <span class="font-bold">${count}</span>
+                         </div>`
+                    ).join('');
+                    lineCounts.style.display = 'block';
+                } else {
+                    lineCounts.style.display = 'none';
+                }
+            }
+
+            function resetView() {
+                allData = [];
+                tableBody.innerHTML = '';
+                tableHead.innerHTML = '';
+                serialCount.textContent = '0';
+                orderNumberDisplay.textContent = 'N/A';
+                resultsTable.style.display = 'none';
+                lineCounts.style.display = 'none';
+                filterInput.value = '';
+                dataInput.value = '';
+                fileInput.value = '';
+                fileNameDisplay.textContent = '';
+                placeholderText.textContent = 'Los resultados del rastreo aparecerán aquí.';
+                placeholderText.style.display = 'block';
+            }
         });
-        return { headers, rows };
-      }
-    }
-
-    // Process pasted/csv text into parsedRows (canonical objects)
-    function processClipboard(text){
-      const parsed = parseClipboardText(text);
-      if (!parsed || !parsed.headers.length){
-        alert('No se detectaron columnas. Asegúrate de pegar la tabla completa (incluyendo encabezados).');
-        return;
-      }
-      const headers = parsed.headers;
-      const map = findColMap(headers);
-
-      parsedRows = parsed.rows.map(raw => {
-        const obj = {};
-        function getByMap(key){
-          if (map[key] !== undefined) {
-            const headerName = headers[map[key]];
-            return raw[headerName] !== undefined ? raw[headerName] : raw[Object.keys(raw)[map[key]]];
-          }
-          // try direct header names case-insensitive
-          for (const k of Object.keys(raw)){
-            if (k.trim().toLowerCase() === key.toLowerCase()) return raw[k];
-          }
-          return raw[key] || '';
-        }
-
-        obj.serial = (getByMap('serial') || '').toString().trim();
-        obj.area = (getByMap('area') || '').toString().trim();
-        obj.line = (getByMap('line') || '').toString().trim();
-        obj.station = (getByMap('station') || '').toString().trim();
-        obj.status = (getByMap('status') || '').toString().trim();
-        obj.notPacked = getByMap('notPacked') || '';
-        obj.isScrap = getByMap('isScrap') || '';
-        obj.dateRegisteredRaw = getByMap('dateRegistered') || getByMap('Date registered') || getByMap('Date Registered') || '';
-
-        // Try parse date robustly: Excel serial or string
-        let parsedDate = null;
-        if (obj.dateRegisteredRaw){
-          const rawStr = String(obj.dateRegisteredRaw).trim();
-          const maybeNum = Number(rawStr);
-          // detect Excel serial (no '-' or '/' and numeric and reasonably short)
-          if (!isNaN(maybeNum) && rawStr.length < 8 && rawStr.indexOf('-')===-1 && rawStr.indexOf('/')===-1){
-            const excelStart = new Date(Date.UTC(1899,11,30));
-            parsedDate = new Date(excelStart.getTime() + maybeNum * 24*60*60*1000);
-          } else {
-            // try Date parse, replace / with - and try again
-            let d = new Date(rawStr);
-            if (isNaN(d)) d = new Date(rawStr.replace(/\./g,'-').replace(/\//g,'-'));
-            if (!isNaN(d)) parsedDate = d;
-          }
-        }
-        obj.dateRegistered = parsedDate;
-        return obj;
-      });
-
-      runAnalysis();
-    }
-
-    // File upload: read first sheet, convert to CSV for transparency and process
-    fileInput.addEventListener('change', async (e) => {
-      const f = e.target.files && e.target.files[0];
-      if (!f) return;
-      try {
-        const data = await f.arrayBuffer();
-        const wb = XLSX.read(data, { type: 'array' });
-        const first = wb.Sheets[wb.SheetNames[0]];
-        const csv = XLSX.utils.sheet_to_csv(first);
-        pasteArea.value = csv;
-        processClipboard(csv);
-      } catch (err) {
-        alert('Error leyendo archivo: ' + (err.message || err));
-      }
-    });
-
-    // Analysis & rendering
-    function runAnalysis(){
-      const rel = getRelativeDates();
-      const total = parsedRows.length;
-      let scrapCount = 0, notPackedCount = 0;
-      const noDate = [];
-      const noMovYesterday = [], noMovAnteayer = [];
-      const areas = new Set(), lines = new Set(), stations = new Set(), statuses = new Set();
-
-      parsedRows.forEach(r => {
-        if (truthy(r.isScrap)) scrapCount++;
-        if (truthy(r.notPacked)) notPackedCount++;
-
-        const ds = toTZDateString(r.dateRegistered);
-        if (!ds) noDate.push(r);
-        if (!ds || ds !== rel.yesterday) noMovYesterday.push(r);
-        if (!ds || ds !== rel.anteayer) noMovAnteayer.push(r);
-
-        if (r.area) areas.add(r.area);
-        if (r.line) lines.add(r.line);
-        if (r.station) stations.add(r.station);
-        if (r.status) statuses.add(r.status);
-      });
-
-      // render summary
-      summaryEl.innerHTML = '';
-      function addCard(title, big, hint=''){ const d=document.createElement('div'); d.className='card'; d.innerHTML = `<div class="title">${title}</div><div class="value">${big}</div>${hint?`<div class="title" style="margin-top:8px;color:var(--muted);font-size:13px">${hint}</div>`:''}`; summaryEl.appendChild(d); }
-      addCard('Total seriales', total);
-      addCard('Seriales en scrap', scrapCount, `${scrapCount} identificados`);
-      addCard('No empaquetados', notPackedCount, `${notPackedCount} identificados`);
-      addCard('Sin fecha de registro', noDate.length, 'Revisar por falta de movimiento');
-      addCard(`No mov. ayer (${rel.yesterday})`, noMovYesterday.length, 'No registraron movimiento ayer');
-      addCard(`No mov. anteayer (${rel.anteayer})`, noMovAnteayer.length, 'No registraron movimiento anteayer');
-
-      populateFilter(areaFilter, Array.from(areas).sort());
-      populateFilter(lineFilter, Array.from(lines).sort());
-      populateFilter(stationFilter, Array.from(stations).sort());
-      populateFilter(statusFilter, Array.from(statuses).sort());
-
-      renderTable(parsedRows, rel);
-    }
-
-    function populateFilter(selectEl, values){
-      const current = selectEl.value || '';
-      selectEl.innerHTML = '<option value="">Todos</option>';
-      values.forEach(v => {
-        const opt = document.createElement('option'); opt.value = v; opt.textContent = v; selectEl.appendChild(opt);
-      });
-      if (current) selectEl.value = current;
-    }
-
-    // Render table with highlights; Employee NOT included anywhere
-    function renderTable(rows, rel){
-      resultsTbody.innerHTML = '';
-      const af = areaFilter.value, lf = lineFilter.value, sf = stationFilter.value, stf = statusFilter.value;
-
-      const visible = rows.filter(r => {
-        if (af && r.area !== af) return false;
-        if (lf && r.line !== lf) return false;
-        if (sf && r.station !== sf) return false;
-        if (stf && r.status !== stf) return false;
-        return true;
-      });
-
-      visible.forEach(r => {
-        const tr = document.createElement('tr');
-        const ds = toTZDateString(r.dateRegistered) || '';
-
-        const isScrap = truthy(r.isScrap);
-        const noMovementRecent = (!ds) || (ds !== rel.today && ds !== rel.yesterday && ds !== rel.anteayer);
-
-        if (isScrap) tr.classList.add('row-scrap');
-        else if (noMovementRecent) tr.classList.add('row-no-mov');
-
-        let comment = '';
-        if (isScrap) comment += 'SCRAP ';
-        if (!ds) comment += 'SIN FECHA ';
-        else {
-          if (ds === rel.yesterday) comment += 'Mov ayer ';
-          if (ds === rel.anteayer) comment += 'Mov anteayer ';
-          if (ds === rel.today) comment += 'Mov hoy ';
-          if (noMovementRecent && !isScrap) comment += 'No mov. recent ';
-        }
-
-        const notPackedTag = truthy(r.notPacked) ? 'NotPacked' : (r.notPacked || '');
-        const isScrapTag = isScrap ? 'SCRAP' : (r.isScrap || '');
-
-        tr.innerHTML = `<td><strong>${escapeHtml(r.serial||'')}</strong></td>
-                        <td>${escapeHtml(r.area||'')}</td>
-                        <td>${escapeHtml(r.line||'')}</td>
-                        <td>${escapeHtml(r.station||'')}</td>
-                        <td>${escapeHtml(r.status||'')}</td>
-                        <td>${escapeHtml(notPackedTag)}</td>
-                        <td>${escapeHtml(isScrapTag)}</td>
-                        <td>${escapeHtml(ds)}</td>
-                        <td>${escapeHtml(comment)}</td>`;
-        resultsTbody.appendChild(tr);
-      });
-    }
-
-    function escapeHtml(s){
-      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
-
-    // BUTTONS and events
-    analyzeBtn.addEventListener('click', ()=> {
-      const txt = pasteArea.value.trim();
-      if (!txt){
-        alert('Pega la tabla en el recuadro o sube un archivo Excel primero.');
-        return;
-      }
-      processClipboard(txt);
-    });
-
-    clearBtn.addEventListener('click', ()=> {
-      pasteArea.value = '';
-      parsedRows = [];
-      summaryEl.innerHTML = '';
-      resultsTbody.innerHTML = '';
-      areaFilter.innerHTML = '<option value="">Todas las Áreas</option>';
-      lineFilter.innerHTML = '<option value="">Todas las Líneas</option>';
-      stationFilter.innerHTML = '<option value="">Todas las Stations</option>';
-      statusFilter.innerHTML = '<option value="">Todos los Status</option>';
-      fileInput.value = '';
-    });
-
-    sampleBtn.addEventListener('click', ()=> {
-      const sample = `Serial,Creation Date,Created By,NotPacked,IsScrap,Área,Línea,Station,Status,Date registered
-S-1001,2025-09-20,Juan,false,false,Manufactura,Linea A,ST-1,OK,2025-09-22
-S-1002,2025-09-20,Maria,true,false,Manufactura,Linea A,ST-2,Pending,2025-09-21
-S-1003,2025-09-19,Pedro,false,true,Ensamble,Linea B,ST-4,SCRAP,2025-09-18
-S-1004,2025-09-18,Ana,false,false,Ensamble,Linea B,ST-4,OK,
-S-1005,2025-09-16,Rosa,false,false,Manufactura,Linea A,ST-1,OK,2025-09-20`;
-      pasteArea.value = sample;
-    });
-
-    helpBtn.addEventListener('click', ()=> {
-      alert('Para pegar desde Excel: selecciona el rango → Ctrl+C → haz click aquí → Ctrl+V → luego "Analizar datos". También puedes subir el archivo .xlsx o .csv con "Subir archivo".');
-    });
-
-    [areaFilter, lineFilter, stationFilter, statusFilter].forEach(s => s.addEventListener('change', ()=> {
-      renderTable(parsedRows, getRelativeDates());
-    }));
-
-    // Copy visible table as CSV to clipboard
-    exportCSV.addEventListener('click', async ()=>{
-      const rows = Array.from(resultsTbody.querySelectorAll('tr'));
-      if (!rows.length){ alert('No hay datos para copiar'); return; }
-      const csv = [['Serial','Área','Línea','Station','Status','NotPacked','IsScrap','Date registered','Comentario']];
-      rows.forEach(tr => {
-        const tds = Array.from(tr.querySelectorAll('td')).map(td=>td.textContent.trim());
-        csv.push(tds);
-      });
-      const csvText = csv.map(r => r.map(cell => `"${cell.replace(/"/g,'""')}"`).join(',')).join('\n');
-      try {
-        await navigator.clipboard.writeText(csvText);
-        alert('Tabla copiada al portapapeles (CSV).');
-      } catch(e){
-        prompt('Copia el CSV manualmente:', csvText);
-      }
-    });
-
-    // Copy visible table as HTML/CSV quick copy
-    copyBtn.addEventListener('click', async ()=>{
-      const rows = Array.from(resultsTbody.querySelectorAll('tr'));
-      if (!rows.length){ alert('No hay datos para copiar'); return; }
-      // copy CSV like exportCSV
-      exportCSV.click();
-    });
-
-    // OPTIONAL: quick .xlsx export using SheetJS (client-side)
-    exportExcelBtn.addEventListener('click', ()=>{
-      const rows = Array.from(resultsTbody.querySelectorAll('tr'));
-      if (!rows.length){ alert('No hay datos para exportar'); return; }
-      const data = [];
-      // header
-      data.push(['Serial','Área','Línea','Station','Status','NotPacked','IsScrap','Date registered','Comentario']);
-      rows.forEach(tr => {
-        const tds = Array.from(tr.querySelectorAll('td')).map(td=>td.textContent.trim());
-        data.push(tds);
-      });
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Resultados');
-      XLSX.writeFile(wb, 'resultados_seriales.xlsx');
-    });
-
-    // Keep paste from auto analyzing (user clicks analyze)
-    pasteArea.addEventListener('paste', () => {
-      // no auto-run, but allow user to paste and click 'Analizar datos'
-    });
-
-    // Expose for debugging
-    window._serialApp = { parsedRows, runAnalysis, renderTable };
-
-  })();
-  </script>
+    </script>
 </body>
 </html>
