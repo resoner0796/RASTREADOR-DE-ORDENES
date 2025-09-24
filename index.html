@@ -43,7 +43,7 @@
             width: 100%; max-width: 1600px; display: grid;
             grid-template-columns: 260px 1fr;
             grid-template-rows: auto auto 1fr;
-            grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main";
+            grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; 
             gap: 16px;
         }
         .sidebar {
@@ -166,60 +166,84 @@
         .modal-close { font-size: 1.75rem; color: var(--text-dark); cursor: pointer; line-height: 1; position: absolute; top: 16px; right: 16px; }
         #modalBody textarea { width: 100%; height: 100px; resize: none; background-color: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;}
 
-        /* --- NUEVO: Estilos para panel desplegable --- */
-        h3.collapsible-trigger {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            user-select: none; /* Prevenir selección de texto al hacer clic */
-        }
-        h3.collapsible-trigger .collapse-icon::before {
-            content: '►';
-            display: inline-block;
-            font-size: 0.7rem;
-            transition: transform 0.2s;
-        }
-        .card-collapsible.expanded h3.collapsible-trigger .collapse-icon::before {
-            transform: rotate(90deg);
-        }
-        .collapsible-content {
-            max-height: 0;
-            overflow-y: auto;
-            transition: max-height 0.3s ease-out;
-        }
-        .card-collapsible.expanded .collapsible-content {
-            max-height: 500px; /* Altura máxima para la lista de órdenes */
-            transition: max-height 0.4s ease-in;
-        }
 
-        /* --- NUEVO: Estilos responsivos para móviles --- */
+        /* --- NUEVO: Estilos responsivos y layout móvil --- */
         @media (max-width: 992px) {
-            body {
-                padding: 8px;
-            }
+            body { padding: 8px; }
             .main-container {
-                grid-template-columns: 1fr;
-                grid-template-areas:
-                    "global-header"
-                    "header"
-                    "sidebar"
-                    "main";
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
             }
-            .rastreo-controls {
-                grid-template-columns: 1fr;
+            /* Reordenar elementos para la vista móvil */
+            .app-header { order: 1; margin-bottom: 8px;}
+            .global-header { order: 2; }
+            .header { order: 3; }
+            .sidebar { order: 4; }
+            .main-content { order: 5; }
+
+            /* Ocultar elementos de escritorio y simplificar contenedores */
+            .sidebar {
+                display: contents; /* Hace que los hijos del sidebar se comporten como hijos directos del flex container */
             }
-            .summary-card {
-                grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            .sidebar > h2 { display: none; } /* Oculta el "Panel de Control" general */
+            .main-content {
+                display: contents; /* Idem para el contenido principal */
             }
-            .stat-item p {
-                font-size: 1.5rem;
+            
+            /* Ajustar tarjetas de estadísticas según el nuevo diseño */
+            .global-dashboard-card { grid-template-columns: 1fr 1fr; }
+            .summary-card { 
+                grid-template-columns: 1fr 1fr; 
+                /* Busca el stat-item que contiene #statOrderNumber y lo hace abarcar 2 columnas */
+                & > .stat-item:has(#statOrderNumber) {
+                    grid-column: 1 / -1;
+                }
             }
-            .app-branding {
-                font-size: 1.8rem;
+            .stat-item p { font-size: 1.5rem; }
+
+            /* Lógica para tarjetas desplegables en MÓVIL */
+            .card.mobile-collapsible > *:not(.mobile-trigger) {
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease-out, opacity 0.2s ease-out, padding 0.3s ease-out;
+                opacity: 0;
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
             }
-            .app-title {
-                font-size: 1.1rem;
+             .card.mobile-collapsible h3.mobile-trigger {
+                margin-bottom: 0; /* Quitar margen inferior del h3 cuando es un trigger */
+                cursor: pointer;
+                user-select: none;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+             }
+             .card.mobile-collapsible h3.mobile-trigger::after {
+                content: '►';
+                display: inline-block;
+                font-size: 0.7rem;
+                transition: transform 0.2s;
+                color: var(--text-secondary);
+             }
+
+            /* Estilos cuando la tarjeta está expandida */
+            .card.mobile-collapsible.expanded > *:not(.mobile-trigger) {
+                max-height: 1500px; /* Un valor suficientemente grande */
+                opacity: 1;
+                margin-top: 16px !important;
+            }
+             .card.mobile-collapsible.expanded h3.mobile-trigger::after {
+                transform: rotate(90deg);
+             }
+            
+             /* Agrupar filtros y acciones en el móvil */
+            .rastreo-controls .filter-container > div:last-of-type,
+            .rastreo-controls > div:last-of-type {
+                 border-top: 1px solid var(--border-color);
+                 padding-top: 16px;
+                 margin-top: 6px;
             }
         }
     </style>
@@ -233,7 +257,7 @@
         <div class="main-container">
             <aside class="sidebar">
                 <h2>Panel de Control</h2>
-                <div class="card">
+                <div class="card" id="uploadCard">
                     <h3>Cargar Órdenes</h3>
                     <div id="fileDropArea" class="file-drop-area">
                         <p>Arrastra archivos (.xlsx, .json)</p>
@@ -242,12 +266,9 @@
                     <input type="file" id="fileInput" accept=".xlsx, .xls, .json" multiple style="display: none;">
                     <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
                 </div>
-                <div class="card card-collapsible expanded" style="flex-grow: 1;">
-                    <h3 class="collapsible-trigger" id="loadedOrdersHeader">
-                        <span>Órdenes Cargadas</span>
-                        <span class="collapse-icon"></span>
-                    </h3>
-                    <div id="orderList" class="collapsible-content">
+                <div class="card" style="flex-grow: 1;" id="orderListCard">
+                    <h3>Órdenes Cargadas</h3>
+                    <div id="orderList">
                         <p class="text-dark" style="font-size:0.9rem;">Cargue uno o más archivos para comenzar.</p>
                     </div>
                 </div>
@@ -286,7 +307,7 @@
     
             <main class="main-content">
                 <div id="rastreoView" style="display:flex; flex-direction:column; gap:16px;">
-                    <div class="card rastreo-controls">
+                    <div class="card rastreo-controls" id="filtersCard">
                         <div class="filter-container">
                             <div>
                                 <h3>Filtrar por Estado</h3>
@@ -395,8 +416,6 @@
             const modalBody = document.getElementById('modalBody');
             const modalClose = document.getElementById('modalClose');
             const copyReportBtn = document.getElementById('copyReportBtn');
-            // NUEVO: Elemento para controlar el panel desplegable
-            const loadedOrdersHeader = document.getElementById('loadedOrdersHeader');
 
             // --- EVENT LISTENERS ---
             fileDropArea.addEventListener('click', () => fileInput.click());
@@ -439,13 +458,6 @@
 
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
-
-            // NUEVO: Event listener para el panel desplegable
-            loadedOrdersHeader.addEventListener('click', () => {
-                const parentCard = loadedOrdersHeader.closest('.card-collapsible');
-                parentCard.classList.toggle('expanded');
-            });
-
 
             // --- MODAL FUNCTIONS ---
             function showModal(title, message, type = 'info', showCopyBtn = false) {
@@ -560,8 +572,6 @@
                         saveOrdersToLocalStorage();
                         updateOrderList();
                         setActiveOrder(isUpdate ? orderToUpdateKey : lastKey);
-                        // NUEVO: Asegurarse de que el panel esté expandido al cargar archivos
-                        document.querySelector('.card-collapsible').classList.add('expanded');
                     })
                     .catch(err => {
                         showModal('Error al Cargar', 'Uno o más archivos no pudieron ser procesados.', 'error');
@@ -767,7 +777,7 @@
 
                 const reportHTML = `
                     <div id="report-content" style="font-family: Inter, sans-serif; color: #F8FAFC;">
-                        <h3 style="margin: 0 0 10px 0; font-size: 1.1rem; border: none; padding: 0;">Reporte de Estatus de Jornada - ${reportDate}</h3>
+                        <h3 style="margin: 0 0 10px 0; font-size: 1.1rem;">Reporte de Estatus de Jornada - ${reportDate}</h3>
                         <p style="margin: 0 0 16px 0; font-size: 0.9rem;">
                             <strong>Órdenes Totales:</strong> ${totalOrders} | 
                             <strong>Órdenes Terminadas:</strong> ${completedOrders}
@@ -1031,9 +1041,23 @@
             function updateRastreoTable(data, headers) {
                 const table = document.getElementById('rastreoTable');
                 if (!table) return;
+                
+                const isMobile = window.innerWidth <= 992;
 
-                const headersToHide = [TRACKING_KEYS.CREATED_BY, TRACKING_KEYS.NOT_PACKED, TRACKING_KEYS.IS_SCRAP].map(h => findHeader(headers, h)).filter(Boolean);
-                const displayHeaders = headers.filter(h => !headersToHide.includes(h) && h !== 'status');
+                // Definir las columnas a mostrar en cada vista
+                let headersToRender;
+                if (isMobile) {
+                    headersToRender = [
+                        findHeader(headers, TRACKING_KEYS.SERIAL),
+                        findHeader(headers, TRACKING_KEYS.LINE),
+                        findHeader(headers, TRACKING_KEYS.STATION),
+                        findHeader(headers, TRACKING_KEYS.DATE_REGISTERED)
+                    ].filter(Boolean); // Filtrar por si alguna columna no existe
+                } else {
+                    const headersToHide = [TRACKING_KEYS.CREATED_BY, TRACKING_KEYS.NOT_PACKED, TRACKING_KEYS.IS_SCRAP].map(h => findHeader(headers, h)).filter(Boolean);
+                    headersToRender = headers.filter(h => !headersToHide.includes(h) && h !== 'status');
+                }
+
 
                 if (data.length === 0) {
                     table.innerHTML = `<thead><tr><th>No se encontraron resultados para los filtros aplicados.</th></tr></thead>`;
@@ -1041,11 +1065,11 @@
                 }
                 
                 table.innerHTML = `
-                    <thead><tr>${displayHeaders.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+                    <thead><tr>${headersToRender.map(h => `<th>${h}</th>`).join('')}</tr></thead>
                     <tbody>
                         ${data.map(row => `
                             <tr class="is-${row.status}">
-                                ${displayHeaders.map(h => `<td>${formatCell(row[h], h)}</td>`).join('')}
+                                ${headersToRender.map(h => `<td>${formatCell(row[h], h)}</td>`).join('')}
                             </tr>
                         `).join('')}
                     </tbody>`;
@@ -1148,9 +1172,78 @@
                  if (header.toLowerCase().includes('date')) return formatDate(excelSerialToDate(value));
                  return value === undefined ? '' : value;
             }
+
+            // --- NUEVO: Lógica de adaptación a móvil ---
+            let isMobile = window.innerWidth <= 992;
+            const collapsibleCards = [
+                { id: 'uploadCard', title: 'Panel de Control' }, 
+                { id: 'orderListCard', title: 'Órdenes Cargadas' },
+                { id: 'filtersCard', title: 'Filtros y Acciones' }
+            ];
+
+            function setupMobileMode() {
+                collapsibleCards.forEach(cardInfo => {
+                    const cardElement = document.getElementById(cardInfo.id);
+                    if (!cardElement) return;
+
+                    cardElement.classList.add('mobile-collapsible');
+                    const trigger = cardElement.querySelector('h3');
+                    if (trigger) {
+                        trigger.classList.add('mobile-trigger');
+                        // Cambiar el título del primer h3 de la tarjeta de filtros
+                        if (cardInfo.id === 'filtersCard') {
+                            const firstH3 = cardElement.querySelector('.filter-container h3');
+                            if(firstH3) firstH3.textContent = cardInfo.title;
+                        }
+                        // Agregar el evento de clic solo una vez
+                        if (!trigger.dataset.mobileListener) {
+                            trigger.addEventListener('click', () => {
+                                if(window.innerWidth <= 992) { // Solo activar en móvil
+                                    cardElement.classList.toggle('expanded');
+                                }
+                            });
+                            trigger.dataset.mobileListener = 'true';
+                        }
+                    }
+                });
+            }
+
+            function teardownMobileMode() {
+                 collapsibleCards.forEach(cardInfo => {
+                    const cardElement = document.getElementById(cardInfo.id);
+                    if (!cardElement) return;
+
+                    cardElement.classList.remove('mobile-collapsible', 'expanded');
+                    const trigger = cardElement.querySelector('h3');
+                    if(trigger) trigger.classList.remove('mobile-trigger');
+
+                    // Restaurar título original
+                    if (cardInfo.id === 'filtersCard') {
+                         const firstH3 = cardElement.querySelector('.filter-container h3');
+                         if(firstH3) firstH3.textContent = 'Filtrar por Estado';
+                    }
+                 });
+            }
             
-             // Initialize view
+            // Listener para cambiar de modo al redimensionar la ventana
+            window.addEventListener('resize', () => {
+                const newIsMobile = window.innerWidth <= 992;
+                if (newIsMobile !== isMobile) {
+                    isMobile = newIsMobile;
+                    if (isMobile) {
+                        setupMobileMode();
+                    } else {
+                        teardownMobileMode();
+                    }
+                    render(); // Re-renderizar la tabla con las columnas correctas
+                }
+            });
+            
+            // Carga inicial
             loadOrdersFromLocalStorage();
+            if (isMobile) {
+                setupMobileMode();
+            }
 
         });
     </script>
