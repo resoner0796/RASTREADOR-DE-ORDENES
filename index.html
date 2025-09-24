@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Control de Producción (Versión Definitiva)</title>
+    <title>Centro de Control de Producción (Versión Final)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Pako (Compression library for sharing links) -->
@@ -103,7 +103,7 @@
             gap: 16px; text-align: center;
         }
         .stat-item h3 { margin: 0 0 8px 0; font-size: 0.9rem; font-weight: 500; }
-        .stat-item p { margin: 0; font-size: 1.75rem; font-weight: 700; } /* Size adjustment */
+        .stat-item p { margin: 0; font-size: 1.75rem; font-weight: 700; }
         #statOrderNumber, #statCatalogNumber { color: var(--primary-color); } #statPackedQty { color: var(--success-color); }
         #statRemainingQty { color: var(--warning-color); } #statScrapQty { color: var(--danger-color); }
 
@@ -167,7 +167,6 @@
         .modal-overlay.visible .modal-content { transform: scale(1); }
         .modal-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
         .modal-close { font-size: 1.75rem; color: var(--text-dark); cursor: pointer; line-height: 1; position: absolute; top: 16px; right: 16px; }
-        #modalBody textarea { width: 100%; height: 100px; resize: none; background-color: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;}
     </style>
 </head>
 <body>
@@ -181,22 +180,12 @@
                 <h2>Panel de Control</h2>
                 <div class="card">
                     <h3>Cargar Órdenes</h3>
-                     <div id="load-switcher" class="mode-switcher" style="grid-template-columns: 1fr 1fr; margin-bottom:12px;">
-                        <button class="active" data-mode="file">Desde Archivo</button>
-                        <button data-mode="code">Desde Código</button>
+                    <div id="fileDropArea" class="file-drop-area">
+                        <p>Arrastra archivos (.xlsx, .json)</p>
+                        <p><span>o haz clic para seleccionar</span></p>
                     </div>
-                    <div id="file-loader">
-                        <div id="fileDropArea" class="file-drop-area">
-                            <p>Arrastra archivos aquí</p>
-                            <p><span>o haz clic para seleccionar</span></p>
-                        </div>
-                        <input type="file" id="fileInput" accept=".xlsx, .xls" multiple style="display: none;">
-                        <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
-                    </div>
-                    <div id="code-loader" style="display:none;">
-                        <textarea id="shareCodeInput" placeholder="Pega aquí el código para compartir..."></textarea>
-                        <button id="loadCodeBtn" class="btn" style="margin-top:10px;">Cargar desde Código</button>
-                    </div>
+                    <input type="file" id="fileInput" accept=".xlsx, .xls, .json" multiple style="display: none;">
+                    <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
                 </div>
                 <div class="card" style="flex-grow: 1;">
                     <h3>Órdenes Cargadas</h3>
@@ -259,7 +248,7 @@
                              <div style="display: flex; flex-direction: column; gap: 10px;">
                                  <button id="exportViewButton" class="btn" disabled>Exportar Vista a Excel</button>
                                  <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
-                                 <button id="shareLinkButton" class="btn" disabled>Generar Código para Compartir</button>
+                                 <button id="shareSessionButton" class="btn" disabled>Guardar Sesión para Compartir</button>
                              </div>
                         </div>
                     </div>
@@ -337,7 +326,7 @@
             const rastreoLineFiltersPlaceholder = document.getElementById('rastreoLineFiltersPlaceholder');
             const exportViewButton = document.getElementById('exportViewButton');
             const exportStatusButton = document.getElementById('exportStatusButton');
-            const shareLinkButton = document.getElementById('shareLinkButton');
+            const shareSessionButton = document.getElementById('shareSessionButton');
             const lineCountsContainer = document.getElementById('lineCountsContainer');
             const placeholderText = document.getElementById('placeholderText');
             const empaqueFilterInput = document.getElementById('empaqueFilterInput');
@@ -346,11 +335,6 @@
             const modalBody = document.getElementById('modalBody');
             const modalClose = document.getElementById('modalClose');
             const copyReportBtn = document.getElementById('copyReportBtn');
-            const loadSwitcher = document.getElementById('load-switcher');
-            const fileLoader = document.getElementById('file-loader');
-            const codeLoader = document.getElementById('code-loader');
-            const shareCodeInput = document.getElementById('shareCodeInput');
-            const loadCodeBtn = document.getElementById('loadCodeBtn');
 
             // --- EVENT LISTENERS ---
             fileDropArea.addEventListener('click', () => fileInput.click());
@@ -389,21 +373,10 @@
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
             exportViewButton.addEventListener('click', handleExport);
             exportStatusButton.addEventListener('click', handleStatusReport);
-            shareLinkButton.addEventListener('click', generateShareCode);
+            shareSessionButton.addEventListener('click', generateShareFile);
 
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
-
-            loadSwitcher.addEventListener('click', (e) => {
-                if (e.target.matches('button')) {
-                    const mode = e.target.dataset.mode;
-                    loadSwitcher.querySelector('.active').classList.remove('active');
-                    e.target.classList.add('active');
-                    fileLoader.style.display = mode === 'file' ? 'block' : 'none';
-                    codeLoader.style.display = mode === 'code' ? 'block' : 'none';
-                }
-            });
-            loadCodeBtn.addEventListener('click', loadFromCode);
 
             // --- MODAL FUNCTIONS ---
             function showModal(title, message, type = 'info', showCopyBtn = false) {
@@ -454,48 +427,57 @@
                 }
             }
             
-            function generateShareCode() {
+            function generateShareFile() {
                 if (loadedOrders.size === 0) {
-                    showModal('Información', 'No hay órdenes cargadas para generar un código.', 'info');
+                    showModal('Información', 'No hay órdenes cargadas para generar un archivo de sesión.', 'info');
                     return;
                 }
                 const dataString = JSON.stringify(Array.from(loadedOrders.entries()));
-                const compressed = pako.deflate(dataString, { to: 'string' });
-                const encoded = btoa(compressed);
-                
-                const codeHTML = `
-                    <p>Copia y comparte este código. Cualquiera con el código podrá cargar tu sesión de trabajo actual.</p>
-                    <textarea readonly onclick="this.select()">${encoded}</textarea>
-                `;
-                showModal('Código para Compartir Generado', codeHTML, 'success', false);
+                const blob = new Blob([dataString], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const now = new Date();
+                const dateStamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+                a.href = url;
+                a.download = `Sesion_Centro_de_Control_${dateStamp}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showModal('Éxito', 'Se ha guardado el archivo de sesión. Puedes enviarlo a un compañero para que lo cargue aquí.', 'success');
             }
 
-            function loadFromCode() {
-                const encoded = shareCodeInput.value.trim();
-                if (!encoded) {
-                    showModal('Error', 'El campo de código está vacío.', 'error');
-                    return;
-                }
-                 try {
-                    const compressed = atob(encoded);
-                    const uint8array = new Uint8Array(compressed.split('').map(c => c.charCodeAt(0)));
-                    const dataString = pako.inflate(uint8array, { to: 'string' });
-                    
-                    loadedOrders = new Map(JSON.parse(dataString));
-                    saveOrdersToLocalStorage();
-                    updateOrderList();
-                    render();
-                    showModal('Éxito', `${loadedOrders.size} órdenes cargadas correctamente desde el código.`, 'success');
-                    shareCodeInput.value = '';
-                } catch (e) {
-                    console.error("Failed to load data from code", e);
-                    showModal('Error', 'El código para compartir parece estar corrupto o es inválido.', 'error');
-                }
+            function loadFromSessionFile(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const dataString = e.target.result;
+                        const parsedData = JSON.parse(dataString);
+                        loadedOrders = new Map(parsedData);
+                        saveOrdersToLocalStorage();
+                        updateOrderList();
+                        render();
+                        showModal('Éxito', `${loadedOrders.size} órdenes cargadas correctamente desde el archivo de sesión.`, 'success');
+                    } catch (e) {
+                        console.error("Failed to load data from session file", e);
+                        showModal('Error', 'El archivo de sesión parece estar corrupto o es inválido.', 'error');
+                    }
+                };
+                reader.readAsText(file);
             }
 
             // --- FILE HANDLING & DATA PROCESSING ---
             function handleFiles(files, isUpdate = false) {
-                const filePromises = Array.from(files).map(file => processFile(file, isUpdate));
+                const fileList = Array.from(files);
+                const sessionFile = fileList.find(f => f.name.endsWith('.json'));
+
+                if(sessionFile) {
+                    loadFromSessionFile(sessionFile);
+                    return;
+                }
+
+                const excelFiles = fileList.filter(f => f.name.endsWith('.xlsx') || f.name.endsWith('.xls'));
+                const filePromises = excelFiles.map(file => processFile(file, isUpdate));
 
                 Promise.all(filePromises)
                     .then(results => {
@@ -533,7 +515,7 @@
                             const orderData = {
                                 orderQty: parseInt(worksheet['O3']?.v || 0),
                                 packedQty: parseInt(worksheet['U3']?.v || 0),
-                                catalogNumber: worksheet['L3']?.v || 'N/A',
+                                catalogNumber: worksheet['I3']?.v || 'N/A', // Corrected cell
                                 rastreoData: processRastreoData(rastreoRawData),
                                 empaqueData: groupEmpaqueData(packingRawData),
                                 headers: {
@@ -844,7 +826,7 @@
                     document.getElementById('empaqueTable').innerHTML = '';
                     exportViewButton.disabled = true;
                     exportStatusButton.disabled = true;
-                    shareLinkButton.disabled = true;
+                    shareSessionButton.disabled = true;
                     rastreoLineFiltersPlaceholder.textContent = 'Cargue un archivo para ver los filtros.';
                     rastreoLineFiltersPlaceholder.style.display = 'block';
                     rastreoLineFilters.innerHTML = '';
@@ -937,7 +919,7 @@
                 currentVisibleData = filteredData;
                 exportViewButton.disabled = dataToShow.length === 0;
                 exportStatusButton.disabled = loadedOrders.size === 0;
-                shareLinkButton.disabled = loadedOrders.size === 0;
+                shareSessionButton.disabled = loadedOrders.size === 0;
 
 
                 updateRastreoTable(filteredData, headers);
