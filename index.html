@@ -3,129 +3,249 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rastreador de Órdenes Avanzado</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS (xlsx) Library for reading Excel/CSV files -->
+    <title>Panel de Rastreo de Órdenes</title>
+    <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Teko:wght@600&display=swap" rel="stylesheet">
     <!-- Custom Styles -->
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
+        :root {
+            --bg-dark: #111827;
+            --surface-1: #1F2937;
+            --surface-2: #374151;
+            --border-color: #4B5563;
+            --primary-accent: #38BDF8; /* Light Blue */
+            --danger-accent: #F47174;
+            --warning-accent: #FBBF24;
+            --text-light: #F9FAFB;
+            --text-medium: #D1D5DB;
+            --text-dark: #9CA3AF;
         }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            margin: 0;
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1600px;
+            display: grid;
+            grid-template-areas:
+                "header header"
+                "controls results";
+            grid-template-columns: 380px 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 24px;
+        }
+
+        .main-header {
+            grid-area: header;
+            text-align: center;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .main-header h1 {
+            font-family: 'Teko', sans-serif;
+            font-size: 3.5rem;
+            margin: 0;
+            color: var(--text-light);
+            letter-spacing: 2px;
+        }
+        .main-header h1 span {
+            color: var(--primary-accent);
+        }
+
+        .card {
+            background-color: var(--surface-1);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .control-panel { grid-area: controls; display: flex; flex-direction: column; gap: 24px; }
+        .results-panel { grid-area: results; display: flex; flex-direction: column; }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: var(--text-medium);
+            font-weight: 500;
+            font-size: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
         .file-drop-area {
-            transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
         }
         .file-drop-area.dragover {
-            background-color: #e0f2fe;
-            border-color: #38bdf8;
+            background-color: var(--surface-2);
+            border-color: var(--primary-accent);
         }
-        /* Spinner Animation */
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
-     <link rel="preconnect" href="https://rsms.me/">
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-</head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+        .file-drop-area p { margin: 0; color: var(--text-dark); }
+        .file-drop-area span { color: var(--primary-accent); font-weight: 500; }
+        #fileName { font-size: 0.8rem; margin-top: 12px; color: var(--text-medium); }
 
-    <div class="container mx-auto p-4 md:p-8">
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-light);
+            font-family: 'Roboto', sans-serif;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        textarea:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.3);
+        }
         
-        <!-- Header -->
-        <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-sky-600 dark:text-sky-400">Rastreador de Órdenes Avanzado</h1>
-            <p class="mt-2 text-lg text-slate-600 dark:text-slate-400">Sube, pega y analiza los datos de tus órdenes de producción.</p>
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background-color: var(--primary-accent);
+            color: var(--bg-dark);
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 16px;
+        }
+        .btn:hover { background-color: #67CFFB; }
+
+        .filter-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .filter-btn {
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            background-color: var(--surface-2);
+            border: 1px solid var(--border-color);
+            color: var(--text-medium);
+            font-weight: 500;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover { background-color: var(--border-color); color: var(--text-light); }
+        .filter-btn.active {
+            background-color: var(--primary-accent);
+            color: var(--bg-dark);
+            border-color: var(--primary-accent);
+            font-weight: 700;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .stats p { margin: 0; font-size: 1.1rem; color: var(--text-medium); }
+        .stats span { font-weight: 700; color: var(--primary-accent); font-size: 1.25rem; }
+
+        #lineCountsContainer { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .line-badge { background-color: var(--surface-2); padding: 4px 12px; border-radius: 16px; font-size: 0.8rem; font-weight: 500; color: var(--text-dark); }
+        .line-badge span { font-weight: 700; color: var(--text-medium); }
+
+        .table-wrapper { overflow: auto; flex-grow: 1; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        thead { position: sticky; top: 0; background-color: var(--surface-1); }
+        th { font-weight: 700; color: var(--text-dark); text-transform: uppercase; font-size: 0.75rem; }
+        tbody tr.is-scrap { background-color: rgba(244, 113, 116, 0.1); }
+        tbody tr.is-scrap td { color: var(--danger-accent); }
+        tbody tr.not-packed { background-color: rgba(251, 191, 36, 0.1); }
+        tbody tr.not-packed td { color: var(--warning-accent); }
+        tbody tr:not(.is-scrap):not(.not-packed):hover { background-color: var(--surface-2); }
+        
+        #loader, #placeholderText { text-align: center; padding: 60px; color: var(--text-dark); font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header class="main-header">
+            <h1>Panel de Rastreo <span>de Órdenes</span></h1>
         </header>
 
-        <!-- Main Content -->
-        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-            <!-- Left Column: Inputs -->
-            <div class="lg:col-span-1 space-y-6">
-                <!-- File Upload Card -->
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md">
-                    <h2 class="text-xl font-semibold mb-4 border-b border-slate-200 dark:border-slate-700 pb-3">1. Cargar Archivo</h2>
-                    <div id="fileDropArea" class="file-drop-area border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center cursor-pointer">
-                        <svg class="mx-auto h-12 w-12 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                            <span class="font-semibold text-sky-600 dark:text-sky-400">Arrastra y suelta</span> un archivo Excel o CSV aquí
-                        </p>
-                        <p class="text-xs text-slate-500 dark:text-slate-500">o haz clic para seleccionar</p>
-                    </div>
-                    <input type="file" id="fileInput" class="hidden" accept=".xlsx, .xls, .csv">
-                    <p id="fileName" class="text-center mt-3 text-sm text-slate-500"></p>
+        <aside class="control-panel">
+            <div class="card">
+                <h2>1. Cargar Archivo</h2>
+                <div id="fileDropArea" class="file-drop-area">
+                    <p>Arrastra un archivo aquí</p>
+                    <p><span>o haz clic para seleccionar</span></p>
+                    <p id="fileName"></p>
                 </div>
-
-                <!-- Manual Paste Card -->
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md">
-                    <h2 class="text-xl font-semibold mb-4 border-b border-slate-200 dark:border-slate-700 pb-3">2. Pegar Datos Manualmente</h2>
-                    <textarea id="dataInput" rows="8" class="w-full p-3 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition" placeholder="Pega aquí los datos de la tabla..."></textarea>
-                    <button id="processButton" class="w-full mt-4 bg-sky-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition duration-300">
-                        Procesar Datos Pegados
-                    </button>
-                </div>
-                 <!-- Filter Card -->
-                 <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md">
-                    <h2 class="text-xl font-semibold mb-4 border-b border-slate-200 dark:border-slate-700 pb-3">3. Filtrar Seriales</h2>
-                    <input type="text" id="filterInput" class="w-full p-3 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition" placeholder="Buscar por serial, línea, estación...">
-                </div>
+                <input type="file" id="fileInput" class="hidden" accept=".xlsx, .xls, .csv" style="display: none;">
             </div>
 
-            <!-- Right Column: Results -->
-            <div class="lg:col-span-2">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md min-h-[400px]">
-                    <div id="resultsHeader" class="flex flex-wrap justify-between items-center mb-4 border-b border-slate-200 dark:border-slate-700 pb-3">
-                         <h2 class="text-xl font-semibold">Resultados</h2>
-                        <div class="text-right">
-                           <p class="font-semibold text-lg">Orden: <span id="orderNumber" class="text-sky-600 dark:text-sky-400 font-bold">N/A</span></p>
-                           <p class="text-sm text-slate-500 dark:text-slate-400">Total de seriales: <span id="serialCount" class="font-bold">0</span></p>
-                        </div>
-                    </div>
-
-                    <!-- Line Counts Display -->
-                    <div id="lineCounts" class="mb-4 hidden">
-                        <h3 class="font-semibold text-md mb-2">Conteo por Línea:</h3>
-                        <div id="lineCountsContainer" class="flex flex-wrap gap-2"></div>
-                    </div>
-                    
-                    <div id="loader" class="hidden justify-center items-center py-16">
-                        <div class="loader"></div>
-                        <p class="ml-4 text-slate-500 dark:text-slate-400">Procesando archivo...</p>
-                    </div>
-
-                    <div id="output" class="overflow-x-auto">
-                        <p id="placeholderText" class="text-center text-slate-500 dark:text-slate-400 py-16">
-                            Los resultados del rastreo aparecerán aquí.
-                        </p>
-                        <table id="resultsTable" class="min-w-full divide-y divide-slate-200 dark:divide-slate-700 hidden">
-                            <thead class="bg-slate-50 dark:bg-slate-700">
-                                <!-- Headers will be dynamically inserted here -->
-                            </thead>
-                            <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                                <!-- Rows will be dynamically inserted here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <div class="card">
+                <h2>2. Pegado Manual</h2>
+                <textarea id="dataInput" rows="6" placeholder="Pega los datos de la tabla..."></textarea>
+                <button id="processButton" class="btn">Procesar Datos</button>
             </div>
 
+            <div class="card">
+                <h2>3. Filtros</h2>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">Todos</button>
+                    <button class="filter-btn" data-filter="scrap">Scrap</button>
+                    <button class="filter-btn" data-filter="not_packed">Sin Mov.</button>
+                </div>
+                <input type="text" id="filterInput" placeholder="Buscar por serial, línea, etc...">
+            </div>
+        </aside>
+
+        <main class="results-panel card">
+            <div class="results-header">
+                <h2>Resultados</h2>
+                <div class="stats">
+                    <p>Orden: <span id="orderNumber">N/A</span></p>
+                    <p>Total: <span id="serialCount">0</span></p>
+                </div>
+            </div>
+            
+            <div id="lineCountsContainer"></div>
+            
+            <div id="output" class="table-wrapper">
+                <div id="loader" style="display: none;">Procesando archivo...</div>
+                <p id="placeholderText">Sube un archivo o pega los datos para comenzar.</p>
+                <table id="resultsTable" style="display: none;">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </main>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Element mapping
             const fileDropArea = document.getElementById('fileDropArea');
             const fileInput = document.getElementById('fileInput');
             const fileNameDisplay = document.getElementById('fileName');
@@ -138,290 +258,259 @@
             const serialCount = document.getElementById('serialCount');
             const orderNumberDisplay = document.getElementById('orderNumber');
             const placeholderText = document.getElementById('placeholderText');
-            const lineCounts = document.getElementById('lineCounts');
             const lineCountsContainer = document.getElementById('lineCountsContainer');
             const loader = document.getElementById('loader');
+            const filterButtons = document.querySelectorAll('.filter-btn');
 
             let allData = [];
+            let currentFilter = 'all';
 
-            // --- File Drag and Drop Logic ---
+            // --- Event Listeners ---
             fileDropArea.addEventListener('click', () => fileInput.click());
-            fileDropArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                fileDropArea.classList.add('dragover');
-            });
-            fileDropArea.addEventListener('dragleave', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                fileDropArea.classList.remove('dragover');
-            });
+            fileDropArea.addEventListener('dragover', (e) => { e.preventDefault(); fileDropArea.classList.add('dragover'); });
+            fileDropArea.addEventListener('dragleave', () => fileDropArea.classList.remove('dragover'));
             fileDropArea.addEventListener('drop', (e) => {
                 e.preventDefault();
-                e.stopPropagation();
                 fileDropArea.classList.remove('dragover');
-                const files = e.dataTransfer.files;
-                if (files.length) {
-                    handleFile(files[0]);
-                }
+                if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
             });
-            fileInput.addEventListener('change', (e) => {
-                if (e.target.files.length) {
-                    handleFile(e.target.files[0]);
-                }
-            });
+            fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
 
-            // --- Core Logic Handlers ---
             processButton.addEventListener('click', () => {
                 const data = dataInput.value.trim();
-                if(data) {
+                if (data) {
                     resetView();
                     const parsedData = parsePastedData(data);
-                    allData = parsedData;
-                    displayData(allData);
-                } else {
-                    alert("Por favor, pega algunos datos en el área de texto.");
+                    allData = sanitizeData(parsedData);
+                    render();
                 }
             });
-
-            filterInput.addEventListener('input', () => {
-                const filterText = filterInput.value.toLowerCase();
-                if (!allData.length) return;
-
-                const filteredData = allData.filter(row => 
-                    Object.values(row).some(value => 
-                        String(value).toLowerCase().includes(filterText)
-                    )
-                );
-                displayData(filteredData, false); // false to avoid re-creating headers
-                updateLineCounts(filteredData);
-            });
             
+            filterInput.addEventListener('input', render);
+            
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.filter;
+                    render();
+                });
+            });
+
+            // --- Core Functions ---
             function handleFile(file) {
-                fileNameDisplay.textContent = `Archivo: ${file.name}`;
+                fileNameDisplay.textContent = file.name;
                 resetView();
-                loader.style.display = 'flex';
+                loader.style.display = 'block';
                 placeholderText.style.display = 'none';
 
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    
-                    // Convert sheet to an array of arrays to scan for order and headers
-                    const sheetAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    
-                    const { order, headers, dataStartIndex } = findOrderAndTable(sheetAsArray);
-                    
-                    orderNumberDisplay.textContent = order || 'No encontrado';
-                    
-                    if(headers) {
-                       // Now convert sheet to JSON with detected headers
-                        const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-                            range: dataStartIndex -1 // SheetJS range is 0-indexed, but we found row number
-                        });
+                reader.onload = (e) => {
+                    try {
+                        const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const sheetArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
 
-                        // Standardize keys to lowercase for easier access
-                        const standardizedData = jsonData.map(row => {
-                           const newRow = {};
-                           for (const key in row) {
-                               newRow[key.trim().toLowerCase()] = row[key];
-                           }
-                           return newRow;
-                        });
+                        const { order, headers, dataRowIndex } = findOrderAndTable(sheetArray);
+                        orderNumberDisplay.textContent = order || 'No encontrado';
 
-                        allData = extractRelevantData(standardizedData);
-                        displayData(allData);
-                    } else {
-                        placeholderText.textContent = "No se pudo detectar una tabla con cabeceras válidas (ej. 'Serial', 'Linea').";
+                        if (headers && dataRowIndex > 0) {
+                            const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: dataRowIndex });
+                            allData = sanitizeData(jsonData);
+                            render();
+                        } else {
+                            placeholderText.textContent = "Error: No se pudo detectar una tabla con cabeceras válidas. Verifique el archivo.";
+                            placeholderText.style.display = 'block';
+                        }
+                    } catch (error) {
+                        console.error("Error processing file:", error);
+                        placeholderText.textContent = "Ocurrió un error al procesar el archivo. Verifique que sea un formato válido.";
                         placeholderText.style.display = 'block';
+                    } finally {
+                        loader.style.display = 'none';
                     }
-                    loader.style.display = 'none';
                 };
                 reader.readAsArrayBuffer(file);
             }
-            
-            /**
-             * Scans the sheet (as an array) to find the order number and the table's header row.
-             * Returns the order number, the detected headers, and the starting row index of data.
-             */
+
             function findOrderAndTable(sheetArray) {
                 let order = null;
                 let headers = null;
-                let dataStartIndex = -1;
-                const MAX_SCAN_ROWS = 20; // Scan up to 20 rows for order/headers
-                const REQUIRED_HEADERS = ['serial', 'linea', 'estacion'];
+                let dataRowIndex = -1;
+                
+                // Headers provided by the user, converted to lowercase for robust matching
+                const TARGET_HEADERS = ['producto serial number', 'creation date', 'created by', 'not packed', 'is scrap', 'área', 'line', 'employee', 'status', 'date registered'];
 
-                for (let i = 0; i < sheetArray.length && i < MAX_SCAN_ROWS; i++) {
-                    const row = sheetArray[i];
+                for (let i = 0; i < sheetArray.length; i++) {
+                    const row = sheetArray[i].map(cell => String(cell).trim());
                     
-                    // 1. Look for order number
+                    // Find Order Number: Look for "Order Number" and grab the value from the cell below.
                     if (!order) {
-                        for(const cell of row) {
-                            const cellStr = String(cell).toLowerCase();
-                            if(cellStr.includes('orden') || cellStr.includes('order')) {
-                                // Find the value in the same cell or the next one
-                                const match = String(cell).match(/:\s*(\w+)|(\d+)/);
-                                if(match && match[1]) {
-                                    order = match[1];
-                                } else if (row[row.indexOf(cell) + 1]) {
-                                    order = row[row.indexOf(cell) + 1];
-                                }
-                                break; 
-                            }
+                        const cellIndex = row.findIndex(cell => cell.toLowerCase() === 'order number');
+                        if (cellIndex !== -1 && sheetArray[i + 1] && sheetArray[i + 1][cellIndex]) {
+                            order = String(sheetArray[i + 1][cellIndex]).trim();
                         }
                     }
-
-                    // 2. Look for header row
+                    
+                    // Find Header Row
                     if (!headers) {
-                        const lowercasedRow = row.map(h => String(h).trim().toLowerCase());
-                        let foundHeaders = 0;
-                        REQUIRED_HEADERS.forEach(reqHeader => {
-                            if(lowercasedRow.includes(reqHeader)) {
-                                foundHeaders++;
-                            }
-                        });
-
-                        if (foundHeaders >= 2) { // Be flexible, require at least 2 key headers
-                            headers = row.map(h => String(h).trim());
-                            dataStartIndex = i + 1; // Data starts on the next row
+                        const lowercasedRow = row.map(h => h.toLowerCase());
+                        const foundHeaders = TARGET_HEADERS.filter(target => lowercasedRow.includes(target));
+                        
+                        // We need a high confidence match, e.g., at least 5 of the target headers
+                        if (foundHeaders.length >= 5) {
+                            headers = row; // Keep original casing for display
+                            dataRowIndex = i; // The header row itself for sheet_to_json range
                         }
                     }
-
+                    
                     if (order && headers) break;
                 }
-
-                return { order, headers, dataStartIndex };
+                return { order, headers, dataRowIndex };
             }
             
-            /**
-             * Takes the raw JSON data and extracts/maps it to a consistent format.
-             */
-            function extractRelevantData(data) {
+            function sanitizeData(data) {
+                // This maps various possible header names from the file to a single, standard key we use in the app
                 const MAPPING = {
-                    'serial': ['serial', 'serial number', 'numero de serie'],
-                    'linea': ['linea', 'line'],
-                    'estacion': ['estacion', 'station'],
-                    'fecha': ['fecha', 'date', 'timestamp'],
-                    'status': ['status', 'estado']
+                    'Serial': ['producto serial number'],
+                    'Línea': ['line'],
+                    'Status': ['status'],
+                    'Es Scrap': ['is scrap'],
+                    'No Empacado': ['not packed'],
+                    'Fecha Creación': ['creation date', 'date registered'],
+                    'Área': ['área'],
+                    'Empleado': ['employee', 'created by']
                 };
+                
+                // The headers we want to display in the final table, and in this order
+                const DISPLAY_HEADERS = ['Serial', 'Línea', 'Status', 'Es Scrap', 'No Empacado', 'Fecha Creación', 'Área', 'Empleado'];
 
                 return data.map(rawRow => {
                     const newRow = {};
+                    // First, create a lowercase key version of the raw row for easy lookup
+                    const rawKeys = Object.keys(rawRow).reduce((acc, key) => {
+                        acc[key.trim().toLowerCase()] = rawRow[key];
+                        return acc;
+                    }, {});
+                    
+                    // Map the data using our MAPPING
                     for (const standardKey in MAPPING) {
                         for (const possibleKey of MAPPING[standardKey]) {
-                            if (rawRow[possibleKey] !== undefined) {
-                                newRow[standardKey.charAt(0).toUpperCase() + standardKey.slice(1)] = rawRow[possibleKey];
-                                break;
+                            if (rawKeys[possibleKey] !== undefined) {
+                                newRow[standardKey] = rawKeys[possibleKey];
+                                break; // Stop after finding the first match for a standard key
                             }
                         }
                     }
                     return newRow;
-                }).filter(row => row.Serial); // Only include rows that have a serial number
+                }).filter(row => row.Serial); // Only keep rows that actually have a serial number
             }
-            
-            function parsePastedData(pastedText) {
-                const rows = pastedText.split('\n').filter(row => row.trim() !== '');
-                if (rows.length < 2) return [];
 
+            function parsePastedData(text) {
+                // This function is for the manual paste feature
+                const rows = text.split('\n').filter(r => r.trim() !== '');
+                if (rows.length < 2) return [];
                 const headers = rows[0].split('\t').map(h => h.trim());
                 return rows.slice(1).map(rowText => {
                     const values = rowText.split('\t');
-                    const rowObject = {};
-                    headers.forEach((header, index) => {
-                        rowObject[header] = values[index] ? values[index].trim() : '';
-                    });
-                    return rowObject;
+                    return headers.reduce((obj, header, i) => {
+                        obj[header] = values[i] ? values[i].trim() : '';
+                        return obj;
+                    }, {});
                 });
             }
 
-            function displayData(data, createHeaders = true) {
+            function render() {
+                // 1. Apply filters to the master data list
+                let filteredData = allData;
+                
+                const isAffirmative = (val) => ['true', '1', 'yes'].includes(String(val).toLowerCase());
+
+                if (currentFilter === 'scrap') {
+                    filteredData = filteredData.filter(row => isAffirmative(row['Es Scrap']));
+                } else if (currentFilter === 'not_packed') {
+                    filteredData = filteredData.filter(row => isAffirmative(row['No Empacado']));
+                }
+
+                const searchText = filterInput.value.toLowerCase();
+                if (searchText) {
+                    filteredData = filteredData.filter(row =>
+                        Object.values(row).some(val => String(val).toLowerCase().includes(searchText))
+                    );
+                }
+
+                // 2. Update all UI components with the filtered data
+                updateTable(filteredData);
+                updateLineCounts(filteredData);
+                serialCount.textContent = filteredData.length;
+            }
+
+            function updateTable(data) {
                 tableBody.innerHTML = '';
 
-                if (data.length === 0) {
-                    serialCount.textContent = '0';
+                if (allData.length === 0) {
+                     placeholderText.textContent = 'Sube un archivo o pega los datos para comenzar.';
+                     placeholderText.style.display = 'block';
+                     resultsTable.style.display = 'none';
+                     return;
+                }
+
+                if (!data.length) {
                     resultsTable.style.display = 'none';
-                    placeholderText.textContent = 'No se encontraron datos que coincidan con la búsqueda.';
+                    placeholderText.textContent = 'No se encontraron resultados para los filtros aplicados.';
                     placeholderText.style.display = 'block';
-                    lineCounts.style.display = 'none';
                     return;
                 }
                 
                 resultsTable.style.display = 'table';
                 placeholderText.style.display = 'none';
-                
-                // --- Create Table Headers (only once) ---
-                if (createHeaders && data.length > 0) {
-                    const headers = Object.keys(data[0]);
-                    tableHead.innerHTML = `<tr>${headers.map(h => `<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">${h}</th>`).join('')}</tr>`;
-                }
 
-                // --- Populate Table Body ---
+                // Define headers based on our desired display order
+                const headers = ['Serial', 'Línea', 'Status', 'Es Scrap', 'No Empacado', 'Fecha Creación', 'Área', 'Empleado'];
+                tableHead.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+
+                // Populate rows
+                const isAffirmative = (val) => ['true', '1', 'yes'].includes(String(val).toLowerCase());
                 data.forEach(row => {
                     const tr = document.createElement('tr');
-                    
-                    // Apply conditional coloring
-                    const status = (row.Status || row.status || '').toLowerCase();
-                    if (status.includes('scrap')) {
-                        tr.className = 'bg-red-100 dark:bg-red-900/50 hover:bg-red-200 dark:hover:bg-red-900/70';
-                    } else if (status.includes('sin movimiento')) {
-                         tr.className = 'bg-yellow-100 dark:bg-yellow-900/50 hover:bg-yellow-200 dark:hover:bg-yellow-900/70';
-                    } else {
-                        tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-700/50';
-                    }
+                    const isScrap = isAffirmative(row['Es Scrap']);
+                    const notPacked = isAffirmative(row['No Empacado']);
 
-                    // Create cells
-                    const headers = Object.keys(data[0]);
-                    tr.innerHTML = headers.map(header => `<td class="px-6 py-4 whitespace-nowrap text-sm">${row[header] || ''}</td>`).join('');
+                    if (isScrap) tr.classList.add('is-scrap');
+                    else if (notPacked) tr.classList.add('not-packed');
+                    
+                    tr.innerHTML = headers.map(h => `<td>${row[h] || ''}</td>`).join('');
                     tableBody.appendChild(tr);
                 });
-                
-                serialCount.textContent = data.length;
-                updateLineCounts(data);
             }
-            
-            function updateLineCounts(data) {
-                if (data.length === 0) {
-                    lineCounts.style.display = 'none';
-                    return;
-                }
 
+            function updateLineCounts(data) {
                 const counts = data.reduce((acc, row) => {
-                    const line = row.Linea || row.linea;
-                    if(line) {
-                       acc[line] = (acc[line] || 0) + 1;
-                    }
+                    const line = row['Línea'];
+                    if (line) acc[line] = (acc[line] || 0) + 1;
                     return acc;
                 }, {});
-
-                if (Object.keys(counts).length > 0) {
-                    lineCountsContainer.innerHTML = Object.entries(counts).map(([line, count]) => 
-                        `<div class="bg-sky-100 dark:bg-sky-900/70 text-sky-800 dark:text-sky-200 text-xs font-semibold mr-2 px-2.5 py-1 rounded-full">
-                            ${line}: <span class="font-bold">${count}</span>
-                         </div>`
-                    ).join('');
-                    lineCounts.style.display = 'block';
-                } else {
-                    lineCounts.style.display = 'none';
-                }
+                
+                lineCountsContainer.innerHTML = Object.entries(counts).map(([line, count]) =>
+                    `<div class="line-badge">${line}: <span>${count}</span></div>`
+                ).join('');
             }
 
             function resetView() {
                 allData = [];
-                tableBody.innerHTML = '';
-                tableHead.innerHTML = '';
-                serialCount.textContent = '0';
-                orderNumberDisplay.textContent = 'N/A';
-                resultsTable.style.display = 'none';
-                lineCounts.style.display = 'none';
+                currentFilter = 'all';
+                filterButtons.forEach(b => b.classList.remove('active'));
+                document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
                 filterInput.value = '';
                 dataInput.value = '';
                 fileInput.value = '';
                 fileNameDisplay.textContent = '';
-                placeholderText.textContent = 'Los resultados del rastreo aparecerán aquí.';
+                orderNumberDisplay.textContent = 'N/A';
+                placeholderText.textContent = 'Sube un archivo o pega los datos para comenzar.';
                 placeholderText.style.display = 'block';
+                resultsTable.style.display = 'none';
+                lineCountsContainer.innerHTML = '';
+                serialCount.textContent = '0';
             }
         });
     </script>
