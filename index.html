@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control de Órdenes (Final v2)</title>
+    <title>Panel de Control de Órdenes (Definitivo)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
@@ -44,7 +44,7 @@
 
         .controls-header {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 1fr 2fr;
             gap: 24px;
         }
 
@@ -55,13 +55,14 @@
             border: 1px solid var(--border-color);
         }
 
-        h2 {
+        h2, h3 {
             margin-top: 0;
             margin-bottom: 16px;
             color: var(--text-secondary);
             font-weight: 600;
             font-size: 1.1rem;
         }
+        h3 { font-size: 0.9rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
 
         .file-drop-area {
             border: 2px dashed var(--border-color);
@@ -71,84 +72,48 @@
             cursor: pointer;
             transition: background-color 0.2s ease, border-color 0.2s ease;
         }
-        .file-drop-area.dragover {
-            background-color: #334155;
-            border-color: var(--primary-color);
-        }
+        .file-drop-area.dragover { background-color: #334155; border-color: var(--primary-color); }
         .file-drop-area p { margin: 0; color: var(--text-dark); }
         .file-drop-area span { color: var(--primary-color); font-weight: 500; }
         #fileName { font-size: 0.8rem; margin-top: 12px; color: var(--text-secondary); height: 1em; }
 
         input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            background-color: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            box-sizing: border-box;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            width: 100%; padding: 10px; background-color: var(--bg-color);
+            border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);
+            font-family: 'Inter', sans-serif; box-sizing: border-box; transition: all 0.2s;
         }
         input[type="text"]:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+            outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
         }
         
-        .filter-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
+        .filter-container { display: flex; flex-direction: column; gap: 16px; }
+        .filter-group { display: flex; flex-wrap: wrap; gap: 10px; }
+
         .filter-btn {
-            padding: 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            background-color: #334155;
-            border: 1px solid #475569;
-            color: var(--text-secondary);
-            font-weight: 500;
-            text-align: center;
-            transition: all 0.2s;
+            padding: 8px 16px; border-radius: 6px; cursor: pointer; background-color: #334155;
+            border: 1px solid #475569; color: var(--text-secondary); font-weight: 500;
+            text-align: center; transition: all 0.2s;
         }
         .filter-btn:hover { background-color: #475569; color: var(--text-primary); }
         .filter-btn.active {
-            background-color: var(--primary-color);
-            color: var(--bg-color);
-            border-color: var(--primary-color);
-            font-weight: 700;
+            color: var(--bg-color); font-weight: 700;
+            background-color: var(--primary-color); border-color: var(--primary-color);
         }
         
         .summary-card {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 24px;
-            text-align: center;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px; text-align: center;
         }
         .stat-item h3 {
-            margin: 0 0 8px 0;
-            font-size: 1rem;
-            color: var(--text-secondary);
-            font-weight: 500;
+            margin: 0 0 8px 0; font-size: 1rem; color: var(--text-secondary); font-weight: 500;
         }
-        .stat-item p {
-            margin: 0;
-            font-size: 2.25rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
+        .stat-item p { margin: 0; font-size: 2.25rem; font-weight: 700; color: var(--text-primary); }
         #statOrderNumber { color: var(--primary-color); }
         #statPackedQty { color: var(--success-color); }
         #statRemainingQty { color: var(--warning-color); }
         #statScrapQty { color: var(--danger-color); }
 
-        .results-card {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
+        .results-card { flex-grow: 1; display: flex; flex-direction: column; }
         #lineCountsContainer { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
         .line-badge { background-color: #334155; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem; font-weight: 500; color: var(--text-dark); }
         .line-badge span { font-weight: 700; color: var(--text-secondary); }
@@ -165,7 +130,6 @@
         tbody tr.is-delayed td { color: var(--warning-color); }
         tbody tr.is-today { background-color: rgba(52, 211, 153, 0.1); }
         tbody tr.is-today td { color: var(--success-color); }
-        
         tbody tr:not(.is-scrap):not(.is-delayed):not(.is-today):hover { background-color: #334155; }
         
         #loader, #placeholderText { text-align: center; padding: 60px; color: var(--text-dark); font-size: 1.1rem; }
@@ -176,46 +140,43 @@
     <div class="container">
         <header class="controls-header">
             <div class="card">
-                <h2>1. Cargar Archivo de Excel</h2>
+                <h2>1. Cargar Archivo</h2>
                 <div id="fileDropArea" class="file-drop-area">
-                    <p>Arrastra un archivo aquí</p>
+                    <p>Arrastra un archivo de Excel aquí</p>
                     <p><span>o haz clic para seleccionar</span></p>
                     <p id="fileName"></p>
                 </div>
                 <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
             </div>
             <div class="card">
-                <h2>2. Filtros de Visualización</h2>
-                <div class="filter-buttons">
-                    <button class="filter-btn active" data-filter="all">Todos</button>
-                    <button class="filter-btn" data-filter="scrap">Scrap</button>
-                    <button class="filter-btn" data-filter="delayed">Retrasados</button>
+                <h2>2. Filtros</h2>
+                <div class="filter-container">
+                    <div>
+                        <h3>Filtrar por Estado</h3>
+                        <div id="statusFilters" class="filter-group">
+                            <button class="filter-btn active" data-filter="all">Todos</button>
+                            <button class="filter-btn" data-filter="today">En Movimiento (Hoy)</button>
+                            <button class="filter-btn" data-filter="delayed">Sin Movimiento</button>
+                            <button class="filter-btn" data-filter="scrap">Scrap</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>Filtrar por Línea</h3>
+                        <div id="lineFilters" class="filter-group">
+                             <p id="lineFiltersPlaceholder" class="text-dark" style="font-size: 0.9rem;">Cargue un archivo para ver los filtros de línea.</p>
+                        </div>
+                    </div>
+                     <input type="text" id="filterInput" placeholder="Buscar por serial, status, etc...">
                 </div>
-                <input type="text" id="filterInput" placeholder="Buscar por serial, línea, etc...">
             </div>
         </header>
 
         <section class="summary-card card">
-            <div class="stat-item">
-                <h3>Número de Orden</h3>
-                <p id="statOrderNumber">N/A</p>
-            </div>
-            <div class="stat-item">
-                <h3>Cantidad de Orden</h3>
-                <p id="statOrderQty">0</p>
-            </div>
-            <div class="stat-item">
-                <h3>Cantidad Empacada</h3>
-                <p id="statPackedQty">0</p>
-            </div>
-             <div class="stat-item">
-                <h3>Restante</h3>
-                <p id="statRemainingQty">0</p>
-            </div>
-             <div class="stat-item">
-                <h3>Cantidad en Scrap</h3>
-                <p id="statScrapQty">0</p>
-            </div>
+            <div class="stat-item"><h3>Número de Orden</h3><p id="statOrderNumber">N/A</p></div>
+            <div class="stat-item"><h3>Cantidad de Orden</h3><p id="statOrderQty">0</p></div>
+            <div class="stat-item"><h3>Cantidad Empacada</h3><p id="statPackedQty">0</p></div>
+            <div class="stat-item"><h3>Restante</h3><p id="statRemainingQty">0</p></div>
+            <div class="stat-item"><h3>Cantidad en Scrap</h3><p id="statScrapQty">0</p></div>
         </section>
 
         <main class="results-card card">
@@ -223,10 +184,7 @@
             <div id="output" class="table-wrapper">
                 <div id="loader" style="display: none;">Procesando archivo...</div>
                 <p id="placeholderText">Cargue un archivo para comenzar.</p>
-                <table id="resultsTable" style="display: none;">
-                    <thead></thead>
-                    <tbody></tbody>
-                </table>
+                <table id="resultsTable" style="display: none;"><thead></thead><tbody></tbody></table>
             </div>
         </main>
     </div>
@@ -235,13 +193,12 @@
         document.addEventListener('DOMContentLoaded', () => {
             // --- GLOBAL STATE AND CONSTANTS ---
             let allData = [];
-            let currentFilter = 'all';
+            let currentStatusFilter = 'all';
+            let currentLineFilter = 'all';
 
             const KEY_HEADER_TEXT = {
-                IS_SCRAP: 'Is Scrap',
-                NOT_PACKED: 'Not Packed',
-                CREATED_BY: 'Created By',
-                DATE_REGISTERED: 'Date Registered' // Main date for status logic
+                IS_SCRAP: 'Is Scrap', NOT_PACKED: 'Not Packed',
+                CREATED_BY: 'Created By', DATE_REGISTERED: 'Date Registered'
             };
             const TARGET_COLUMNS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
 
@@ -261,36 +218,41 @@
             const placeholderText = document.getElementById('placeholderText');
             const lineCountsContainer = document.getElementById('lineCountsContainer');
             const loader = document.getElementById('loader');
-            const filterButtons = document.querySelectorAll('.filter-btn');
+            const statusFiltersContainer = document.getElementById('statusFilters');
+            const lineFiltersContainer = document.getElementById('lineFilters');
+            const lineFiltersPlaceholder = document.getElementById('lineFiltersPlaceholder');
 
             // --- EVENT LISTENERS ---
             fileDropArea.addEventListener('click', () => fileInput.click());
             fileDropArea.addEventListener('dragover', (e) => { e.preventDefault(); fileDropArea.classList.add('dragover'); });
             fileDropArea.addEventListener('dragleave', () => fileDropArea.classList.remove('dragover'));
             fileDropArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                fileDropArea.classList.remove('dragover');
+                e.preventDefault(); fileDropArea.classList.remove('dragover');
                 if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
             });
             fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
             
             filterInput.addEventListener('input', render);
             
-            filterButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    filterButtons.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    currentFilter = btn.dataset.filter;
+            statusFiltersContainer.addEventListener('click', (e) => {
+                if (e.target.matches('.filter-btn')) {
+                    statusFiltersContainer.querySelector('.active').classList.remove('active');
+                    e.target.classList.add('active');
+                    currentStatusFilter = e.target.dataset.filter;
                     render();
-                });
+                }
             });
 
             // --- HELPER FUNCTIONS ---
             function excelSerialToDate(serial) {
-                // This improved function correctly handles timezone offsets.
                 if (typeof serial !== 'number' || isNaN(serial)) return null;
-                const excelEpoch = new Date(Date.UTC(1899, 11, 30));
-                return new Date(excelEpoch.getTime() + serial * 24 * 60 * 60 * 1000);
+                // This formula correctly converts Excel's serial number to a JS Date object
+                // without being affected by timezones during the conversion itself.
+                const excelEpoch = new Date(1899, 11, 30);
+                const jsDate = new Date(excelEpoch.getTime() + (serial * 86400000));
+                // Adjust for timezone offset to match local time representation from Excel
+                const timezoneOffset = jsDate.getTimezoneOffset() * 60000;
+                return new Date(jsDate.getTime() + timezoneOffset);
             }
 
             function formatDate(date) {
@@ -320,7 +282,6 @@
                         const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
                         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                         
-                        // 1. Extract and display summary stats
                         const orderQty = parseInt(worksheet['O3']?.v || 0);
                         const packedQty = parseInt(worksheet['U3']?.v || 0);
                         statOrderNumber.textContent = worksheet['B3']?.v || 'N/A';
@@ -328,7 +289,6 @@
                         statPackedQty.textContent = packedQty;
                         statRemainingQty.textContent = orderQty - packedQty;
 
-                        // 2. Extract and process table data
                         allData = extractTableData(worksheet);
 
                         if (allData.length > 0) {
@@ -336,6 +296,7 @@
                             const scrapHeader = findHeader(headers, KEY_HEADER_TEXT.IS_SCRAP);
                             const scrapCount = allData.filter(row => String(row[scrapHeader]).trim().toUpperCase() === 'X').length;
                             statScrapQty.textContent = scrapCount;
+                            createLineFilters(headers);
                             render();
                         } else {
                            placeholderText.textContent = "Se procesó el archivo, pero no se encontró la tabla de datos en la fila 20 o no contiene información.";
@@ -353,17 +314,12 @@
 
             function extractTableData(worksheet) {
                 const headers = {};
-                let headerFound = false;
-
                 TARGET_COLUMNS.forEach(col => {
                     const cell = worksheet[col + '20'];
-                    if (cell && cell.v) {
-                        headers[col] = cell.v.toString().trim();
-                        headerFound = true;
-                    }
+                    if (cell && cell.v) headers[col] = cell.v.toString().trim();
                 });
 
-                if (!headerFound) return [];
+                if (Object.keys(headers).length === 0) return [];
 
                 const jsonData = [];
                 const range = XLSX.utils.decode_range(worksheet['!ref']);
@@ -379,11 +335,44 @@
                             if (cell && cell.v) hasData = true;
                         }
                     });
-                    if (hasData) {
-                        jsonData.push(row);
-                    }
+                    if (hasData) jsonData.push(row);
                 }
                 return jsonData;
+            }
+
+            function createLineFilters(headers) {
+                const lineHeader = findHeader(headers, 'Line');
+                if (!lineHeader) {
+                    lineFiltersPlaceholder.textContent = "No se encontró la columna 'Line'.";
+                    return;
+                }
+
+                const uniqueLines = [...new Set(allData.map(row => row[lineHeader]).filter(Boolean))].sort();
+                lineFiltersContainer.innerHTML = '';
+                lineFiltersPlaceholder.style.display = 'none';
+
+                const allBtn = document.createElement('button');
+                allBtn.className = 'filter-btn active';
+                allBtn.textContent = 'Todas';
+                allBtn.dataset.filter = 'all';
+                lineFiltersContainer.appendChild(allBtn);
+
+                uniqueLines.forEach(line => {
+                    const lineBtn = document.createElement('button');
+                    lineBtn.className = 'filter-btn';
+                    lineBtn.textContent = line;
+                    lineBtn.dataset.filter = line;
+                    lineFiltersContainer.appendChild(lineBtn);
+                });
+
+                lineFiltersContainer.addEventListener('click', (e) => {
+                    if (e.target.matches('.filter-btn')) {
+                        lineFiltersContainer.querySelector('.active').classList.remove('active');
+                        e.target.classList.add('active');
+                        currentLineFilter = e.target.dataset.filter;
+                        render();
+                    }
+                });
             }
 
             // --- UI RENDERING ---
@@ -396,19 +385,18 @@
                 const dateRegisteredHeader = findHeader(headers, KEY_HEADER_TEXT.DATE_REGISTERED);
                 const createdByHeader = findHeader(headers, KEY_HEADER_TEXT.CREATED_BY);
                 const lineHeader = findHeader(headers, 'Line');
-
-                const today = new Date();
                 
+                const today = new Date();
+
                 let processedData = allData.map(row => {
                     let status = 'normal';
                     const isScrap = String(row[scrapHeader]).trim().toUpperCase() === 'X';
-
                     if (isScrap) {
                         status = 'scrap';
                     } else {
                         const registeredDate = excelSerialToDate(row[dateRegisteredHeader]);
                         if (registeredDate instanceof Date) {
-                            if (registeredDate.toLocaleDateString() === today.toLocaleDateString()) {
+                            if (registeredDate.toDateString() === today.toDateString()) {
                                 status = 'today';
                             } else if (registeredDate < today) {
                                 status = 'delayed';
@@ -419,10 +407,12 @@
                 });
                 
                 let filteredData = processedData;
-                if (currentFilter === 'scrap') {
-                    filteredData = processedData.filter(row => row.status === 'scrap');
-                } else if (currentFilter === 'delayed') {
-                    filteredData = processedData.filter(row => row.status === 'delayed');
+
+                if (currentStatusFilter !== 'all') {
+                    filteredData = processedData.filter(row => row.status === currentStatusFilter);
+                }
+                if (currentLineFilter !== 'all') {
+                    filteredData = filteredData.filter(row => row[lineHeader] === currentLineFilter);
                 }
 
                 const searchText = filterInput.value.toLowerCase();
@@ -456,7 +446,7 @@
 
                 data.forEach(row => {
                     const tr = document.createElement('tr');
-                    tr.classList.add(`is-${row.status}`);
+                    tr.className = `is-${row.status}`;
                     
                     let cells = '';
                     displayHeaders.forEach(header => {
@@ -473,8 +463,7 @@
 
             function updateLineCounts(data, lineHeader) {
                 if (!lineHeader) {
-                    lineCountsContainer.innerHTML = '';
-                    return;
+                    lineCountsContainer.innerHTML = ''; return;
                 }
                 const counts = data.reduce((acc, row) => {
                     const line = row[lineHeader];
@@ -495,9 +484,13 @@
                 statPackedQty.textContent = '0';
                 statRemainingQty.textContent = '0';
                 statScrapQty.textContent = '0';
-                currentFilter = 'all';
-                filterButtons.forEach(b => b.classList.remove('active'));
-                document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
+                currentStatusFilter = 'all';
+                currentLineFilter = 'all';
+                statusFiltersContainer.querySelector('.active').classList.remove('active');
+                statusFiltersContainer.querySelector('[data-filter="all"]').classList.add('active');
+                lineFiltersContainer.innerHTML = '';
+                lineFiltersPlaceholder.style.display = 'block';
+                lineFiltersPlaceholder.textContent = "Cargue un archivo para ver los filtros de línea.";
                 filterInput.value = '';
                 placeholderText.textContent = 'Cargue un archivo para comenzar.';
                 resultsTable.style.display = 'none';
@@ -507,4 +500,3 @@
     </script>
 </body>
 </html>
-
