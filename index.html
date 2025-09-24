@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control de Órdenes (Solución Definitiva)</title>
+    <title>Centro de Control de Producción</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
@@ -13,119 +13,71 @@
     <!-- Custom Styles -->
     <style>
         :root {
-            --bg-color: #0F172A;
-            --surface-color: #1E293B;
-            --border-color: #334155;
-            --primary-color: #38BDF8;
-            --danger-color: #FB7185;
-            --warning-color: #FBBF24;
-            --success-color: #34D399;
-            --text-primary: #F8FAFC;
-            --text-secondary: #94A3B8;
+            --bg-color: #0F172A; --surface-color: #1E293B; --border-color: #334155;
+            --primary-color: #38BDF8; --danger-color: #FB7185; --warning-color: #FBBF24;
+            --success-color: #34D399; --text-primary: #F8FAFC; --text-secondary: #94A3B8;
             --text-dark: #64748B;
         }
-
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            margin: 0;
-            padding: 24px;
+            font-family: 'Inter', sans-serif; background-color: var(--bg-color);
+            color: var(--text-primary); margin: 0; padding: 24px;
+            display: flex; justify-content: center;
         }
-
-        .container {
-            width: 100%;
-            max-width: 1800px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
+        .main-container {
+            width: 100%; max-width: 1800px; display: grid;
+            grid-template-columns: 280px 1fr; grid-template-rows: auto 1fr;
+            grid-template-areas: "sidebar header" "sidebar main"; gap: 24px;
         }
-
-        .controls-header {
-            display: grid;
-            grid-template-columns: 1fr 2fr 1fr;
-            gap: 24px;
+        .sidebar {
+            grid-area: sidebar; background-color: var(--surface-color); border-radius: 12px;
+            padding: 24px; display: flex; flex-direction: column; gap: 16px;
         }
-
+        .header { grid-area: header; }
+        .main-content { grid-area: main; display: flex; flex-direction: column; gap: 24px; }
         .card {
-            background-color: var(--surface-color);
-            border-radius: 12px;
-            padding: 24px;
-            border: 1px solid var(--border-color);
+            background-color: var(--surface-color); border-radius: 12px;
+            padding: 24px; border: 1px solid var(--border-color);
         }
-
         h2, h3 {
-            margin-top: 0;
-            margin-bottom: 16px;
-            color: var(--text-secondary);
-            font-weight: 600;
-            font-size: 1.1rem;
+            margin-top: 0; margin-bottom: 16px; color: var(--text-secondary);
+            font-weight: 600; font-size: 1.1rem;
         }
-        h3 { font-size: 0.9rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
-
+        h3 { font-size: 0.9rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;}
         .file-drop-area {
-            border: 2px dashed var(--border-color);
-            border-radius: 8px;
-            padding: 40px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: background-color 0.2s ease, border-color 0.2s ease;
+            border: 2px dashed var(--border-color); border-radius: 8px; padding: 30px 20px;
+            text-align: center; cursor: pointer; transition: all 0.2s ease;
         }
         .file-drop-area.dragover { background-color: #334155; border-color: var(--primary-color); }
         .file-drop-area p { margin: 0; color: var(--text-dark); }
         .file-drop-area span { color: var(--primary-color); font-weight: 500; }
-        #fileName { font-size: 0.8rem; margin-top: 12px; color: var(--text-secondary); height: 1em; }
-
-        input[type="text"] {
-            width: 100%; padding: 10px; background-color: var(--bg-color);
-            border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);
-            font-family: 'Inter', sans-serif; box-sizing: border-box; transition: all 0.2s;
+        #orderList .order-btn {
+            width: 100%; text-align: left; padding: 12px; border-radius: 6px;
+            border: 1px solid var(--border-color); background-color: #334155;
+            color: var(--text-secondary); cursor: pointer; transition: all 0.2s;
         }
-        input[type="text"]:focus {
-            outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+        #orderList .order-btn:hover { background-color: #475569; color: var(--text-primary); }
+        #orderList .order-btn.active {
+            background-color: var(--primary-color); color: var(--bg-color);
+            font-weight: 700; border-color: var(--primary-color);
         }
-        
-        .filter-container { display: flex; flex-direction: column; gap: 16px; }
-        .filter-group { display: flex; flex-wrap: wrap; gap: 10px; }
-
-        .btn, .filter-btn {
-            padding: 8px 16px; border-radius: 6px; cursor: pointer; background-color: #334155;
-            border: 1px solid #475569; color: var(--text-secondary); font-weight: 500;
-            text-align: center; transition: all 0.2s;
+        .mode-switcher {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 4px;
+            background-color: var(--bg-color); border-radius: 8px; margin-bottom: 16px;
         }
-        .btn:hover, .filter-btn:hover { background-color: #475569; color: var(--text-primary); }
-        .filter-btn.active {
-            color: var(--bg-color); font-weight: 700;
-            background-color: var(--primary-color); border-color: var(--primary-color);
+        .mode-switcher button {
+            padding: 8px; border: none; background-color: transparent; color: var(--text-secondary);
+            font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;
         }
-        .btn {
-             width: 100%; padding: 12px; background-color: var(--primary-color); color: var(--bg-color);
-             font-weight: 700;
-        }
-        .btn:disabled {
-            background-color: #334155; color: var(--text-dark); cursor: not-allowed;
-            border-color: #475569;
-        }
-        .btn:hover:not(:disabled) { background-color: #67CFFB;}
+        .mode-switcher button.active { background-color: var(--surface-color); color: var(--primary-color); }
         
         .summary-card {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 24px; text-align: center;
         }
-        .stat-item h3 {
-            margin: 0 0 8px 0; font-size: 1rem; color: var(--text-secondary); font-weight: 500;
-        }
-        .stat-item p { margin: 0; font-size: 2.25rem; font-weight: 700; color: var(--text-primary); }
-        #statOrderNumber { color: var(--primary-color); }
-        #statPackedQty { color: var(--success-color); }
-        #statRemainingQty { color: var(--warning-color); }
-        #statScrapQty { color: var(--danger-color); }
-
-        .results-card { flex-grow: 1; display: flex; flex-direction: column; }
-        #lineCountsContainer { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-        .line-badge { background-color: #334155; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem; font-weight: 500; color: var(--text-dark); }
-        .line-badge span { font-weight: 700; color: var(--text-secondary); }
+        .stat-item h3 { margin: 0 0 8px 0; font-size: 1rem; font-weight: 500; }
+        .stat-item p { margin: 0; font-size: 2rem; font-weight: 700; }
+        #statOrderNumber { color: var(--primary-color); } #statPackedQty { color: var(--success-color); }
+        #statRemainingQty { color: var(--warning-color); } #statScrapQty { color: var(--danger-color); }
 
         .table-wrapper { overflow: auto; flex-grow: 1; }
         table { width: 100%; border-collapse: collapse; }
@@ -133,156 +85,136 @@
         thead { position: sticky; top: 0; background-color: var(--surface-color); z-index: 10; }
         th { font-weight: 600; color: var(--text-secondary); font-size: 0.8rem; }
         
+        /* Packing Table Specific Styles */
+        .box-row { cursor: pointer; }
+        .box-row:hover { background-color: #334155; }
+        .box-row td:first-child::before {
+            content: '►'; display: inline-block; margin-right: 10px;
+            font-size: 0.7rem; transition: transform 0.2s;
+        }
+        .box-row.expanded td:first-child::before { transform: rotate(90deg); }
+        .serial-row { display: none; background-color: var(--bg-color); }
+        .serial-row td { padding-left: 40px; border-color: #2a3a5e; }
+
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1); }
         tbody tr.is-scrap td { color: var(--danger-color); }
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1); }
         tbody tr.is-delayed td { color: var(--warning-color); }
         tbody tr.is-today { background-color: rgba(52, 211, 153, 0.1); }
         tbody tr.is-today td { color: var(--success-color); }
-        tbody tr:not(.is-scrap):not(.is-delayed):not(.is-today):hover { background-color: #334155; }
         
         #loader, #placeholderText { text-align: center; padding: 60px; color: var(--text-dark); font-size: 1.1rem; }
-
+        
         /* Modal Styles */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px);
             display: flex; align-items: center; justify-content: center; z-index: 1000;
-            opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
+            opacity: 0; visibility: hidden; transition: all 0.3s;
         }
         .modal-overlay.visible { opacity: 1; visibility: visible; }
         .modal-content {
             background-color: var(--surface-color); border-radius: 12px; padding: 24px;
             border: 1px solid var(--border-color); width: 90%; max-width: 450px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            transform: scale(0.95); transition: transform 0.3s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: scale(0.95); transition: transform 0.3s;
         }
         .modal-overlay.visible .modal-content { transform: scale(1); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; }
         .modal-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
-        .modal-close { font-size: 1.75rem; color: var(--text-dark); cursor: pointer; line-height: 1; }
-        .modal-body { margin-top: 16px; color: var(--text-secondary); }
-        .modal-content.success .modal-title { color: var(--success-color); }
-        .modal-content.error .modal-title { color: var(--danger-color); }
-        .modal-content.info .modal-title { color: var(--primary-color); }
+        .modal-close { font-size: 1.75rem; color: var(--text-dark); cursor: pointer; line-height: 1; position: absolute; top: 16px; right: 16px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <header class="controls-header">
+    <div class="main-container">
+        <aside class="sidebar">
+            <h2>Panel de Control</h2>
             <div class="card">
-                <h2>1. Cargar Archivo</h2>
+                <h3>Cargar Órdenes</h3>
                 <div id="fileDropArea" class="file-drop-area">
-                    <p>Arrastra un archivo de Excel aquí</p>
+                    <p>Arrastra archivos aquí</p>
                     <p><span>o haz clic para seleccionar</span></p>
-                    <p id="fileName"></p>
                 </div>
-                <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
+                <input type="file" id="fileInput" accept=".xlsx, .xls" multiple style="display: none;">
             </div>
-            <div class="card">
-                <h2>2. Filtros</h2>
-                <div class="filter-container">
-                    <div>
-                        <h3>Filtrar por Estado</h3>
-                        <div id="statusFilters" class="filter-group">
-                            <button class="filter-btn active" data-filter="all">Todos</button>
-                            <button class="filter-btn" data-filter="today">En Movimiento</button>
-                            <button class="filter-btn" data-filter="delayed">Sin Movimiento</button>
-                            <button class="filter-btn" data-filter="scrap">Scrap</button>
-                        </div>
-                    </div>
-                    <div>
-                        <h3>Filtrar por Línea</h3>
-                        <div id="lineFilters" class="filter-group">
-                             <p id="lineFiltersPlaceholder" class="text-dark" style="font-size: 0.9rem;">Cargue un archivo para ver los filtros de línea.</p>
-                        </div>
-                    </div>
+            <div class="card" style="flex-grow: 1;">
+                <h3>Órdenes Cargadas</h3>
+                <div id="orderList">
+                    <p class="text-dark" style="font-size:0.9rem;">Cargue uno o más archivos para comenzar.</p>
                 </div>
             </div>
-            <div class="card">
-                 <h2>3. Exportar Reportes</h2>
-                 <p class="text-dark" style="font-size: 0.9rem; margin-top: 0; margin-bottom: 16px;">Exporta los datos que se muestran actualmente en la tabla.</p>
-                 <button id="exportButton" class="btn" disabled>Exportar Vista Actual</button>
+        </aside>
+
+        <header class="header card">
+             <div class="mode-switcher">
+                <button id="modeRastreo" class="active">Rastreo</button>
+                <button id="modeEmpaque">Empaque</button>
+            </div>
+            <div id="summaryCard" class="summary-card">
+                 <div class="stat-item"><h3># de Orden</h3><p id="statOrderNumber">N/A</p></div>
+                 <div class="stat-item"><h3>Cant. Orden</h3><p id="statOrderQty">0</p></div>
+                 <div class="stat-item"><h3>Cant. Empacada</h3><p id="statPackedQty">0</p></div>
+                 <div class="stat-item"><h3>Restante</h3><p id="statRemainingQty">0</p></div>
+                 <div class="stat-item"><h3>Cant. en Scrap</h3><p id="statScrapQty">0</p></div>
             </div>
         </header>
 
-        <section class="summary-card card">
-            <div class="stat-item"><h3>Número de Orden</h3><p id="statOrderNumber">N/A</p></div>
-            <div class="stat-item"><h3>Cantidad de Orden</h3><p id="statOrderQty">0</p></div>
-            <div class="stat-item"><h3>Cantidad Empacada</h3><p id="statPackedQty">0</p></div>
-            <div class="stat-item"><h3>Restante</h3><p id="statRemainingQty">0</p></div>
-            <div class="stat-item"><h3>Cantidad en Scrap</h3><p id="statScrapQty">0</p></div>
-        </section>
-
-        <main class="results-card card">
-            <input type="text" id="filterInput" placeholder="Buscar en la tabla por serial, status, etc..." style="margin-bottom: 16px;">
-            <div id="lineCountsContainer"></div>
-            <div id="output" class="table-wrapper">
-                <div id="loader" style="display: none;">Procesando archivo...</div>
-                <p id="placeholderText">Cargue un archivo para comenzar.</p>
-                <table id="resultsTable" style="display: none;"><thead></thead><tbody></tbody></table>
+        <main class="main-content">
+            <div id="rastreoView">
+                 <!-- Tracking specific content will go here -->
+                <div class="card">
+                     <!-- Tracking table will be dynamically inserted here -->
+                     <div id="rastreoTableContainer"></div>
+                </div>
+            </div>
+            <div id="empaqueView" style="display: none;">
+                <div class="card">
+                    <input type="text" id="empaqueFilterInput" placeholder="Buscar por Serial o BoxID..." style="margin-bottom:16px">
+                    <div class="table-wrapper">
+                         <table id="empaqueTable"></table>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
-
+    
     <!-- Modal HTML -->
     <div id="modalOverlay" class="modal-overlay">
         <div id="modalContent" class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTitle" class="modal-title"></h2>
-                <span id="modalClose" class="modal-close">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p id="modalMessage"></p>
-            </div>
+             <span id="modalClose" class="modal-close">&times;</span>
+             <h2 id="modalTitle" class="modal-title"></h2>
+             <p id="modalMessage" style="margin-top:16px; color: var(--text-secondary);"></p>
         </div>
     </div>
 
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- GLOBAL STATE AND CONSTANTS ---
-            let allData = [];
-            let processedData = [];
-            let currentVisibleData = []; 
-            let currentStatusFilter = 'all';
-            let currentLineFilter = 'all';
-            let headersCache = {};
+            // --- GLOBAL STATE ---
+            let loadedOrders = new Map();
+            let activeOrderKey = 'all';
+            let currentMode = 'rastreo';
 
-            const KEY_HEADER_TEXT = {
-                SERIAL: 'Product Serial Number', 
-                IS_SCRAP: 'Is Scrap', 
-                NOT_PACKED: 'Not Packed', 
-                CREATED_BY: 'Created By', 
-                DATE_REGISTERED: 'Date Registered', 
-                LINE: 'Line',
-                STATION: 'Station' // Corrected based on user feedback
-            };
-            const TARGET_COLUMNS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
-
-            // --- DOM ELEMENT REFERENCES ---
+            // --- KEY COLUMN NAMES ---
+            const TRACKING_KEYS = { SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', DATE_REGISTERED: 'Date Registered', LINE: 'Line'};
+            const PACKING_KEYS = { SERIAL: 'Serial Number', PACKER: 'Empacador', PACKED_DATE: 'Finish Packed Date', BOX_ID: 'BoxID' };
+            const TRACKING_COLS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
+            const PACKING_COLS = { SERIAL: 'AE', PACKER: 'AF', PACKED_DATE: 'AK', BOX_ID: 'AO' };
+            
+            // --- DOM ELEMENTS ---
             const fileDropArea = document.getElementById('fileDropArea');
             const fileInput = document.getElementById('fileInput');
-            const fileNameDisplay = document.getElementById('fileName');
-            const filterInput = document.getElementById('filterInput');
-            const resultsTable = document.getElementById('resultsTable');
-            const tableBody = resultsTable.querySelector('tbody');
-            const tableHead = resultsTable.querySelector('thead');
+            const orderList = document.getElementById('orderList');
             const statOrderNumber = document.getElementById('statOrderNumber');
             const statOrderQty = document.getElementById('statOrderQty');
             const statPackedQty = document.getElementById('statPackedQty');
             const statRemainingQty = document.getElementById('statRemainingQty');
             const statScrapQty = document.getElementById('statScrapQty');
-            const placeholderText = document.getElementById('placeholderText');
-            const lineCountsContainer = document.getElementById('lineCountsContainer');
-            const loader = document.getElementById('loader');
-            const statusFiltersContainer = document.getElementById('statusFilters');
-            const lineFiltersContainer = document.getElementById('lineFilters');
-            const lineFiltersPlaceholder = document.getElementById('lineFiltersPlaceholder');
-            const exportButton = document.getElementById('exportButton');
+            const modeRastreo = document.getElementById('modeRastreo');
+            const modeEmpaque = document.getElementById('modeEmpaque');
+            const rastreoView = document.getElementById('rastreoView');
+            const empaqueView = document.getElementById('empaqueView');
+            const empaqueFilterInput = document.getElementById('empaqueFilterInput');
             const modalOverlay = document.getElementById('modalOverlay');
-            const modalContent = document.getElementById('modalContent');
             const modalTitle = document.getElementById('modalTitle');
             const modalMessage = document.getElementById('modalMessage');
             const modalClose = document.getElementById('modalClose');
@@ -293,52 +225,36 @@
             fileDropArea.addEventListener('dragleave', () => fileDropArea.classList.remove('dragover'));
             fileDropArea.addEventListener('drop', (e) => {
                 e.preventDefault(); fileDropArea.classList.remove('dragover');
-                if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+                if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
             });
-            fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
+            fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFiles(e.target.files); });
             
-            filterInput.addEventListener('input', render);
-            
-            statusFiltersContainer.addEventListener('click', (e) => {
-                if (e.target.matches('.filter-btn')) {
-                    statusFiltersContainer.querySelector('.active').classList.remove('active');
-                    e.target.classList.add('active');
-                    currentStatusFilter = e.target.dataset.filter;
-                    render();
-                }
-            });
+            modeRastreo.addEventListener('click', () => switchMode('rastreo'));
+            modeEmpaque.addEventListener('click', () => switchMode('empaque'));
 
-            exportButton.addEventListener('click', handleExport);
+            empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
+
             modalClose.addEventListener('click', hideModal);
-            modalOverlay.addEventListener('click', (e) => {
-                if(e.target === modalOverlay) hideModal();
-            });
+            modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
 
             // --- MODAL FUNCTIONS ---
             function showModal(title, message, type = 'info') {
-                modalTitle.textContent = title;
-                modalMessage.textContent = message;
-                modalContent.className = `modal-content ${type}`;
-                modalOverlay.classList.add('visible');
+                 modalOverlay.querySelector('.modal-content').className = `modal-content ${type}`;
+                 modalTitle.textContent = title;
+                 modalMessage.textContent = message;
+                 modalOverlay.classList.add('visible');
             }
-
-            function hideModal() {
-                modalOverlay.classList.remove('visible');
-            }
-
+            function hideModal() { modalOverlay.classList.remove('visible'); }
 
             // --- HELPER FUNCTIONS ---
             function excelSerialToDate(serial) {
                 if (typeof serial !== 'number' || isNaN(serial)) return null;
                 try {
-                    const decoded_date = XLSX.SSF.parse_date_code(serial);
-                    if (decoded_date) {
-                        return new Date(decoded_date.y, decoded_date.m - 1, decoded_date.d, decoded_date.H, decoded_date.M, decoded_date.S);
-                    }
-                } catch(e) { console.error("Could not parse date serial:", serial, e); }
+                    const decoded = XLSX.SSF.parse_date_code(serial);
+                    if (decoded) return new Date(decoded.y, decoded.m - 1, decoded.d, decoded.H, decoded.M, decoded.S);
+                } catch(e) { console.error(e); }
                 return null;
             }
-
             function formatDate(date) {
                 if (!(date instanceof Date) || isNaN(date)) return '';
                 const day = String(date.getDate()).padStart(2, '0');
@@ -348,298 +264,312 @@
                 const minutes = String(date.getMinutes()).padStart(2, '0');
                 return `${day}/${month}/${year} ${hours}:${minutes}`;
             }
+             function findHeader(headers, keyText) { return headers.find(h => h.toLowerCase() === keyText.toLowerCase()); }
 
-            function findHeader(headers, keyText) {
-                return headers.find(h => h.toLowerCase() === keyText.toLowerCase());
-            }
-
-            // --- CORE LOGIC ---
-            function handleFile(file) {
-                resetView();
-                fileNameDisplay.textContent = file.name;
-                loader.style.display = 'block';
-                placeholderText.style.display = 'none';
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                        
-                        const orderQty = parseInt(worksheet['O3']?.v || 0);
-                        const packedQty = parseInt(worksheet['U3']?.v || 0);
-                        statOrderNumber.textContent = worksheet['B3']?.v || 'N/A';
-                        statOrderQty.textContent = orderQty;
-                        statPackedQty.textContent = packedQty;
-                        statRemainingQty.textContent = orderQty - packedQty;
-
-                        allData = extractTableData(worksheet);
-
-                        if (allData.length > 0) {
-                            cacheHeaders(Object.keys(allData[0]));
-                            const scrapCount = allData.filter(row => String(row[headersCache.scrap]).trim().toUpperCase() === 'X').length;
-                            statScrapQty.textContent = scrapCount;
-                            
-                            processAllData();
-                            createLineFilters();
-                            render();
-                            exportButton.disabled = false;
-                        } else {
-                           placeholderText.textContent = "Se procesó el archivo, pero no se encontró la tabla de datos en la fila 20 o no contiene información.";
-                        }
-                    } catch (error) {
-                        console.error("Error processing file:", error);
-                        placeholderText.textContent = "Ocurrió un error al procesar el archivo. Verifique que sea un formato válido.";
-                    } finally {
-                        loader.style.display = 'none';
-                        if(placeholderText.textContent && allData.length === 0) placeholderText.style.display = 'block';
-                    }
-                };
-                reader.readAsArrayBuffer(file);
-            }
-
-            function extractTableData(worksheet) {
-                const headers = {};
-                TARGET_COLUMNS.forEach(col => {
-                    const cell = worksheet[col + '20'];
-                    if (cell && cell.v) headers[col] = cell.v.toString().trim();
+            // --- FILE HANDLING & DATA PROCESSING ---
+            function handleFiles(files) {
+                let filePromises = Array.from(files).map(file => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            try {
+                                const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                                const orderNumber = worksheet['B3']?.v || `Archivo_${file.name.slice(0,10)}`;
+                                
+                                const orderData = {
+                                    orderQty: parseInt(worksheet['O3']?.v || 0),
+                                    packedQty: parseInt(worksheet['U3']?.v || 0),
+                                    rastreoData: processRastreoData(extractTableData(worksheet, TRACKING_COLS, 20)),
+                                    empaqueData: groupEmpaqueData(extractTableData(worksheet, Object.values(PACKING_COLS), 20, true))
+                                };
+                                resolve({ key: orderNumber, data: orderData });
+                            } catch(err) {
+                                reject(err);
+                            }
+                        };
+                        reader.readAsArrayBuffer(file);
+                    });
                 });
 
-                if (Object.keys(headers).length === 0) return [];
+                Promise.all(filePromises)
+                    .then(results => {
+                        results.forEach(result => loadedOrders.set(result.key, result.data));
+                        updateOrderList();
+                        render();
+                    })
+                    .catch(err => {
+                        showModal('Error al Cargar', 'Uno o más archivos no pudieron ser procesados. Verifique el formato.', 'error');
+                        console.error(err);
+                    });
+            }
 
-                const jsonData = [];
-                const range = XLSX.utils.decode_range(worksheet['!ref']);
-                for (let rowNum = 20; rowNum <= range.e.r; ++rowNum) {
-                    const row = {};
-                    let hasData = false;
-                    TARGET_COLUMNS.forEach(col => {
-                        const headerName = headers[col];
-                        if (headerName) {
+            function extractTableData(worksheet, targetCols, startRow, isPacking = false) {
+                 const headers = {};
+                 const colsToUse = isPacking ? Object.keys(PACKING_COLS) : targetCols;
+                 
+                 colsToUse.forEach(key => {
+                     const col = isPacking ? PACKING_COLS[key] : key;
+                     const cell = worksheet[col + startRow];
+                     if(cell && cell.v) headers[col] = cell.v.toString().trim();
+                 });
+
+                 if (Object.keys(headers).length === 0) return [];
+                 const jsonData = [];
+                 const range = XLSX.utils.decode_range(worksheet['!ref']);
+                 for (let rowNum = startRow; rowNum <= range.e.r; ++rowNum) {
+                     const row = {};
+                     let hasData = false;
+                     colsToUse.forEach(key => {
+                         const col = isPacking ? PACKING_COLS[key] : key;
+                         const headerName = headers[col];
+                         if (headerName) {
                             const cellAddress = col + (rowNum + 1);
                             const cell = worksheet[cellAddress];
-                            row[headerName] = cell ? cell.v : undefined;
-                            if (cell && cell.v) hasData = true;
-                        }
-                    });
-                    if (hasData) jsonData.push(row);
-                }
-                return jsonData;
+                            if(cell && cell.v) {
+                                row[headerName] = cell.v;
+                                hasData = true;
+                            }
+                         }
+                     });
+                     if (hasData) jsonData.push(row);
+                 }
+                 return jsonData;
             }
             
-            function cacheHeaders(headers) {
-                headersCache.all = headers;
-                headersCache.serial = findHeader(headers, KEY_HEADER_TEXT.SERIAL);
-                headersCache.scrap = findHeader(headers, KEY_HEADER_TEXT.IS_SCRAP);
-                headersCache.notPacked = findHeader(headers, KEY_HEADER_TEXT.NOT_PACKED);
-                headersCache.dateRegistered = findHeader(headers, KEY_HEADER_TEXT.DATE_REGISTERED);
-                headersCache.createdBy = findHeader(headers, KEY_HEADER_TEXT.CREATED_BY);
-                headersCache.line = findHeader(headers, KEY_HEADER_TEXT.LINE);
-                headersCache.station = findHeader(headers, KEY_HEADER_TEXT.STATION);
-            }
-
-            function createLineFilters() {
-                if (!headersCache.line) {
-                    lineFiltersPlaceholder.textContent = "No se encontró la columna 'Line'.";
-                    return;
-                }
-
-                const uniqueLines = [...new Set(allData.map(row => row[headersCache.line]).filter(Boolean))].sort();
-                lineFiltersContainer.innerHTML = '';
-                lineFiltersPlaceholder.style.display = 'none';
-
-                const allBtn = document.createElement('button');
-                allBtn.className = 'filter-btn active';
-                allBtn.textContent = 'Todas';
-                allBtn.dataset.filter = 'all';
-                lineFiltersContainer.appendChild(allBtn);
-
-                uniqueLines.forEach(line => {
-                    const lineBtn = document.createElement('button');
-                    lineBtn.className = 'filter-btn';
-                    lineBtn.textContent = line;
-                    lineBtn.dataset.filter = line;
-                    lineFiltersContainer.appendChild(lineBtn);
-                });
-
-                lineFiltersContainer.addEventListener('click', (e) => {
-                    if (e.target.matches('.filter-btn')) {
-                        lineFiltersContainer.querySelector('.active').classList.remove('active');
-                        e.target.classList.add('active');
-                        currentLineFilter = e.target.dataset.filter;
-                        render();
-                    }
-                });
-            }
-
-            function processAllData() {
+            function processRastreoData(data) {
                 const today = new Date();
-                processedData = allData.map(row => {
+                const headers = Object.keys(data[0] || {});
+                const scrapHeader = findHeader(headers, TRACKING_KEYS.IS_SCRAP);
+                const dateHeader = findHeader(headers, TRACKING_KEYS.DATE_REGISTERED);
+                
+                return data.map(row => {
                     let status = 'normal';
-                    const isScrap = String(row[headersCache.scrap]).trim().toUpperCase() === 'X';
-                    if (isScrap) {
+                    const isScrap = String(row[scrapHeader]).trim().toUpperCase() === 'X';
+                     if (isScrap) {
                         status = 'scrap';
                     } else {
-                        const registeredDate = excelSerialToDate(row[headersCache.dateRegistered]);
+                        const registeredDate = excelSerialToDate(row[dateHeader]);
                         if (registeredDate instanceof Date) {
-                            if (registeredDate.toDateString() === today.toDateString()) {
-                                status = 'today';
-                            } else if (registeredDate < today) {
-                                status = 'delayed';
-                            }
+                            if (registeredDate.toDateString() === today.toDateString()) status = 'today';
+                            else if (registeredDate < today) status = 'delayed';
                         }
                     }
                     return { ...row, status };
                 });
             }
-            
-            function handleExport() {
-                if (!headersCache.serial || !headersCache.station || !headersCache.dateRegistered) {
-                    showModal('Error de Exportación', `No se pudo identificar una columna clave ("${KEY_HEADER_TEXT.SERIAL}", "${KEY_HEADER_TEXT.STATION}", o "${KEY_HEADER_TEXT.DATE_REGISTERED}"). Verifique el archivo.`, 'error');
-                    return;
-                }
+
+            function groupEmpaqueData(data) {
+                if (!data || data.length === 0) return new Map();
+                const headers = Object.keys(data[0] || {});
+                const boxIdHeader = findHeader(headers, PACKING_KEYS.BOX_ID);
                 
-                if (currentVisibleData.length === 0) {
-                     showModal('Información', 'No hay datos visibles en la tabla para exportar (según los filtros aplicados).', 'info');
-                    return;
-                }
-
-                const orderNumber = statOrderNumber.textContent;
-                const finalData = currentVisibleData.map(row => {
-                    const serial = String(row[headersCache.serial] || '');
-                    const cleanedSerial = serial.replace(/S#/i, '');
-                    return {
-                        'Numero_de_Orden': orderNumber,
-                        'Serial_Para_Reimpresion': cleanedSerial,
-                        'Estacion': row[headersCache.station],
-                        'Fecha_y_Hora_Ultimo_Movimiento': formatDate(excelSerialToDate(row[headersCache.dateRegistered]))
-                    };
-                });
-
-                const worksheet = XLSX.utils.json_to_sheet([]);
-                
-                const headerText = currentLineFilter === 'all' 
-                    ? `Reporte de Exportación para Todas las Líneas` 
-                    : `Reporte de Exportación para Línea: ${currentLineFilter}`;
-
-                XLSX.utils.sheet_add_aoa(worksheet, [[headerText]], { origin: "A1"});
-                XLSX.utils.sheet_add_json(worksheet, finalData, { origin: "A2", skipHeader: false });
-
-                // Merge header cells
-                const merge = { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }; // A1 to D1
-                if (!worksheet['!merges']) worksheet['!merges'] = [];
-                worksheet['!merges'].push(merge);
-
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Exportación");
-                
-                const linePart = currentLineFilter === 'all' ? 'Todas_Lineas' : `Linea_${currentLineFilter}`;
-                const fileName = `Exportacion_Orden_${orderNumber}_${linePart}.xlsx`;
-                XLSX.writeFile(workbook, fileName);
-
-                showModal('Exportación Exitosa', `Se ha generado el archivo "${fileName}" con ${finalData.length} seriales.`, 'success');
-            }
-
-
-            // --- UI RENDERING ---
-            function render() {
-                if (processedData.length === 0) return;
-                
-                let filteredData = processedData;
-
-                if (currentStatusFilter !== 'all') {
-                    filteredData = filteredData.filter(row => row.status === currentStatusFilter);
-                }
-                if (currentLineFilter !== 'all') {
-                    filteredData = filteredData.filter(row => row[headersCache.line] === currentLineFilter);
-                }
-
-                const searchText = filterInput.value.toLowerCase();
-                if (searchText) {
-                    filteredData = filteredData.filter(row =>
-                        Object.entries(row).some(([key, val]) => key !== 'status' && String(val).toLowerCase().includes(searchText))
-                    );
-                }
-                
-                const headersToHide = [headersCache.scrap, headersCache.notPacked, headersCache.createdBy].filter(Boolean);
-                const displayHeaders = headersCache.all.filter(h => !headersToHide.includes(h));
-
-                updateTable(filteredData, displayHeaders);
-                updateLineCounts(filteredData);
-
-                currentVisibleData = filteredData;
-            }
-
-            function updateTable(data, displayHeaders) {
-                tableBody.innerHTML = '';
-
-                if (!data.length) {
-                    resultsTable.style.display = 'none';
-                    placeholderText.textContent = 'No se encontraron resultados para los filtros aplicados.';
-                    placeholderText.style.display = 'block';
-                    return;
-                }
-                
-                resultsTable.style.display = 'table';
-                placeholderText.style.display = 'none';
-
-                tableHead.innerHTML = `<tr>${displayHeaders.map(h => `<th>${h}</th>`).join('')}</tr>`;
-
-                data.forEach(row => {
-                    const tr = document.createElement('tr');
-                    tr.className = `is-${row.status}`;
-                    
-                    let cells = '';
-                    displayHeaders.forEach(header => {
-                        let cellValue = row[header];
-                        if (header.toLowerCase().includes('date')) {
-                           cellValue = formatDate(excelSerialToDate(cellValue));
-                        }
-                        cells += `<td>${cellValue === undefined ? '' : cellValue}</td>`;
-                    });
-                    tr.innerHTML = cells;
-                    tableBody.appendChild(tr);
-                });
-            }
-
-            function updateLineCounts(data) {
-                if (!headersCache.line) {
-                    lineCountsContainer.innerHTML = ''; return;
-                }
-                const counts = data.reduce((acc, row) => {
-                    const line = row[headersCache.line];
-                    if (line) acc[line] = (acc[line] || 0) + 1;
+                return data.reduce((acc, row) => {
+                    const boxId = row[boxIdHeader];
+                    if (boxId) {
+                        if (!acc.has(boxId)) acc.set(boxId, []);
+                        acc.get(boxId).push(row);
+                    }
                     return acc;
-                }, {});
-                
-                lineCountsContainer.innerHTML = Object.entries(counts).sort().map(([line, count]) =>
-                    `<div class="line-badge">${line}: <span>${count}</span></div>`
-                ).join('');
+                }, new Map());
             }
 
-            function resetView() {
-                allData = [];
-                processedData = [];
-                currentVisibleData = [];
-                headersCache = {};
-                fileNameDisplay.textContent = '';
-                statOrderNumber.textContent = 'N/A';
-                statOrderQty.textContent = '0';
-                statPackedQty.textContent = '0';
-                statRemainingQty.textContent = '0';
-                statScrapQty.textContent = '0';
-                currentStatusFilter = 'all';
-                currentLineFilter = 'all';
-                statusFiltersContainer.querySelector('.active').classList.remove('active');
-                statusFiltersContainer.querySelector('[data-filter="all"]').classList.add('active');
-                lineFiltersContainer.innerHTML = '';
-                lineFiltersPlaceholder.style.display = 'block';
-                lineFiltersPlaceholder.textContent = "Cargue un archivo para ver los filtros de línea.";
-                filterInput.value = '';
-                placeholderText.textContent = 'Cargue un archivo para comenzar.';
-                resultsTable.style.display = 'none';
-                lineCountsContainer.innerHTML = '';
-                exportButton.disabled = true;
+            // --- UI & RENDERING ---
+            function switchMode(mode) {
+                currentMode = mode;
+                modeRastreo.classList.toggle('active', mode === 'rastreo');
+                modeEmpaque.classList.toggle('active', mode === 'empaque');
+                rastreoView.style.display = mode === 'rastreo' ? 'block' : 'none';
+                empaqueView.style.display = mode === 'empaque' ? 'block' : 'none';
+                render();
             }
+
+            function updateOrderList() {
+                orderList.innerHTML = '';
+                const allBtn = document.createElement('button');
+                allBtn.className = 'order-btn';
+                allBtn.textContent = 'Vista General';
+                allBtn.dataset.key = 'all';
+                allBtn.onclick = () => setActiveOrder('all');
+                orderList.appendChild(allBtn);
+
+                for (const key of loadedOrders.keys()) {
+                    const btn = document.createElement('button');
+                    btn.className = 'order-btn';
+                    btn.textContent = key;
+                    btn.dataset.key = key;
+                    btn.onclick = () => setActiveOrder(key);
+                    orderList.appendChild(btn);
+                }
+                setActiveOrder(activeOrderKey); // Re-apply active state
+            }
+            
+            function setActiveOrder(key) {
+                activeOrderKey = key;
+                const currentActive = orderList.querySelector('.active');
+                if (currentActive) currentActive.classList.remove('active');
+                const newActive = orderList.querySelector(`[data-key="${key}"]`);
+                if (newActive) newActive.classList.add('active');
+                render();
+            }
+
+            function render() {
+                if (loadedOrders.size === 0) return;
+                renderSummary();
+                if (currentMode === 'rastreo') {
+                    renderRastreoView(activeOrderKey);
+                } else {
+                    renderEmpaqueView(activeOrderKey);
+                }
+            }
+
+            function renderSummary() {
+                let orderQty = 0, packedQty = 0, scrapCount = 0;
+                let ordersToProcess = [];
+
+                if (activeOrderKey === 'all') {
+                    ordersToProcess = Array.from(loadedOrders.values());
+                    statOrderNumber.textContent = 'Múltiples';
+                } else if (loadedOrders.has(activeOrderKey)) {
+                    ordersToProcess = [loadedOrders.get(activeOrderKey)];
+                    statOrderNumber.textContent = activeOrderKey;
+                }
+
+                ordersToProcess.forEach(order => {
+                    orderQty += order.orderQty;
+                    packedQty += order.packedQty;
+                    const headers = Object.keys(order.rastreoData[0] || {});
+                    const scrapHeader = findHeader(headers, TRACKING_KEYS.IS_SCRAP);
+                    scrapCount += order.rastreoData.filter(row => String(row[scrapHeader]).trim().toUpperCase() === 'X').length;
+                });
+
+                statOrderQty.textContent = orderQty;
+                statPackedQty.textContent = packedQty;
+                statRemainingQty.textContent = orderQty - packedQty;
+                statScrapQty.textContent = scrapCount;
+            }
+            
+            function renderRastreoView(key) {
+                let dataToShow = [];
+                if (key === 'all') {
+                    loadedOrders.forEach(order => dataToShow.push(...order.rastreoData));
+                } else if (loadedOrders.has(key)) {
+                    dataToShow = loadedOrders.get(key).rastreoData;
+                }
+                
+                const rastreoTableContainer = document.getElementById('rastreoTableContainer');
+                rastreoTableContainer.innerHTML = `
+                    <div class="table-wrapper">
+                        <table id="rastreoTable">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>`;
+
+                const table = rastreoTableContainer.querySelector('#rastreoTable');
+                if (dataToShow.length === 0) {
+                     table.innerHTML = `<tr><td>No hay datos de rastreo para mostrar.</td></tr>`;
+                    return;
+                }
+                
+                const headers = Object.keys(dataToShow[0]).filter(h => h !== 'status');
+                table.querySelector('thead').innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+                const tbody = table.querySelector('tbody');
+                tbody.innerHTML = dataToShow.map(row => `
+                    <tr class="is-${row.status}">
+                        ${headers.map(h => `<td>${formatCell(row[h], h)}</td>`).join('')}
+                    </tr>
+                `).join('');
+            }
+            
+             function renderEmpaqueView(key) {
+                let dataToShow = new Map();
+                if (key === 'all') {
+                    loadedOrders.forEach(order => {
+                        order.empaqueData.forEach((serials, boxId) => {
+                            if (!dataToShow.has(boxId)) dataToShow.set(boxId, []);
+                            dataToShow.get(boxId).push(...serials);
+                        });
+                    });
+                } else if (loadedOrders.has(key)) {
+                    dataToShow = loadedOrders.get(key).empaqueData;
+                }
+                
+                const table = document.getElementById('empaqueTable');
+                if (dataToShow.size === 0) {
+                     table.innerHTML = `<thead><tr><th>No hay datos de empaque para mostrar.</th></tr></thead>`;
+                    return;
+                }
+                
+                const sampleRow = dataToShow.values().next().value[0];
+                const headers = Object.keys(sampleRow);
+                const boxIdHeader = findHeader(headers, PACKING_KEYS.BOX_ID);
+                const serialHeader = findHeader(headers, PACKING_KEYS.SERIAL);
+                const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
+                const packerHeader = findHeader(headers, PACKING_KEYS.PACKER);
+
+                const filterText = empaqueFilterInput.value.toLowerCase();
+                let tableHTML = `
+                    <thead>
+                        <tr>
+                            <th>${boxIdHeader}</th>
+                            <th>Cantidad</th>
+                            <th>Último Empaque</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                
+                for (const [boxId, serials] of dataToShow.entries()) {
+                    const latestDate = Math.max(...serials.map(s => s[packedDateHeader]));
+                    
+                    const serialsMatchFilter = serials.some(s => String(s[serialHeader]).toLowerCase().includes(filterText));
+                    if (!String(boxId).toLowerCase().includes(filterText) && !serialsMatchFilter) continue;
+
+                    tableHTML += `
+                        <tr class="box-row" data-boxid="${boxId}">
+                            <td>${boxId}</td>
+                            <td>${serials.length}</td>
+                            <td>${formatDate(excelSerialToDate(latestDate))}</td>
+                        </tr>`;
+
+                    serials.forEach(serial => {
+                         tableHTML += `
+                            <tr class="serial-row" data-parentbox="${boxId}">
+                                <td colspan="3">
+                                    <strong>Serial:</strong> ${serial[serialHeader]} | 
+                                    <strong>Empacador:</strong> ${serial[packerHeader] || 'N/A'} | 
+                                    <strong>Fecha:</strong> ${formatDate(excelSerialToDate(serial[packedDateHeader]))}
+                                </td>
+                            </tr>`;
+                    });
+                }
+                tableHTML += `</tbody>`;
+                table.innerHTML = tableHTML;
+
+                table.querySelectorAll('.box-row').forEach(row => {
+                    row.addEventListener('click', () => {
+                        row.classList.toggle('expanded');
+                        const boxId = row.dataset.boxid;
+                        table.querySelectorAll(`.serial-row[data-parentbox="${boxId}"]`).forEach(serialRow => {
+                            serialRow.style.display = row.classList.contains('expanded') ? 'table-row' : 'none';
+                        });
+                    });
+                });
+            }
+
+            function formatCell(value, header) {
+                 if (header.toLowerCase().includes('date')) return formatDate(excelSerialToDate(value));
+                 return value === undefined ? '' : value;
+            }
+
+             function resetView() {
+                loadedOrders.clear();
+                activeOrderKey = 'all';
+                currentMode = 'rastreo';
+                orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">Cargue uno o más archivos para comenzar.</p>`;
+                render();
+            }
+
         });
     </script>
 </body>
