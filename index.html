@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Control de Producción (con Reportes y Links)</title>
+    <title>Centro de Control de Producción (Versión Definitiva)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Pako (Compression library for sharing links) -->
@@ -22,33 +22,33 @@
         }
         body {
             font-family: 'Inter', sans-serif; background-color: var(--bg-color);
-            color: var(--text-primary); margin: 0; padding: 16px; /* Size adjustment */
+            color: var(--text-primary); margin: 0; padding: 16px;
             display: flex; justify-content: center;
         }
         .app-header {
             text-align: center;
-            margin-bottom: 16px; /* Size adjustment */
+            margin-bottom: 16px;
         }
         .app-branding {
             font-family: 'Tinos', 'Times New Roman', serif;
             font-weight: 400;
-            font-size: 2.2rem; /* Size adjustment */
+            font-size: 2.2rem;
             color: var(--text-primary);
             letter-spacing: 2px;
             margin: 0;
         }
         .app-title {
-            font-size: 1.25rem; /* Size adjustment */
+            font-size: 1.25rem;
             font-weight: 600;
             color: var(--text-secondary);
             margin: 4px 0 0 0;
         }
         .main-container {
-            width: 100%; max-width: 1600px; display: grid; /* Size adjustment */
-            grid-template-columns: 260px 1fr; /* Size adjustment */
+            width: 100%; max-width: 1600px; display: grid;
+            grid-template-columns: 260px 1fr;
             grid-template-rows: auto auto 1fr;
             grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; 
-            gap: 16px; /* Size adjustment */
+            gap: 16px;
         }
         .sidebar {
             grid-area: sidebar; background-color: var(--surface-color); border-radius: 12px;
@@ -104,7 +104,7 @@
         }
         .stat-item h3 { margin: 0 0 8px 0; font-size: 0.9rem; font-weight: 500; }
         .stat-item p { margin: 0; font-size: 1.75rem; font-weight: 700; } /* Size adjustment */
-        #statOrderNumber { color: var(--primary-color); } #statPackedQty { color: var(--success-color); }
+        #statOrderNumber, #statCatalogNumber { color: var(--primary-color); } #statPackedQty { color: var(--success-color); }
         #statRemainingQty { color: var(--warning-color); } #statScrapQty { color: var(--danger-color); }
 
         .table-wrapper { overflow: auto; flex-grow: 1; }
@@ -167,7 +167,7 @@
         .modal-overlay.visible .modal-content { transform: scale(1); }
         .modal-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
         .modal-close { font-size: 1.75rem; color: var(--text-dark); cursor: pointer; line-height: 1; position: absolute; top: 16px; right: 16px; }
-        #modalBody input[type=text] { background-color: var(--bg-color); border: 1px solid var(--border-color); padding: 8px; color: var(--text-primary); border-radius: 4px; width: 100%; box-sizing: border-box; }
+        #modalBody textarea { width: 100%; height: 100px; resize: none; background-color: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;}
     </style>
 </head>
 <body>
@@ -181,12 +181,22 @@
                 <h2>Panel de Control</h2>
                 <div class="card">
                     <h3>Cargar Órdenes</h3>
-                    <div id="fileDropArea" class="file-drop-area">
-                        <p>Arrastra archivos aquí</p>
-                        <p><span>o haz clic para seleccionar</span></p>
+                     <div id="load-switcher" class="mode-switcher" style="grid-template-columns: 1fr 1fr; margin-bottom:12px;">
+                        <button class="active" data-mode="file">Desde Archivo</button>
+                        <button data-mode="code">Desde Código</button>
                     </div>
-                    <input type="file" id="fileInput" accept=".xlsx, .xls" multiple style="display: none;">
-                    <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
+                    <div id="file-loader">
+                        <div id="fileDropArea" class="file-drop-area">
+                            <p>Arrastra archivos aquí</p>
+                            <p><span>o haz clic para seleccionar</span></p>
+                        </div>
+                        <input type="file" id="fileInput" accept=".xlsx, .xls" multiple style="display: none;">
+                        <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
+                    </div>
+                    <div id="code-loader" style="display:none;">
+                        <textarea id="shareCodeInput" placeholder="Pega aquí el código para compartir..."></textarea>
+                        <button id="loadCodeBtn" class="btn" style="margin-top:10px;">Cargar desde Código</button>
+                    </div>
                 </div>
                 <div class="card" style="flex-grow: 1;">
                     <h3>Órdenes Cargadas</h3>
@@ -216,6 +226,7 @@
                 </div>
                 <div id="summaryCard" class="summary-card">
                      <div class="stat-item"><h3># de Orden</h3><p id="statOrderNumber">N/A</p></div>
+                     <div class="stat-item"><h3># de Catálogo</h3><p id="statCatalogNumber">N/A</p></div>
                      <div class="stat-item"><h3>Cant. Orden</h3><p id="statOrderQty">0</p></div>
                      <div class="stat-item"><h3>Cant. Empacada</h3><p id="statPackedQty">0</p></div>
                      <div class="stat-item"><h3>Restante</h3><p id="statRemainingQty">0</p></div>
@@ -248,7 +259,7 @@
                              <div style="display: flex; flex-direction: column; gap: 10px;">
                                  <button id="exportViewButton" class="btn" disabled>Exportar Vista a Excel</button>
                                  <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
-                                 <button id="shareLinkButton" class="btn" disabled>Generar Link para Compartir</button>
+                                 <button id="shareLinkButton" class="btn" disabled>Generar Código para Compartir</button>
                              </div>
                         </div>
                     </div>
@@ -309,6 +320,7 @@
             const updateFileInput = document.getElementById('updateFileInput');
             const orderList = document.getElementById('orderList');
             const statOrderNumber = document.getElementById('statOrderNumber');
+            const statCatalogNumber = document.getElementById('statCatalogNumber');
             const statOrderQty = document.getElementById('statOrderQty');
             const statPackedQty = document.getElementById('statPackedQty');
             const statRemainingQty = document.getElementById('statRemainingQty');
@@ -334,6 +346,11 @@
             const modalBody = document.getElementById('modalBody');
             const modalClose = document.getElementById('modalClose');
             const copyReportBtn = document.getElementById('copyReportBtn');
+            const loadSwitcher = document.getElementById('load-switcher');
+            const fileLoader = document.getElementById('file-loader');
+            const codeLoader = document.getElementById('code-loader');
+            const shareCodeInput = document.getElementById('shareCodeInput');
+            const loadCodeBtn = document.getElementById('loadCodeBtn');
 
             // --- EVENT LISTENERS ---
             fileDropArea.addEventListener('click', () => fileInput.click());
@@ -372,10 +389,21 @@
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
             exportViewButton.addEventListener('click', handleExport);
             exportStatusButton.addEventListener('click', handleStatusReport);
-            shareLinkButton.addEventListener('click', generateShareLink);
+            shareLinkButton.addEventListener('click', generateShareCode);
 
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
+
+            loadSwitcher.addEventListener('click', (e) => {
+                if (e.target.matches('button')) {
+                    const mode = e.target.dataset.mode;
+                    loadSwitcher.querySelector('.active').classList.remove('active');
+                    e.target.classList.add('active');
+                    fileLoader.style.display = mode === 'file' ? 'block' : 'none';
+                    codeLoader.style.display = mode === 'code' ? 'block' : 'none';
+                }
+            });
+            loadCodeBtn.addEventListener('click', loadFromCode);
 
             // --- MODAL FUNCTIONS ---
             function showModal(title, message, type = 'info', showCopyBtn = false) {
@@ -407,7 +435,7 @@
             }
              function findHeader(headers, keyText) { return headers.find(h => h.toLowerCase() === keyText.toLowerCase()); }
             
-            // --- LOCALSTORAGE & SHARING LINK ---
+            // --- LOCALSTORAGE & SHARING ---
             function saveOrdersToLocalStorage() {
                 const dataToSave = JSON.stringify(Array.from(loadedOrders.entries()));
                 localStorage.setItem('productionControlCenterData', dataToSave);
@@ -426,47 +454,42 @@
                 }
             }
             
-            function generateShareLink() {
+            function generateShareCode() {
                 if (loadedOrders.size === 0) {
-                    showModal('Información', 'No hay órdenes cargadas para generar un link.', 'info');
+                    showModal('Información', 'No hay órdenes cargadas para generar un código.', 'info');
                     return;
                 }
                 const dataString = JSON.stringify(Array.from(loadedOrders.entries()));
                 const compressed = pako.deflate(dataString, { to: 'string' });
-                const encoded = btoa(compressed).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+                const encoded = btoa(compressed);
                 
-                const url = `${window.location.origin}${window.location.pathname}#${encoded}`;
-                
-                const linkHTML = `
-                    <p>Copia y comparte este link. Cualquiera con el link podrá ver las órdenes que tienes cargadas actualmente.</p>
-                    <input type="text" readonly value="${url}" onclick="this.select()">
+                const codeHTML = `
+                    <p>Copia y comparte este código. Cualquiera con el código podrá cargar tu sesión de trabajo actual.</p>
+                    <textarea readonly onclick="this.select()">${encoded}</textarea>
                 `;
-                showModal('Link para Compartir Generado', linkHTML, 'success', false);
+                showModal('Código para Compartir Generado', codeHTML, 'success', false);
             }
 
-            function loadFromLink() {
-                if (window.location.hash.length > 1) {
-                    try {
-                        let encoded = window.location.hash.substring(1);
-                        const padding = '='.repeat((4 - encoded.length % 4) % 4);
-                        const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/') + padding;
-                        const compressed = atob(base64);
-                        const uint8array = new Uint8Array(compressed.split('').map(c => c.charCodeAt(0)));
-                        const dataString = pako.inflate(uint8array, { to: 'string' });
-                        
-                        loadedOrders = new Map(JSON.parse(dataString));
-                        saveOrdersToLocalStorage();
-                        updateOrderList();
-                        render();
-
-                        // Clean URL after loading
-                        history.pushState("", document.title, window.location.pathname + window.location.search);
-                    } catch (e) {
-                        console.error("Failed to load data from link", e);
-                        showModal('Error', 'El link para compartir parece estar corrupto o es inválido.', 'error');
-                    }
-                } else {
-                    loadOrdersFromLocalStorage();
+            function loadFromCode() {
+                const encoded = shareCodeInput.value.trim();
+                if (!encoded) {
+                    showModal('Error', 'El campo de código está vacío.', 'error');
+                    return;
+                }
+                 try {
+                    const compressed = atob(encoded);
+                    const uint8array = new Uint8Array(compressed.split('').map(c => c.charCodeAt(0)));
+                    const dataString = pako.inflate(uint8array, { to: 'string' });
+                    
+                    loadedOrders = new Map(JSON.parse(dataString));
+                    saveOrdersToLocalStorage();
+                    updateOrderList();
+                    render();
+                    showModal('Éxito', `${loadedOrders.size} órdenes cargadas correctamente desde el código.`, 'success');
+                    shareCodeInput.value = '';
+                } catch (e) {
+                    console.error("Failed to load data from code", e);
+                    showModal('Error', 'El código para compartir parece estar corrupto o es inválido.', 'error');
                 }
             }
 
@@ -510,6 +533,7 @@
                             const orderData = {
                                 orderQty: parseInt(worksheet['O3']?.v || 0),
                                 packedQty: parseInt(worksheet['U3']?.v || 0),
+                                catalogNumber: worksheet['L3']?.v || 'N/A',
                                 rastreoData: processRastreoData(rastreoRawData),
                                 empaqueData: groupEmpaqueData(packingRawData),
                                 headers: {
@@ -660,8 +684,6 @@
 
                 let tableRows = '';
                 for (const [key, order] of loadedOrders.entries()) {
-                    const scrapHeader = findHeader(order.headers.rastreo, TRACKING_KEYS.IS_SCRAP);
-                    const scrapCount = scrapHeader ? order.rastreoData.filter(row => String(row[scrapHeader]).trim().toUpperCase() === 'X').length : 0;
                     const delayedCount = order.rastreoData.filter(row => row.status === 'delayed').length;
                     const todayCount = order.rastreoData.filter(row => row.status === 'today').length;
                     
@@ -672,9 +694,6 @@
                     } else if (delayedCount > 0) {
                         status = 'Con Retrasos';
                         statusEmoji = '🟡';
-                    } else if (scrapCount / order.orderQty > 0.05) { // Critical if >5% scrap
-                        status = 'Crítico (Scrap)';
-                        statusEmoji = '🔴';
                     } else {
                         status = 'En Proceso';
                         statusEmoji = '🔵';
@@ -689,7 +708,6 @@
                             <td style="padding: 8px;">${order.packedQty} / ${order.orderQty} (${progress}%)</td>
                             <td style="padding: 8px; text-align: center;">${todayCount}</td>
                             <td style="padding: 8px; text-align: center;">${delayedCount}</td>
-                            <td style="padding: 8px; text-align: center;">${scrapCount}</td>
                         </tr>
                     `;
                 }
@@ -710,7 +728,6 @@
                                     <th style="padding: 8px;">Progreso</th>
                                     <th style="padding: 8px; text-align: center;">En Mov. (Hoy)</th>
                                     <th style="padding: 8px; text-align: center;">Sin Mov. (Retraso)</th>
-                                    <th style="padding: 8px; text-align: center;">Scrap</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -725,7 +742,6 @@
                 copyReportBtn.onclick = () => {
                     try {
                         const content = document.getElementById('report-content');
-                        // Use a trick to copy HTML by creating a temporary element
                         const listener = (e) => {
                             e.clipboardData.setData('text/html', content.innerHTML);
                             e.clipboardData.setData('text/plain', content.innerText);
@@ -848,19 +864,22 @@
             }
 
             function renderSummary() {
-                let orderQty = 0, packedQty = 0, scrapCount = 0;
+                let orderQty = 0, packedQty = 0, scrapCount = 0, catalogNumber = 'N/A';
                 let ordersToProcess = [];
 
                 if (activeOrderKey === 'all') {
                     ordersToProcess = Array.from(loadedOrders.values());
                     statOrderNumber.textContent = 'Múltiples';
+                    statCatalogNumber.textContent = 'Múltiples';
                 } else if (loadedOrders.has(activeOrderKey)) {
                     ordersToProcess = [loadedOrders.get(activeOrderKey)];
                     statOrderNumber.textContent = activeOrderKey;
+                    statCatalogNumber.textContent = ordersToProcess[0].catalogNumber;
                 } else {
                     activeOrderKey = 'all';
                     ordersToProcess = Array.from(loadedOrders.values());
                     statOrderNumber.textContent = 'Múltiples';
+                    statCatalogNumber.textContent = 'Múltiples';
                     setActiveOrder('all');
                 }
 
@@ -1076,9 +1095,9 @@
                  if (header.toLowerCase().includes('date')) return formatDate(excelSerialToDate(value));
                  return value === undefined ? '' : value;
             }
-            
+
              // Initialize view
-            loadFromLink();
+            loadOrdersFromLocalStorage();
 
         });
     </script>
