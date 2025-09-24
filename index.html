@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Control de Producción (Versión Final)</title>
+    <title>Centro de Control de Producción v2.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
@@ -115,7 +115,6 @@
         thead { position: sticky; top: 0; background-color: var(--surface-color); z-index: 10; }
         th { font-weight: 600; color: var(--text-secondary); font-size: 0.75rem; }
         
-        .rastreo-controls { display: grid; grid-template-columns: 1fr; gap: 16px;}
         .actions-container { display: flex; flex-direction: column; gap: 10px; }
         .filter-container { display: flex; flex-direction: column; gap: 16px; }
         .filter-group { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -152,7 +151,6 @@
         
         #loader, #placeholderText { text-align: center; padding: 60px; color: var(--text-dark); font-size: 1.1rem; }
         
-        /* Modal Styles */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px);
@@ -170,11 +168,9 @@
         .modal-close { font-size: 1.75rem; color: var(--text-dark); cursor: pointer; line-height: 1; position: absolute; top: 16px; right: 16px; }
         #modalBody textarea { width: 100%; height: 100px; resize: none; background-color: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;}
 
-        /* --- SOLUCIÓN BUG DE VISTAS: Ocultar/mostrar vistas según la clase del body --- */
         body.mode-rastreo #empaqueView { display: none !important; }
         body.mode-empaque #rastreoView { display: none !important; }
 
-        /* --- ESTILOS RESPONSIVOS Y LAYOUT MÓVIL --- */
         @media (max-width: 992px) {
             body { padding: 8px; }
             .main-container {
@@ -191,10 +187,15 @@
             .header { order: 2; }
             #uploadCard { order: 3; }
             #orderListCard { order: 4; }
+
+            /* SOLUCIÓN AL BUG DE ORDEN FINAL */
+            #rastreoView {
+                display: contents; /* Se aplana para que sus hijos se puedan ordenar individualmente */
+            }
             #filtersCard { order: 5; }
             #actionsCard { order: 6; }
             #tableCard { order: 7; }
-            #empaqueView { order: 7; }
+            #empaqueView { order: 7; } /* Ambas vistas de tabla comparten el último lugar */
             
             .global-dashboard-card { grid-template-columns: 1fr 1fr; }
             .summary-card { 
@@ -216,8 +217,7 @@
                 transition: transform 0.2s; color: var(--text-secondary);
             }
             .card.mobile-collapsible.expanded h3.mobile-trigger::after { transform: rotate(90deg); }
-
-            /* --- NUEVO: Tablas responsivas --- */
+            
             #rastreoTable thead, #empaqueTable thead { display: none; }
             #rastreoTable tr, #empaqueTable tr { 
                 display: block; margin-bottom: 1rem; border-radius: 8px; 
@@ -228,7 +228,7 @@
                 border: none; padding: 0.5rem 0; white-space: normal;
                 border-bottom: 1px solid #0f172a80;
             }
-            #rastreoTable tr:last-child td:last-child, #empaqueTable tr:last-child td:last-child { border-bottom: none; }
+            #rastreoTable tr td:last-child, #empaqueTable tr td:last-child { border-bottom: none; }
             #rastreoTable td::before, #empaqueTable td::before { 
                 content: attr(data-label); float: left; font-weight: bold; 
                 text-align: left; margin-right: 1rem; color: var(--text-secondary);
@@ -270,14 +270,8 @@
     
             <header class="global-header card">
                 <div class="global-dashboard-card">
-                     <div class="stat-item">
-                        <h3>Órdenes del Día</h3>
-                        <p id="totalOrdersStat">0</p>
-                    </div>
-                     <div class="stat-item">
-                        <h3>Órdenes Terminadas</h3>
-                        <p id="completedOrdersStat">0</p>
-                    </div>
+                     <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
+                     <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
                 </div>
             </header>
     
@@ -844,7 +838,34 @@
             }
 
             function createRastreoLineFilters(data, headers) {
-                // (Sin cambios en esta función)
+                const lineHeader = findHeader(headers, TRACKING_KEYS.LINE);
+                if (!lineHeader || data.length === 0) {
+                    rastreoLineFiltersPlaceholder.textContent = "No hay datos para filtrar.";
+                    rastreoLineFiltersPlaceholder.style.display = 'block';
+                    rastreoLineFilters.innerHTML = '';
+                    return;
+                }
+
+                const uniqueLines = [...new Set(data.map(row => row[lineHeader]).filter(Boolean))].sort();
+                rastreoLineFilters.innerHTML = '';
+                rastreoLineFiltersPlaceholder.style.display = 'none';
+
+                const allBtn = document.createElement('button');
+                allBtn.className = 'filter-btn';
+                allBtn.textContent = 'Todas';
+                allBtn.dataset.filter = 'all';
+                rastreoLineFilters.appendChild(allBtn);
+
+                uniqueLines.forEach(line => {
+                    const lineBtn = document.createElement('button');
+                    lineBtn.className = 'filter-btn';
+                    lineBtn.textContent = line;
+                    lineBtn.dataset.filter = line;
+                    rastreoLineFilters.appendChild(lineBtn);
+                });
+                
+                const activeBtn = rastreoLineFilters.querySelector(`[data-filter="${rastreoLineFilter}"]`) || rastreoLineFilters.querySelector('[data-filter="all"]');
+                if(activeBtn) activeBtn.classList.add('active');
             }
             
             function updateRastreoTable(data, headers) {
@@ -864,7 +885,7 @@
                     headersToRender = headers.filter(h => !headersToHide.includes(h) && h !== 'status');
                 }
 
-                if (data.length === 0) {
+                if (data.length === 0 || headersToRender.length === 0) {
                     table.innerHTML = `<thead><tr><th>No se encontraron resultados.</th></tr></thead>`;
                     return;
                 }
@@ -881,7 +902,17 @@
             }
 
             function updateLineCounts(data, headers) {
-                // (Sin cambios en esta función)
+                const lineHeader = findHeader(headers, TRACKING_KEYS.LINE);
+                if (!lineHeader) { lineCountsContainer.innerHTML = ''; return; }
+                const counts = data.reduce((acc, row) => {
+                    const line = row[lineHeader];
+                    if (line) acc[line] = (acc[line] || 0) + 1;
+                    return acc;
+                }, {});
+                
+                lineCountsContainer.innerHTML = Object.entries(counts).sort().map(([line, count]) =>
+                    `<div class="line-badge">${line}: <span>${count}</span></div>`
+                ).join('');
             }
             
             function renderEmpaqueView(key) {
