@@ -176,24 +176,22 @@
                 gap: 12px;
             }
             
-            /* Aplanar la estructura para que los hijos se puedan reordenar */
             .sidebar, .main-content, #rastreoView {
-                display: contents; 
+                /* SOLUCIÓN AL BUG DE ORDEN: Forzar display:contents para que el reordenamiento funcione siempre */
+                display: contents !important; 
             }
             .sidebar > h2 { display: none; }
 
-            /* **CORRECCIÓN FINAL**: Asignar el orden numérico correcto a CADA bloque */
-            /* El .app-header está fuera de este contenedor, por lo que siempre va primero */
+            /* Orden numérico correcto para cada bloque */
             .global-header { order: 1; }
             .header { order: 2; }
             #uploadCard { order: 3; }
             #orderListCard { order: 4; }
             #filtersCard { order: 5; }
             #tableCard { order: 6; }
-            #empaqueView { order: 6; } /* La vista de empaque también va al final */
+            #empaqueView { order: 6; }
             
-
-            /* Ajustar tarjetas de estadísticas según el nuevo diseño */
+            /* Ajustar tarjetas de estadísticas */
             .global-dashboard-card { grid-template-columns: 1fr 1fr; }
             .summary-card { 
                 grid-template-columns: 1fr 1fr; 
@@ -203,15 +201,13 @@
             }
             .stat-item p { font-size: 1.5rem; }
 
-            /* Lógica para tarjetas desplegables en MÓVIL */
-            .card.mobile-collapsible > *:not(.mobile-trigger) {
-                max-height: 0;
-                overflow: hidden;
-                transition: max-height 0.3s ease-out, opacity 0.2s ease-out, padding 0.3s ease-out;
-                opacity: 0;
-                padding-top: 0 !important;
-                margin-top: 0 !important;
-                margin-bottom: 0 !important;
+            /* SOLUCIÓN AL BUG DE FILTROS: Lógica desplegable más robusta */
+            .card.mobile-collapsible .card-content {
+                display: none;
+                padding-top: 16px;
+            }
+            .card.mobile-collapsible.expanded .card-content {
+                display: block;
             }
              .card.mobile-collapsible h3.mobile-trigger {
                 margin-bottom: 0;
@@ -228,20 +224,13 @@
                 transition: transform 0.2s;
                 color: var(--text-secondary);
              }
-
-            /* Estilos cuando la tarjeta está expandida */
-            .card.mobile-collapsible.expanded > *:not(.mobile-trigger) {
-                max-height: 1500px;
-                opacity: 1;
-                margin-top: 16px !important;
-            }
              .card.mobile-collapsible.expanded h3.mobile-trigger::after {
                 transform: rotate(90deg);
              }
             
              /* Agrupar filtros y acciones en el móvil */
-            .rastreo-controls .filter-container > div:last-of-type,
-            .rastreo-controls > div:last-of-type {
+            #filtersCard .filter-container > div:last-of-type,
+            #filtersCard > div:last-of-type {
                  border-top: 1px solid var(--border-color);
                  padding-top: 16px;
                  margin-top: 6px;
@@ -260,17 +249,21 @@
                 <h2>Panel de Control</h2>
                 <div class="card" id="uploadCard">
                     <h3>Cargar Órdenes</h3>
-                    <div id="fileDropArea" class="file-drop-area">
-                        <p>Arrastra archivos (.xlsx, .json)</p>
-                        <p><span>o haz clic para seleccionar</span></p>
+                    <div class="card-content">
+                        <div id="fileDropArea" class="file-drop-area">
+                            <p>Arrastra archivos (.xlsx, .json)</p>
+                            <p><span>o haz clic para seleccionar</span></p>
+                        </div>
+                        <input type="file" id="fileInput" accept=".xlsx, .xls, .json" multiple style="display: none;">
+                        <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
                     </div>
-                    <input type="file" id="fileInput" accept=".xlsx, .xls, .json" multiple style="display: none;">
-                    <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
                 </div>
                 <div class="card" style="flex-grow: 1;" id="orderListCard">
                     <h3>Órdenes Cargadas</h3>
-                    <div id="orderList">
-                        <p class="text-dark" style="font-size:0.9rem;">Cargue uno o más archivos para comenzar.</p>
+                    <div class="card-content">
+                        <div id="orderList">
+                            <p class="text-dark" style="font-size:0.9rem;">Cargue uno o más archivos para comenzar.</p>
+                        </div>
                     </div>
                 </div>
             </aside>
@@ -309,30 +302,33 @@
             <main class="main-content">
                 <div id="rastreoView" style="display:flex; flex-direction:column; gap:16px;">
                     <div class="card rastreo-controls" id="filtersCard">
-                        <div class="filter-container">
-                            <div>
-                                <h3>Filtrar por Estado</h3>
-                                <div id="rastreoStatusFilters" class="filter-group">
-                                    <button class="filter-btn active" data-filter="all">Todos</button>
-                                    <button class="filter-btn" data-filter="today">En Movimiento</button>
-                                    <button class="filter-btn" data-filter="delayed">Sin Movimiento</button>
-                                    <button class="filter-btn" data-filter="scrap">Scrap</button>
+                        <h3>Filtros y Acciones</h3>
+                        <div class="card-content">
+                            <div class="filter-container">
+                                <div>
+                                    <h3>Filtrar por Estado</h3>
+                                    <div id="rastreoStatusFilters" class="filter-group">
+                                        <button class="filter-btn active" data-filter="all">Todos</button>
+                                        <button class="filter-btn" data-filter="today">En Movimiento</button>
+                                        <button class="filter-btn" data-filter="delayed">Sin Movimiento</button>
+                                        <button class="filter-btn" data-filter="scrap">Scrap</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3>Filtrar por Línea</h3>
+                                    <div id="rastreoLineFilters" class="filter-group">
+                                        <p id="rastreoLineFiltersPlaceholder" class="text-dark" style="font-size: 0.9rem;">Cargue un archivo para ver los filtros.</p>
+                                    </div>
                                 </div>
                             </div>
                             <div>
-                                <h3>Filtrar por Línea</h3>
-                                <div id="rastreoLineFilters" class="filter-group">
-                                    <p id="rastreoLineFiltersPlaceholder" class="text-dark" style="font-size: 0.9rem;">Cargue un archivo para ver los filtros.</p>
-                                </div>
+                                 <h3>Acciones y Reportes</h3>
+                                 <div style="display: flex; flex-direction: column; gap: 10px;">
+                                     <button id="exportViewButton" class="btn" disabled>Exportar Vista a Excel</button>
+                                     <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
+                                     <button id="shareSessionButton" class="btn" disabled>Guardar Sesión para Compartir</button>
+                                 </div>
                             </div>
-                        </div>
-                        <div>
-                             <h3>Acciones y Reportes</h3>
-                             <div style="display: flex; flex-direction: column; gap: 10px;">
-                                 <button id="exportViewButton" class="btn" disabled>Exportar Vista a Excel</button>
-                                 <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
-                                 <button id="shareSessionButton" class="btn" disabled>Guardar Sesión para Compartir</button>
-                             </div>
                         </div>
                     </div>
                     <div class="card" id="tableCard" style="flex-grow:1; display:flex; flex-direction:column;">
@@ -1175,25 +1171,17 @@
 
             // --- Lógica de adaptación a móvil ---
             let isMobile = window.innerWidth <= 992;
-            const collapsibleCards = [
-                { id: 'uploadCard', title: 'Panel de Control' }, 
-                { id: 'orderListCard', title: 'Órdenes Cargadas' },
-                { id: 'filtersCard', title: 'Filtros y Acciones' }
-            ];
+            const cardIds = ['uploadCard', 'orderListCard', 'filtersCard'];
 
             function setupMobileMode() {
-                collapsibleCards.forEach(cardInfo => {
-                    const cardElement = document.getElementById(cardInfo.id);
+                cardIds.forEach(id => {
+                    const cardElement = document.getElementById(id);
                     if (!cardElement) return;
 
                     cardElement.classList.add('mobile-collapsible');
                     const trigger = cardElement.querySelector('h3');
                     if (trigger) {
                         trigger.classList.add('mobile-trigger');
-                        if (cardInfo.id === 'filtersCard') {
-                            const firstH3 = cardElement.querySelector('.filter-container h3');
-                            if(firstH3) firstH3.textContent = cardInfo.title;
-                        }
                         if (!trigger.dataset.mobileListener) {
                             trigger.addEventListener('click', () => {
                                 if(window.innerWidth <= 992) { 
@@ -1207,18 +1195,12 @@
             }
 
             function teardownMobileMode() {
-                 collapsibleCards.forEach(cardInfo => {
-                    const cardElement = document.getElementById(cardInfo.id);
+                 cardIds.forEach(id => {
+                    const cardElement = document.getElementById(id);
                     if (!cardElement) return;
-
                     cardElement.classList.remove('mobile-collapsible', 'expanded');
                     const trigger = cardElement.querySelector('h3');
                     if(trigger) trigger.classList.remove('mobile-trigger');
-
-                    if (cardInfo.id === 'filtersCard') {
-                         const firstH3 = cardElement.querySelector('.filter-container h3');
-                         if(firstH3) firstH3.textContent = 'Filtrar por Estado';
-                    }
                  });
             }
             
