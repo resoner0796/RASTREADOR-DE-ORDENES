@@ -694,51 +694,39 @@
             }
             
             // ======================================================================
-            // ========= ✅ INICIO: SOLUCIÓN DEFINITIVA "EN MOVIMIENTO" ✅ ==========
+            // ========= ✅ INICIO: SOLUCIÓN PARA FECHA "EN MOVIMIENTO" ✅ =========
             // ======================================================================
             function processRastreoData(data) {
                 if (!data || data.length === 0) return [];
-                
-                // Función auxiliar para formatear una fecha a 'YYYY-MM-DD'
-                const toYYYYMMDD = (date) => {
-                    const y = date.getFullYear();
-                    const m = String(date.getMonth() + 1).padStart(2, '0');
-                    const d = String(date.getDate()).padStart(2, '0');
-                    return `${y}-${m}-${d}`;
-                };
-            
-                const todayString = toYYYYMMDD(new Date());
-            
-                // Para la comparación de "retrasado", necesitamos el inicio del día de hoy.
-                const startOfToday = new Date();
-                startOfToday.setHours(0, 0, 0, 0);
-            
-                const headers = Object.keys(data[0]);
+
+                // Obtenemos la fecha de hoy en el horario local del cliente.
+                // Al comparar cadenas en formato YYYY-MM-DD, evitamos problemas de zona horaria en el cálculo.
+                const today = new Date();
+                const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+                const headers = Object.keys(data[0] || {});
                 const scrapHeader = findHeader(headers, TRACKING_KEYS.IS_SCRAP);
                 const dateHeader = findHeader(headers, TRACKING_KEYS.DATE_REGISTERED);
-            
+
                 return data.map(row => {
                     let status = 'normal';
                     const isScrap = String(row[scrapHeader]).trim().toUpperCase() === 'X';
-            
+
                     if (isScrap) {
                         status = 'scrap';
                     } else {
                         const dateSerial = row[dateHeader];
                         const decodedDate = dateSerial ? XLSX.SSF.parse_date_code(dateSerial) : null;
-            
+
                         if (decodedDate) {
-                            // Construir la cadena 'YYYY-MM-DD' desde los datos del serial
+                            // Construimos la cadena YYYY-MM-DD desde los componentes de la fecha del archivo Excel.
                             const serialDateString = `${decodedDate.y}-${String(decodedDate.m).padStart(2, '0')}-${String(decodedDate.d).padStart(2, '0')}`;
                             
-                            // Comparación de texto: infalible y sin zonas horarias.
+                            // Comparamos las cadenas de texto directamente. Es seguro y consistente para el formato YYYY-MM-DD.
                             if (serialDateString === todayString) {
                                 status = 'today';
-                            } else {
-                                const registeredDateObject = excelSerialToDate(dateSerial);
-                                if (registeredDateObject && registeredDateObject < startOfToday) {
-                                    status = 'delayed';
-                                }
+                            } else if (serialDateString < todayString) {
+                                status = 'delayed';
                             }
                         }
                     }
@@ -746,7 +734,7 @@
                 });
             }
             // ======================================================================
-            // =========== ✅ FIN: SOLUCIÓN DEFINITIVA "EN MOVIMIENTO" ✅ ============
+            // =========== ✅ FIN: SOLUCIÓN PARA FECHA "EN MOVIMIENTO" ✅ ===========
             // ======================================================================
 
 
@@ -1006,7 +994,7 @@
             }
             
             // =================================================================
-            // ========= ✅ INICIO: CORRECCIÓN TABLA DE EMPAQUE ✅ ==============
+            // ========= ✅ INICIO: SOLUCIÓN TABLA DE EMPAQUE COLAPSABLE ✅ =====
             // =================================================================
             function renderEmpaqueView(key) {
                 let dataToShow = new Map(); let headers = [];
@@ -1032,7 +1020,7 @@
                 const employeeIdHeader = findHeader(headers, PACKING_KEYS.EMPLOYEE_ID);
                 const filterText = empaqueFilterInput.value.toLowerCase();
                 let tableHTML = `
-                    <thead><tr><th>${boxIdHeader}</th><th>Cantidad</th><th>Último Empaque</th></tr></thead>
+                    <thead><tr><th>${boxIdHeader || 'Box ID'}</th><th>Cantidad</th><th>Último Empaque</th></tr></thead>
                     <tbody>`;
                 for (const [boxId, serials] of dataToShow.entries()) {
                     const latestDate = Math.max(...serials.map(s => s[packedDateHeader]));
@@ -1071,6 +1059,8 @@
                 }
                 tableHTML += `</tbody>`;
                 table.innerHTML = tableHTML;
+
+                // Añadimos los event listeners para hacer las filas colapsables
                 table.querySelectorAll('.box-row').forEach(row => {
                     row.addEventListener('click', () => {
                         row.classList.toggle('expanded');
@@ -1083,7 +1073,7 @@
                 });
             }
             // =================================================================
-            // =========== ✅ FIN: CORRECCIÓN TABLA DE EMPAQUE ✅ ===============
+            // =========== ✅ FIN: SOLUCIÓN TABLA DE EMPAQUE COLAPSABLE ✅ ======
             // =================================================================
 
             function formatCell(value, header, isDateTime = false) {
