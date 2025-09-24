@@ -139,7 +139,7 @@
         }
         .box-row.expanded td:first-child::before { transform: rotate(90deg); }
         .serial-row { display: none; background-color: var(--bg-color); }
-        .serial-row td { padding-left: 40px; border-color: #2a3a5e; }
+        .serial-row td { padding: 12px 20px 12px 40px; border-color: #2a3a5e; }
 
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
@@ -148,6 +148,48 @@
         tbody tr.is-today { background-color: rgba(52, 211, 153, 0.1) !important; }
         tbody tr.is-today td { color: var(--success-color) !important; }
         
+        /* === INICIO: NUEVOS ESTILOS PARA TABLA DE EMPAQUE === */
+        .serial-details-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+        .serial-detail-item {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .serial-detail-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .serial-info, .packing-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .packing-info {
+            text-align: left;
+        }
+        .detail-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+        .detail-value {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        @media (min-width: 500px) {
+            .packing-info { text-align: right; }
+        }
+        /* === FIN: NUEVOS ESTILOS PARA TABLA DE EMPAQUE === */
+
         #loader, #placeholderText { text-align: center; padding: 60px; color: var(--text-dark); font-size: 1.1rem; }
         
         .modal-overlay {
@@ -244,32 +286,29 @@
                 text-align: left; margin-right: 1rem; color: var(--text-secondary);
             }
 
-            /* SOLUCIÓN TABLA EMPAQUE ROTA */
-            #empaqueTable, #empaqueTable tbody { display: block; }
-            #empaqueTable .box-row { 
-                display: block; border: 1px solid var(--border-color);
-                border-radius: 8px 8px 0 0; padding: 1rem; margin-bottom:0;
+            #empaqueTable, #empaqueTable tbody, #empaqueTable tr { display: block; }
+            #empaqueTable .box-row, #empaqueTable .serial-row {
+                margin-bottom: 1rem;
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
             }
-            #empaqueTable .box-row td {
-                 display: flex; justify-content: space-between; text-align: right; 
-                border: none; padding: 0.5rem 0; white-space: normal;
+            #empaqueTable .box-row { margin-bottom: 0; border-radius: 8px 8px 0 0; }
+            #empaqueTable .box-row.expanded { border-bottom-color: transparent; }
+             #empaqueTable .serial-row { margin-top: -1px; margin-bottom: 1rem; border-radius: 0 0 8px 8px; }
+
+            #empaqueTable td { display: block; padding: 0.5rem 0; border: none; }
+            #empaqueTable .box-row td { 
+                display: flex; justify-content: space-between; text-align: right; 
+                padding: 0.5rem 0; white-space: normal;
                 border-bottom: 1px solid #0f172a80;
             }
-            #empaqueTable .box-row td:last-child { border-bottom: none; }
+            #empaqueTable .box-row { padding: 1rem; }
+            #empaqueTable tr td:last-child { border-bottom: none; }
             #empaqueTable .box-row td::before {
                 content: attr(data-label); float: left; font-weight: bold; 
                 text-align: left; margin-right: 1rem; color: var(--text-secondary);
             }
-            #empaqueTable .serial-row {
-                display: block; background-color: var(--bg-color);
-                padding: 0.75rem 1rem 0.75rem 2rem;
-                border-radius: 0 0 8px 8px; border: 1px solid var(--border-color);
-                border-top: none; margin-bottom: 1rem; font-size: 0.8rem;
-            }
-             #empaqueTable .serial-row td {
-                display: block; padding: 0; border: none; text-align: left;
-             }
-             #empaqueTable .serial-row td::before { display: none; }
+             #empaqueTable .serial-row td { padding: 1rem; }
         }
     </style>
 </head>
@@ -659,12 +698,16 @@
             // ======================================================================
             function processRastreoData(data) {
                 if (!data || data.length === 0) return [];
+                
+                // Función auxiliar para formatear una fecha a 'YYYY-MM-DD'
+                const toYYYYMMDD = (date) => {
+                    const y = date.getFullYear();
+                    const m = String(date.getMonth() + 1).padStart(2, '0');
+                    const d = String(date.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${d}`;
+                };
             
-                // Obtener los componentes de la fecha actual (año, mes, día) una sola vez.
-                const now = new Date();
-                const todayYear = now.getFullYear();
-                const todayMonth = now.getMonth() + 1; // JS los meses son 0-11, así que sumamos 1
-                const todayDay = now.getDate();
+                const todayString = toYYYYMMDD(new Date());
             
                 // Para la comparación de "retrasado", necesitamos el inicio del día de hoy.
                 const startOfToday = new Date();
@@ -682,19 +725,16 @@
                         status = 'scrap';
                     } else {
                         const dateSerial = row[dateHeader];
-                        // Decodifica el serial de Excel para obtener sus componentes (y, m, d)
                         const decodedDate = dateSerial ? XLSX.SSF.parse_date_code(dateSerial) : null;
             
                         if (decodedDate) {
-                            // Comparación numérica directa: infalible y sin zonas horarias.
-                            const isToday = decodedDate.y === todayYear &&
-                                          decodedDate.m === todayMonth &&
-                                          decodedDate.d === todayDay;
-            
-                            if (isToday) {
+                            // Construir la cadena 'YYYY-MM-DD' desde los datos del serial
+                            const serialDateString = `${decodedDate.y}-${String(decodedDate.m).padStart(2, '0')}-${String(decodedDate.d).padStart(2, '0')}`;
+                            
+                            // Comparación de texto: infalible y sin zonas horarias.
+                            if (serialDateString === todayString) {
                                 status = 'today';
                             } else {
-                                // Para "retrasado", sí necesitamos comparar objetos Date
                                 const registeredDateObject = excelSerialToDate(dateSerial);
                                 if (registeredDateObject && registeredDateObject < startOfToday) {
                                     status = 'delayed';
@@ -708,6 +748,7 @@
             // ======================================================================
             // =========== ✅ FIN: SOLUCIÓN DEFINITIVA "EN MOVIMIENTO" ✅ ============
             // ======================================================================
+
 
             function groupEmpaqueData(data) {
                 if (!data || data.length === 0) return new Map();
@@ -964,6 +1005,9 @@
                 ).join('');
             }
             
+            // =================================================================
+            // ========= ✅ INICIO: CORRECCIÓN TABLA DE EMPAQUE ✅ ==============
+            // =================================================================
             function renderEmpaqueView(key) {
                 let dataToShow = new Map(); let headers = [];
                 if (key === 'all') {
@@ -994,22 +1038,36 @@
                     const latestDate = Math.max(...serials.map(s => s[packedDateHeader]));
                     const serialsMatchFilter = serials.some(s => String(s[serialHeader]).toLowerCase().includes(filterText));
                     if (!String(boxId).toLowerCase().includes(filterText) && !serialsMatchFilter) continue;
+                    
+                    let serialsDetailsHTML = '<div class="serial-details-container">';
+                    serials.forEach(serial => {
+                        serialsDetailsHTML += `
+                            <div class="serial-detail-item">
+                                <div class="serial-info">
+                                    <span class="detail-label">Serial:</span>
+                                    <span class="detail-value">${serial[serialHeader]}</span>
+                                </div>
+                                <div class="packing-info">
+                                    <span class="detail-label">Empacador:</span>
+                                    <span class="detail-value">${serial[employeeIdHeader] || 'N/A'}</span>
+                                    <span class="detail-label" style="margin-top: 5px;">Fecha:</span>
+                                    <span class="detail-value">${formatDateTime(excelSerialToDate(serial[packedDateHeader]))}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    serialsDetailsHTML += '</div>';
+
                     tableHTML += `
                         <tr class="box-row" data-boxid="${boxId}">
                             <td data-label="Box ID">${boxId}</td>
                             <td data-label="Cantidad">${serials.length}</td>
                             <td data-label="Último Empaque">${formatDateTime(excelSerialToDate(latestDate))}</td>
-                        </tr>`;
-                    serials.forEach(serial => {
-                         tableHTML += `
-                            <tr class="serial-row" data-parentbox="${boxId}" style="display: none;">
-                                <td colspan="3">
-                                    <strong>Serial:</strong> ${serial[serialHeader]} | 
-                                    <strong>Empacador:</strong> ${serial[employeeIdHeader] || 'N/A'} | 
-                                    <strong>Fecha:</strong> ${formatDateTime(excelSerialToDate(serial[packedDateHeader]))}
-                                </td>
-                            </tr>`;
-                    });
+                        </tr>
+                        <tr class="serial-row" data-parentbox="${boxId}">
+                            <td colspan="3">${serialsDetailsHTML}</td>
+                        </tr>
+                        `;
                 }
                 tableHTML += `</tbody>`;
                 table.innerHTML = tableHTML;
@@ -1017,15 +1075,16 @@
                     row.addEventListener('click', () => {
                         row.classList.toggle('expanded');
                         const boxId = row.dataset.boxid;
-                        const isMobile = window.innerWidth <= 992;
-                        const newDisplay = row.classList.contains('expanded') ? (isMobile ? 'block' : 'table-row') : 'none';
-                        
-                        table.querySelectorAll(`.serial-row[data-parentbox="${boxId}"]`).forEach(serialRow => {
-                            serialRow.style.display = newDisplay;
-                        });
+                        const serialRow = table.querySelector(`.serial-row[data-parentbox="${boxId}"]`);
+                        if (serialRow) {
+                            serialRow.style.display = row.classList.contains('expanded') ? 'table-row' : 'none';
+                        }
                     });
                 });
             }
+            // =================================================================
+            // =========== ✅ FIN: CORRECCIÓN TABLA DE EMPAQUE ✅ ===============
+            // =================================================================
 
             function formatCell(value, header, isDateTime = false) {
                  if (isDateTime) return formatDateTime(excelSerialToDate(value));
