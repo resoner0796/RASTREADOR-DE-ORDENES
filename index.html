@@ -286,11 +286,16 @@
                 text-align: left; margin-right: 1rem; color: var(--text-secondary);
             }
 
-            #empaqueTable, #empaqueTable tbody, #empaqueTable tr { display: block; }
+            /* === CSS FIX FOR PACKING TABLE === */
+            #empaqueTable, #empaqueTable tbody { display: block; } /* REMOVED 'tr' from this rule */
             #empaqueTable .box-row, #empaqueTable .serial-row {
+                display: block; /* Ensure serial-row becomes block when visible */
                 margin-bottom: 1rem;
                 border: 1px solid var(--border-color);
                 border-radius: 8px;
+            }
+            #empaqueTable .serial-row { 
+                display: none; /* Keep it hidden by default */
             }
             #empaqueTable .box-row { margin-bottom: 0; border-radius: 8px 8px 0 0; }
             #empaqueTable .box-row.expanded { border-bottom-color: transparent; }
@@ -344,8 +349,8 @@
     
             <header class="global-header card">
                 <div class="global-dashboard-card">
-                     <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
-                     <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
+                       <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
+                       <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
                 </div>
             </header>
     
@@ -355,15 +360,15 @@
                     <button id="modeEmpaque">Empaque</button>
                 </div>
                 <div id="summaryCard" class="summary-card">
-                     <div class="stat-item">
-                         <h3>Orden</h3>
-                         <p id="statOrderNumber">N/A</p>
-                         <p id="statCatalogNumber"></p>
-                     </div>
-                     <div class="stat-item"><h3>Cant. Orden</h3><p id="statOrderQty">0</p></div>
-                     <div class="stat-item"><h3>Cant. Empacada</h3><p id="statPackedQty">0</p></div>
-                     <div class="stat-item"><h3>Restante</h3><p id="statRemainingQty">0</p></div>
-                     <div class="stat-item"><h3>Cant. en Scrap</h3><p id="statScrapQty">0</p></div>
+                       <div class="stat-item">
+                            <h3>Orden</h3>
+                            <p id="statOrderNumber">N/A</p>
+                            <p id="statCatalogNumber"></p>
+                       </div>
+                       <div class="stat-item"><h3>Cant. Orden</h3><p id="statOrderQty">0</p></div>
+                       <div class="stat-item"><h3>Cant. Empacada</h3><p id="statPackedQty">0</p></div>
+                       <div class="stat-item"><h3>Restante</h3><p id="statRemainingQty">0</p></div>
+                       <div class="stat-item"><h3>Cant. en Scrap</h3><p id="statScrapQty">0</p></div>
                 </div>
             </section>
     
@@ -435,7 +440,7 @@
             apiKey: "AIzaSyDtlj3ppT9WBGMR60SZx0TZmAo3BXQWDX0",
             authDomain: "rastreador-de-ordenes.firebaseapp.com",
             projectId: "rastreador-de-ordenes",
-            storageBucket: "rastreador-de-ordenes.firebasestorage.app",
+            storageBucket: "rastreador-de-ordenes.appspot.com",
             messagingSenderId: "956052823395",
             appId: "1:956052823395:web:2ba74d9591d2b24c3cc756"
         };
@@ -678,14 +683,14 @@
                          const col = isPacking ? PACKING_KEYS[key] : key;
                          const headerName = headers[col];
                          if (headerName) {
-                            const cellAddress = col + (rowNum + 1);
-                            const cell = worksheet[cellAddress];
-                            if(cell && cell.v !== undefined) {
-                                row[headerName] = cell.v;
-                                hasData = true;
-                            } else {
-                                row[headerName] = '';
-                            }
+                             const cellAddress = col + (rowNum + 1);
+                             const cell = worksheet[cellAddress];
+                             if(cell && cell.v !== undefined) {
+                                 row[headerName] = cell.v;
+                                 hasData = true;
+                             } else {
+                                 row[headerName] = '';
+                             }
                          }
                      });
                      if (hasData) jsonData.push(row);
@@ -694,39 +699,42 @@
             }
             
             // ======================================================================
-            // ========= ✅ INICIO: SOLUCIÓN PARA FECHA "EN MOVIMIENTO" ✅ =========
+            // ========= ✅ INICIO: SOLUCIÓN DEFINITIVA "EN MOVIMIENTO" ✅ ==========
             // ======================================================================
             function processRastreoData(data) {
                 if (!data || data.length === 0) return [];
 
-                // Obtenemos la fecha de hoy en el horario local del cliente.
-                // Al comparar cadenas en formato YYYY-MM-DD, evitamos problemas de zona horaria en el cálculo.
-                const today = new Date();
-                const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
+                // Obtener la fecha actual en formato YYYY-MM-DD para Reynosa, México.
+                // Esta es la clave para resolver el problema de la zona horaria.
+                const reynosaTodayString = new Date().toLocaleDateString('en-CA', {
+                    timeZone: 'America/Matamoros'
+                });
+                
                 const headers = Object.keys(data[0] || {});
                 const scrapHeader = findHeader(headers, TRACKING_KEYS.IS_SCRAP);
                 const dateHeader = findHeader(headers, TRACKING_KEYS.DATE_REGISTERED);
 
                 return data.map(row => {
-                    let status = 'normal';
+                    let status = 'normal'; // Estado por defecto para items sin fecha o con fecha futura
                     const isScrap = String(row[scrapHeader]).trim().toUpperCase() === 'X';
 
                     if (isScrap) {
                         status = 'scrap';
                     } else {
                         const dateSerial = row[dateHeader];
-                        const decodedDate = dateSerial ? XLSX.SSF.parse_date_code(dateSerial) : null;
-
-                        if (decodedDate) {
-                            // Construimos la cadena YYYY-MM-DD desde los componentes de la fecha del archivo Excel.
-                            const serialDateString = `${decodedDate.y}-${String(decodedDate.m).padStart(2, '0')}-${String(decodedDate.d).padStart(2, '0')}`;
-                            
-                            // Comparamos las cadenas de texto directamente. Es seguro y consistente para el formato YYYY-MM-DD.
-                            if (serialDateString === todayString) {
-                                status = 'today';
-                            } else if (serialDateString < todayString) {
-                                status = 'delayed';
+                        if (dateSerial) {
+                            const decodedDate = XLSX.SSF.parse_date_code(dateSerial);
+                            if (decodedDate) {
+                                // Construir la cadena de fecha del serial de Excel en formato YYYY-MM-DD
+                                const serialDateString = `${decodedDate.y}-${String(decodedDate.m).padStart(2, '0')}-${String(decodedDate.d).padStart(2, '0')}`;
+                                
+                                // La comparación de cadenas puras evita todos los problemas de conversión de zona horaria.
+                                if (serialDateString === reynosaTodayString) {
+                                    status = 'today'; // 'En Movimiento'
+                                } else if (serialDateString < reynosaTodayString) {
+                                    status = 'delayed'; // 'Sin Movimiento'
+                                }
+                                // Si serialDateString > reynosaTodayString (fecha futura), el estado permanece 'normal'.
                             }
                         }
                     }
@@ -734,7 +742,7 @@
                 });
             }
             // ======================================================================
-            // =========== ✅ FIN: SOLUCIÓN PARA FECHA "EN MOVIMIENTO" ✅ ===========
+            // =========== ✅ FIN: SOLUCIÓN DEFINITIVA "EN MOVIMIENTO" ✅ ============
             // ======================================================================
 
 
@@ -994,7 +1002,7 @@
             }
             
             // =================================================================
-            // ========= ✅ INICIO: SOLUCIÓN TABLA DE EMPAQUE COLAPSABLE ✅ =====
+            // ========= ✅ INICIO: CORRECCIÓN TABLA DE EMPAQUE ✅ ==============
             // =================================================================
             function renderEmpaqueView(key) {
                 let dataToShow = new Map(); let headers = [];
@@ -1020,7 +1028,7 @@
                 const employeeIdHeader = findHeader(headers, PACKING_KEYS.EMPLOYEE_ID);
                 const filterText = empaqueFilterInput.value.toLowerCase();
                 let tableHTML = `
-                    <thead><tr><th>${boxIdHeader || 'Box ID'}</th><th>Cantidad</th><th>Último Empaque</th></tr></thead>
+                    <thead><tr><th>${boxIdHeader}</th><th>Cantidad</th><th>Último Empaque</th></tr></thead>
                     <tbody>`;
                 for (const [boxId, serials] of dataToShow.entries()) {
                     const latestDate = Math.max(...serials.map(s => s[packedDateHeader]));
@@ -1059,21 +1067,25 @@
                 }
                 tableHTML += `</tbody>`;
                 table.innerHTML = tableHTML;
-
-                // Añadimos los event listeners para hacer las filas colapsables
                 table.querySelectorAll('.box-row').forEach(row => {
                     row.addEventListener('click', () => {
                         row.classList.toggle('expanded');
                         const boxId = row.dataset.boxid;
                         const serialRow = table.querySelector(`.serial-row[data-parentbox="${boxId}"]`);
                         if (serialRow) {
-                            serialRow.style.display = row.classList.contains('expanded') ? 'table-row' : 'none';
+                            if (row.classList.contains('expanded')) {
+                                // Usar 'block' en vista móvil y 'table-row' en escritorio
+                                const isMobileView = window.innerWidth <= 992;
+                                serialRow.style.display = isMobileView ? 'block' : 'table-row';
+                            } else {
+                                serialRow.style.display = 'none';
+                            }
                         }
                     });
                 });
             }
             // =================================================================
-            // =========== ✅ FIN: SOLUCIÓN TABLA DE EMPAQUE COLAPSABLE ✅ ======
+            // =========== ✅ FIN: CORRECCIÓN TABLA DE EMPAQUE ✅ ===============
             // =================================================================
 
             function formatCell(value, header, isDateTime = false) {
