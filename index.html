@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control de Órdenes (con Exportación)</title>
+    <title>Panel de Control de Órdenes (Exportación Avanzada)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
@@ -142,6 +142,30 @@
         tbody tr:not(.is-scrap):not(.is-delayed):not(.is-today):hover { background-color: #334155; }
         
         #loader, #placeholderText { text-align: center; padding: 60px; color: var(--text-dark); font-size: 1.1rem; }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px);
+            display: flex; align-items: center; justify-content: center; z-index: 1000;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal-overlay.visible { opacity: 1; visibility: visible; }
+        .modal-content {
+            background-color: var(--surface-color); border-radius: 12px; padding: 24px;
+            border: 1px solid var(--border-color); width: 90%; max-width: 450px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transform: scale(0.95); transition: transform 0.3s;
+        }
+        .modal-overlay.visible .modal-content { transform: scale(1); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; }
+        .modal-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
+        .modal-close { font-size: 1.75rem; color: var(--text-dark); cursor: pointer; line-height: 1; }
+        .modal-body { margin-top: 16px; color: var(--text-secondary); }
+        .modal-content.success .modal-title { color: var(--success-color); }
+        .modal-content.error .modal-title { color: var(--danger-color); }
+        .modal-content.info .modal-title { color: var(--primary-color); }
+
     </style>
 </head>
 <body>
@@ -203,18 +227,33 @@
         </main>
     </div>
 
+    <!-- Modal HTML -->
+    <div id="modalOverlay" class="modal-overlay">
+        <div id="modalContent" class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle" class="modal-title"></h2>
+                <span id="modalClose" class="modal-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="modalMessage"></p>
+            </div>
+        </div>
+    </div>
+
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- GLOBAL STATE AND CONSTANTS ---
             let allData = [];
-            let processedData = []; // This will store data with calculated status
+            let processedData = [];
             let currentStatusFilter = 'all';
             let currentLineFilter = 'all';
+            let headersCache = {};
 
             const KEY_HEADER_TEXT = {
-                SERIAL: 'Producto Serial Number',
-                IS_SCRAP: 'Is Scrap', NOT_PACKED: 'Not Packed',
-                CREATED_BY: 'Created By', DATE_REGISTERED: 'Date Registered'
+                SERIAL: 'Producto Serial Number', IS_SCRAP: 'Is Scrap', 
+                NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', 
+                DATE_REGISTERED: 'Date Registered', LINE: 'Line'
             };
             const TARGET_COLUMNS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
 
@@ -238,6 +277,11 @@
             const lineFiltersContainer = document.getElementById('lineFilters');
             const lineFiltersPlaceholder = document.getElementById('lineFiltersPlaceholder');
             const exportButton = document.getElementById('exportButton');
+            const modalOverlay = document.getElementById('modalOverlay');
+            const modalContent = document.getElementById('modalContent');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalMessage = document.getElementById('modalMessage');
+            const modalClose = document.getElementById('modalClose');
 
             // --- EVENT LISTENERS ---
             fileDropArea.addEventListener('click', () => fileInput.click());
@@ -261,6 +305,23 @@
             });
 
             exportButton.addEventListener('click', handleExport);
+            modalClose.addEventListener('click', hideModal);
+            modalOverlay.addEventListener('click', (e) => {
+                if(e.target === modalOverlay) hideModal();
+            });
+
+            // --- MODAL FUNCTIONS ---
+            function showModal(title, message, type = 'info') {
+                modalTitle.textContent = title;
+                modalMessage.textContent = message;
+                modalContent.className = `modal-content ${type}`;
+                modalOverlay.classList.add('visible');
+            }
+
+            function hideModal() {
+                modalOverlay.classList.remove('visible');
+            }
+
 
             // --- HELPER FUNCTIONS ---
             function excelSerialToDate(serial) {
@@ -312,12 +373,12 @@
 
                         if (allData.length > 0) {
                             const headers = Object.keys(allData[0]);
-                            const scrapHeader = findHeader(headers, KEY_HEADER_TEXT.IS_SCRAP);
-                            const scrapCount = allData.filter(row => String(row[scrapHeader]).trim().toUpperCase() === 'X').length;
+                            cacheHeaders(headers);
+                            const scrapCount = allData.filter(row => String(row[headersCache.scrap]).trim().toUpperCase() === 'X').length;
                             statScrapQty.textContent = scrapCount;
                             
-                            processAllData(); // Pre-calculate status for all rows
-                            createLineFilters(headers);
+                            processAllData();
+                            createLineFilters();
                             render();
                             exportButton.disabled = false;
                         } else {
@@ -361,15 +422,24 @@
                 }
                 return jsonData;
             }
+            
+            function cacheHeaders(headers) {
+                headersCache.all = headers;
+                headersCache.serial = findHeader(headers, KEY_HEADER_TEXT.SERIAL);
+                headersCache.scrap = findHeader(headers, KEY_HEADER_TEXT.IS_SCRAP);
+                headersCache.notPacked = findHeader(headers, KEY_HEADER_TEXT.NOT_PACKED);
+                headersCache.dateRegistered = findHeader(headers, KEY_HEADER_TEXT.DATE_REGISTERED);
+                headersCache.createdBy = findHeader(headers, KEY_HEADER_TEXT.CREATED_BY);
+                headersCache.line = findHeader(headers, KEY_HEADER_TEXT.LINE);
+            }
 
-            function createLineFilters(headers) {
-                const lineHeader = findHeader(headers, 'Line');
-                if (!lineHeader) {
+            function createLineFilters() {
+                if (!headersCache.line) {
                     lineFiltersPlaceholder.textContent = "No se encontró la columna 'Line'.";
                     return;
                 }
 
-                const uniqueLines = [...new Set(allData.map(row => row[lineHeader]).filter(Boolean))].sort();
+                const uniqueLines = [...new Set(allData.map(row => row[headersCache.line]).filter(Boolean))].sort();
                 lineFiltersContainer.innerHTML = '';
                 lineFiltersPlaceholder.style.display = 'none';
 
@@ -398,18 +468,14 @@
             }
 
             function processAllData() {
-                const headers = Object.keys(allData[0] || {});
-                const scrapHeader = findHeader(headers, KEY_HEADER_TEXT.IS_SCRAP);
-                const dateRegisteredHeader = findHeader(headers, KEY_HEADER_TEXT.DATE_REGISTERED);
                 const today = new Date();
-
                 processedData = allData.map(row => {
                     let status = 'normal';
-                    const isScrap = String(row[scrapHeader]).trim().toUpperCase() === 'X';
+                    const isScrap = String(row[headersCache.scrap]).trim().toUpperCase() === 'X';
                     if (isScrap) {
                         status = 'scrap';
                     } else {
-                        const registeredDate = excelSerialToDate(row[dateRegisteredHeader]);
+                        const registeredDate = excelSerialToDate(row[headersCache.dateRegistered]);
                         if (registeredDate instanceof Date) {
                             if (registeredDate.toDateString() === today.toDateString()) {
                                 status = 'today';
@@ -423,45 +489,46 @@
             }
             
             function handleExport() {
-                const serialHeader = findHeader(Object.keys(allData[0] || {}), KEY_HEADER_TEXT.SERIAL);
-                if (!serialHeader) {
-                    alert("No se pudo encontrar la columna de seriales para exportar.");
+                if (!headersCache.serial) {
+                    showModal('Error de Exportación', 'No se pudo encontrar la columna de seriales para exportar.', 'error');
                     return;
                 }
 
-                const dataToExport = processedData
-                    .filter(row => row.status === 'delayed')
-                    .map(row => {
-                        const serial = String(row[serialHeader] || '');
-                        // Remove "S#" prefix, case-insensitive
-                        const cleanedSerial = serial.replace(/S#/i, '');
-                        return { 'Serial_Para_Reimpresion': cleanedSerial };
-                    });
+                let dataToExport = processedData.filter(row => row.status === 'delayed');
+                
+                if(currentLineFilter !== 'all'){
+                    dataToExport = dataToExport.filter(row => row[headersCache.line] === currentLineFilter);
+                }
                 
                 if (dataToExport.length === 0) {
-                    alert("No hay seriales sin movimiento para exportar.");
+                     showModal('Información', 'No hay seriales sin movimiento (retrasados) para exportar con los filtros actuales.', 'info');
                     return;
                 }
 
-                const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+                const orderNumber = statOrderNumber.textContent;
+                const finalData = dataToExport.map(row => {
+                    const serial = String(row[headersCache.serial] || '');
+                    const cleanedSerial = serial.replace(/S#/i, '');
+                    return {
+                        'Numero_de_Orden': orderNumber,
+                        'Serial_Para_Reimpresion': cleanedSerial
+                    };
+                });
+
+                const worksheet = XLSX.utils.json_to_sheet(finalData);
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, "Reimpresión");
 
-                const orderNumber = statOrderNumber.textContent || 'SIN_ORDEN';
                 const fileName = `Reimpresion_Orden_${orderNumber}.xlsx`;
                 XLSX.writeFile(workbook, fileName);
+
+                showModal('Exportación Exitosa', `Se ha generado el archivo "${fileName}" con ${finalData.length} seriales.`, 'success');
             }
 
 
             // --- UI RENDERING ---
             function render() {
                 if (processedData.length === 0) return;
-
-                const headers = Object.keys(allData[0]);
-                const notPackedHeader = findHeader(headers, KEY_HEADER_TEXT.NOT_PACKED);
-                const scrapHeader = findHeader(headers, KEY_HEADER_TEXT.IS_SCRAP);
-                const createdByHeader = findHeader(headers, KEY_HEADER_TEXT.CREATED_BY);
-                const lineHeader = findHeader(headers, 'Line');
                 
                 let filteredData = processedData;
 
@@ -469,7 +536,7 @@
                     filteredData = processedData.filter(row => row.status === currentStatusFilter);
                 }
                 if (currentLineFilter !== 'all') {
-                    filteredData = filteredData.filter(row => row[lineHeader] === currentLineFilter);
+                    filteredData = filteredData.filter(row => row[headersCache.line] === currentLineFilter);
                 }
 
                 const searchText = filterInput.value.toLowerCase();
@@ -479,11 +546,11 @@
                     );
                 }
                 
-                const headersToHide = [scrapHeader, notPackedHeader, createdByHeader].filter(Boolean);
-                const displayHeaders = headers.filter(h => !headersToHide.includes(h));
+                const headersToHide = [headersCache.scrap, headersCache.notPacked, headersCache.createdBy].filter(Boolean);
+                const displayHeaders = headersCache.all.filter(h => !headersToHide.includes(h));
 
                 updateTable(filteredData, displayHeaders);
-                updateLineCounts(filteredData, lineHeader);
+                updateLineCounts(filteredData);
             }
 
             function updateTable(data, displayHeaders) {
@@ -518,12 +585,12 @@
                 });
             }
 
-            function updateLineCounts(data, lineHeader) {
-                if (!lineHeader) {
+            function updateLineCounts(data) {
+                if (!headersCache.line) {
                     lineCountsContainer.innerHTML = ''; return;
                 }
                 const counts = data.reduce((acc, row) => {
-                    const line = row[lineHeader];
+                    const line = row[headersCache.line];
                     if (line) acc[line] = (acc[line] || 0) + 1;
                     return acc;
                 }, {});
@@ -536,6 +603,7 @@
             function resetView() {
                 allData = [];
                 processedData = [];
+                headersCache = {};
                 fileNameDisplay.textContent = '';
                 statOrderNumber.textContent = 'N/A';
                 statOrderQty.textContent = '0';
