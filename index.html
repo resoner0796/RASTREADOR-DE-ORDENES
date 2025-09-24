@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Control de Producción</title>
+    <title>Centro de Control de Producción (Funcionalidad Restaurada)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
@@ -53,7 +53,7 @@
         #orderList .order-btn {
             width: 100%; text-align: left; padding: 12px; border-radius: 6px;
             border: 1px solid var(--border-color); background-color: #334155;
-            color: var(--text-secondary); cursor: pointer; transition: all 0.2s;
+            color: var(--text-secondary); cursor: pointer; transition: all 0.2s; margin-bottom: 8px;
         }
         #orderList .order-btn:hover { background-color: #475569; color: var(--text-primary); }
         #orderList .order-btn.active {
@@ -85,6 +85,24 @@
         thead { position: sticky; top: 0; background-color: var(--surface-color); z-index: 10; }
         th { font-weight: 600; color: var(--text-secondary); font-size: 0.8rem; }
         
+        /* Rastreo View specific */
+        .rastreo-controls { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;}
+        .filter-container { display: flex; flex-direction: column; gap: 16px; }
+        .filter-group { display: flex; flex-wrap: wrap; gap: 10px; }
+        .btn, .filter-btn {
+            padding: 8px 16px; border-radius: 6px; cursor: pointer; background-color: #334155;
+            border: 1px solid #475569; color: var(--text-secondary); font-weight: 500;
+            text-align: center; transition: all 0.2s;
+        }
+        .btn:hover, .filter-btn:hover { background-color: #475569; color: var(--text-primary); }
+        .filter-btn.active { color: var(--bg-color); font-weight: 700; background-color: var(--primary-color); border-color: var(--primary-color); }
+        .btn { width: 100%; padding: 12px; background-color: var(--primary-color); color: var(--bg-color); font-weight: 700;}
+        .btn:disabled { background-color: #334155; color: var(--text-dark); cursor: not-allowed; border-color: #475569;}
+        .btn:hover:not(:disabled) { background-color: #67CFFB;}
+        #lineCountsContainer { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .line-badge { background-color: #334155; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem; font-weight: 500; color: var(--text-dark); }
+        .line-badge span { font-weight: 700; color: var(--text-secondary); }
+
         /* Packing Table Specific Styles */
         .box-row { cursor: pointer; }
         .box-row:hover { background-color: #334155; }
@@ -160,10 +178,37 @@
 
         <main class="main-content">
             <div id="rastreoView">
-                 <!-- Tracking specific content will go here -->
+                <div class="card rastreo-controls">
+                    <div class="filter-container">
+                        <div>
+                            <h3>Filtrar por Estado</h3>
+                            <div id="rastreoStatusFilters" class="filter-group">
+                                <button class="filter-btn active" data-filter="all">Todos</button>
+                                <button class="filter-btn" data-filter="today">En Movimiento</button>
+                                <button class="filter-btn" data-filter="delayed">Sin Movimiento</button>
+                                <button class="filter-btn" data-filter="scrap">Scrap</button>
+                            </div>
+                        </div>
+                        <div>
+                            <h3>Filtrar por Línea</h3>
+                            <div id="rastreoLineFilters" class="filter-group">
+                                <p id="rastreoLineFiltersPlaceholder" class="text-dark" style="font-size: 0.9rem;">...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                         <h3>Exportar Reportes</h3>
+                         <p class="text-dark" style="font-size: 0.9rem; margin-top: 0; margin-bottom: 16px;">Exporta los datos que se muestran actualmente en la tabla.</p>
+                         <button id="exportButton" class="btn" disabled>Exportar Vista Actual</button>
+                    </div>
+                </div>
                 <div class="card">
-                     <!-- Tracking table will be dynamically inserted here -->
-                     <div id="rastreoTableContainer"></div>
+                    <input type="text" id="rastreoFilterInput" placeholder="Buscar en la tabla por serial, status, etc..." style="margin-bottom: 16px;">
+                    <div id="lineCountsContainer"></div>
+                    <div class="table-wrapper">
+                         <table id="rastreoTable"></table>
+                         <p id="placeholderText">Cargue archivos para ver los datos de rastreo.</p>
+                    </div>
                 </div>
             </div>
             <div id="empaqueView" style="display: none;">
@@ -193,12 +238,17 @@
             let loadedOrders = new Map();
             let activeOrderKey = 'all';
             let currentMode = 'rastreo';
+            let currentVisibleData = []; 
+            
+            // --- RASTREO STATE ---
+            let rastreoStatusFilter = 'all';
+            let rastreoLineFilter = 'all';
 
             // --- KEY COLUMN NAMES ---
-            const TRACKING_KEYS = { SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', DATE_REGISTERED: 'Date Registered', LINE: 'Line'};
-            const PACKING_KEYS = { SERIAL: 'Serial Number', PACKER: 'Empacador', PACKED_DATE: 'Finish Packed Date', BOX_ID: 'BoxID' };
+            const TRACKING_KEYS = { SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', DATE_REGISTERED: 'Date Registered', LINE: 'Line', STATION: 'Station' };
+            const PACKING_KEYS = { SERIAL: 'Serial Number', EMPLOYEE_ID: 'Employee ID', PACKED_DATE: 'Finish Packed Date', BOX_ID: 'BoxID' };
             const TRACKING_COLS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
-            const PACKING_COLS = { SERIAL: 'AE', PACKER: 'AF', PACKED_DATE: 'AK', BOX_ID: 'AO' };
+            const PACKING_COLS = { SERIAL: 'AE', EMPLOYEE_ID: 'AF', PACKED_DATE: 'AK', BOX_ID: 'AO' };
             
             // --- DOM ELEMENTS ---
             const fileDropArea = document.getElementById('fileDropArea');
@@ -213,6 +263,13 @@
             const modeEmpaque = document.getElementById('modeEmpaque');
             const rastreoView = document.getElementById('rastreoView');
             const empaqueView = document.getElementById('empaqueView');
+            const rastreoFilterInput = document.getElementById('rastreoFilterInput');
+            const rastreoStatusFilters = document.getElementById('rastreoStatusFilters');
+            const rastreoLineFilters = document.getElementById('rastreoLineFilters');
+            const rastreoLineFiltersPlaceholder = document.getElementById('rastreoLineFiltersPlaceholder');
+            const exportButton = document.getElementById('exportButton');
+            const lineCountsContainer = document.getElementById('lineCountsContainer');
+            const placeholderText = document.getElementById('placeholderText');
             const empaqueFilterInput = document.getElementById('empaqueFilterInput');
             const modalOverlay = document.getElementById('modalOverlay');
             const modalTitle = document.getElementById('modalTitle');
@@ -232,7 +289,18 @@
             modeRastreo.addEventListener('click', () => switchMode('rastreo'));
             modeEmpaque.addEventListener('click', () => switchMode('empaque'));
 
+            rastreoFilterInput.addEventListener('input', () => renderRastreoView(activeOrderKey));
+            rastreoStatusFilters.addEventListener('click', (e) => {
+                if (e.target.matches('.filter-btn')) {
+                    rastreoStatusFilters.querySelector('.active').classList.remove('active');
+                    e.target.classList.add('active');
+                    rastreoStatusFilter = e.target.dataset.filter;
+                    renderRastreoView(activeOrderKey);
+                }
+            });
+
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
+            exportButton.addEventListener('click', handleExport);
 
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
@@ -277,16 +345,21 @@
                                 const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                                 const orderNumber = worksheet['B3']?.v || `Archivo_${file.name.slice(0,10)}`;
                                 
+                                const rastreoRawData = extractTableData(worksheet, TRACKING_COLS, 20);
+                                const packingRawData = extractTableData(worksheet, Object.values(PACKING_COLS), 20, true);
+
                                 const orderData = {
                                     orderQty: parseInt(worksheet['O3']?.v || 0),
                                     packedQty: parseInt(worksheet['U3']?.v || 0),
-                                    rastreoData: processRastreoData(extractTableData(worksheet, TRACKING_COLS, 20)),
-                                    empaqueData: groupEmpaqueData(extractTableData(worksheet, Object.values(PACKING_COLS), 20, true))
+                                    rastreoData: processRastreoData(rastreoRawData),
+                                    empaqueData: groupEmpaqueData(packingRawData),
+                                    headers: {
+                                        rastreo: Object.keys(rastreoRawData[0] || {}),
+                                        empaque: Object.keys(packingRawData[0] || {})
+                                    }
                                 };
                                 resolve({ key: orderNumber, data: orderData });
-                            } catch(err) {
-                                reject(err);
-                            }
+                            } catch(err) { reject(err); }
                         };
                         reader.readAsArrayBuffer(file);
                     });
@@ -307,7 +380,6 @@
             function extractTableData(worksheet, targetCols, startRow, isPacking = false) {
                  const headers = {};
                  const colsToUse = isPacking ? Object.keys(PACKING_COLS) : targetCols;
-                 
                  colsToUse.forEach(key => {
                      const col = isPacking ? PACKING_COLS[key] : key;
                      const cell = worksheet[col + startRow];
@@ -326,7 +398,7 @@
                          if (headerName) {
                             const cellAddress = col + (rowNum + 1);
                             const cell = worksheet[cellAddress];
-                            if(cell && cell.v) {
+                            if(cell && cell.v !== undefined) {
                                 row[headerName] = cell.v;
                                 hasData = true;
                             }
@@ -338,8 +410,9 @@
             }
             
             function processRastreoData(data) {
+                if (data.length === 0) return [];
                 const today = new Date();
-                const headers = Object.keys(data[0] || {});
+                const headers = Object.keys(data[0]);
                 const scrapHeader = findHeader(headers, TRACKING_KEYS.IS_SCRAP);
                 const dateHeader = findHeader(headers, TRACKING_KEYS.DATE_REGISTERED);
                 
@@ -361,7 +434,7 @@
 
             function groupEmpaqueData(data) {
                 if (!data || data.length === 0) return new Map();
-                const headers = Object.keys(data[0] || {});
+                const headers = Object.keys(data[0]);
                 const boxIdHeader = findHeader(headers, PACKING_KEYS.BOX_ID);
                 
                 return data.reduce((acc, row) => {
@@ -379,7 +452,7 @@
                 currentMode = mode;
                 modeRastreo.classList.toggle('active', mode === 'rastreo');
                 modeEmpaque.classList.toggle('active', mode === 'empaque');
-                rastreoView.style.display = mode === 'rastreo' ? 'block' : 'none';
+                rastreoView.style.display = mode === 'rastreo' ? 'flex' : 'none';
                 empaqueView.style.display = mode === 'empaque' ? 'block' : 'none';
                 render();
             }
@@ -401,7 +474,7 @@
                     btn.onclick = () => setActiveOrder(key);
                     orderList.appendChild(btn);
                 }
-                setActiveOrder(activeOrderKey); // Re-apply active state
+                setActiveOrder(activeOrderKey);
             }
             
             function setActiveOrder(key) {
@@ -414,7 +487,11 @@
             }
 
             function render() {
-                if (loadedOrders.size === 0) return;
+                if (loadedOrders.size === 0) {
+                    placeholderText.style.display = 'block';
+                    return;
+                }
+                placeholderText.style.display = 'none';
                 renderSummary();
                 if (currentMode === 'rastreo') {
                     renderRastreoView(activeOrderKey);
@@ -438,8 +515,7 @@
                 ordersToProcess.forEach(order => {
                     orderQty += order.orderQty;
                     packedQty += order.packedQty;
-                    const headers = Object.keys(order.rastreoData[0] || {});
-                    const scrapHeader = findHeader(headers, TRACKING_KEYS.IS_SCRAP);
+                    const scrapHeader = findHeader(order.headers.rastreo, TRACKING_KEYS.IS_SCRAP);
                     scrapCount += order.rastreoData.filter(row => String(row[scrapHeader]).trim().toUpperCase() === 'X').length;
                 });
 
@@ -451,39 +527,125 @@
             
             function renderRastreoView(key) {
                 let dataToShow = [];
+                let headers = [];
                 if (key === 'all') {
                     loadedOrders.forEach(order => dataToShow.push(...order.rastreoData));
+                    if (loadedOrders.size > 0) headers = loadedOrders.values().next().value.headers.rastreo;
                 } else if (loadedOrders.has(key)) {
-                    dataToShow = loadedOrders.get(key).rastreoData;
+                    const order = loadedOrders.get(key);
+                    dataToShow = order.rastreoData;
+                    headers = order.headers.rastreo;
                 }
                 
-                const rastreoTableContainer = document.getElementById('rastreoTableContainer');
-                rastreoTableContainer.innerHTML = `
-                    <div class="table-wrapper">
-                        <table id="rastreoTable">
-                            <thead></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>`;
+                createRastreoLineFilters(dataToShow, headers);
 
-                const table = rastreoTableContainer.querySelector('#rastreoTable');
-                if (dataToShow.length === 0) {
-                     table.innerHTML = `<tr><td>No hay datos de rastreo para mostrar.</td></tr>`;
+                // Apply filters
+                let filteredData = dataToShow;
+                if (rastreoStatusFilter !== 'all') {
+                    filteredData = filteredData.filter(row => row.status === rastreoStatusFilter);
+                }
+                const lineHeader = findHeader(headers, TRACKING_KEYS.LINE);
+                if (rastreoLineFilter !== 'all' && lineHeader) {
+                    filteredData = filteredData.filter(row => row[lineHeader] === rastreoLineFilter);
+                }
+                const searchText = rastreoFilterInput.value.toLowerCase();
+                if (searchText) {
+                    filteredData = filteredData.filter(row =>
+                        Object.entries(row).some(([k, val]) => k !== 'status' && String(val).toLowerCase().includes(searchText))
+                    );
+                }
+
+                currentVisibleData = filteredData; // IMPORTANT for export
+                exportButton.disabled = false;
+
+                updateRastreoTable(filteredData, headers);
+                updateLineCounts(filteredData, headers);
+            }
+
+             function createRastreoLineFilters(data, headers) {
+                const lineHeader = findHeader(headers, TRACKING_KEYS.LINE);
+                if (!lineHeader) {
+                    rastreoLineFiltersPlaceholder.textContent = "No se encontró la columna 'Line'.";
+                    rastreoLineFiltersPlaceholder.style.display = 'block';
+                    rastreoLineFilters.innerHTML = '';
+                    return;
+                }
+
+                const uniqueLines = [...new Set(data.map(row => row[lineHeader]).filter(Boolean))].sort();
+                rastreoLineFilters.innerHTML = '';
+                rastreoLineFiltersPlaceholder.style.display = 'none';
+
+                const allBtn = document.createElement('button');
+                allBtn.className = 'filter-btn active';
+                allBtn.textContent = 'Todas';
+                allBtn.dataset.filter = 'all';
+                rastreoLineFilters.appendChild(allBtn);
+
+                uniqueLines.forEach(line => {
+                    const lineBtn = document.createElement('button');
+                    lineBtn.className = 'filter-btn';
+                    lineBtn.textContent = line;
+                    lineBtn.dataset.filter = line;
+                    rastreoLineFilters.appendChild(lineBtn);
+                });
+
+                // This event listener needs to be outside the render loop
+                if (!rastreoLineFilters.dataset.listenerAttached) {
+                    rastreoLineFilters.addEventListener('click', (e) => {
+                        if (e.target.matches('.filter-btn')) {
+                            rastreoLineFilters.querySelector('.active').classList.remove('active');
+                            e.target.classList.add('active');
+                            rastreoLineFilter = e.target.dataset.filter;
+                            renderRastreoView(activeOrderKey);
+                        }
+                    });
+                    rastreoLineFilters.dataset.listenerAttached = 'true';
+                }
+            }
+            
+            function updateRastreoTable(data, headers) {
+                const table = document.getElementById('rastreoTable');
+                if (!table) return;
+
+                const headersToHide = [TRACKING_KEYS.CREATED_BY, TRACKING_KEYS.NOT_PACKED, TRACKING_KEYS.IS_SCRAP].map(h => findHeader(headers, h)).filter(Boolean);
+                const displayHeaders = headers.filter(h => !headersToHide.includes(h) && h !== 'status');
+
+                if (data.length === 0) {
+                    table.innerHTML = `<thead><tr><th>No se encontraron resultados para los filtros aplicados.</th></tr></thead>`;
                     return;
                 }
                 
-                const headers = Object.keys(dataToShow[0]).filter(h => h !== 'status');
-                table.querySelector('thead').innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
-                const tbody = table.querySelector('tbody');
-                tbody.innerHTML = dataToShow.map(row => `
-                    <tr class="is-${row.status}">
-                        ${headers.map(h => `<td>${formatCell(row[h], h)}</td>`).join('')}
-                    </tr>
-                `).join('');
+                table.innerHTML = `
+                    <thead><tr>${displayHeaders.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+                    <tbody>
+                        ${data.map(row => `
+                            <tr class="is-${row.status}">
+                                ${displayHeaders.map(h => `<td>${formatCell(row[h], h)}</td>`).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>`;
+            }
+
+            function updateLineCounts(data, headers) {
+                const lineHeader = findHeader(headers, TRACKING_KEYS.LINE);
+                if (!lineHeader) {
+                    lineCountsContainer.innerHTML = ''; return;
+                }
+                const counts = data.reduce((acc, row) => {
+                    const line = row[lineHeader];
+                    if (line) acc[line] = (acc[line] || 0) + 1;
+                    return acc;
+                }, {});
+                
+                lineCountsContainer.innerHTML = Object.entries(counts).sort().map(([line, count]) =>
+                    `<div class="line-badge">${line}: <span>${count}</span></div>`
+                ).join('');
             }
             
-             function renderEmpaqueView(key) {
+            function renderEmpaqueView(key) {
                 let dataToShow = new Map();
+                let headers = [];
+
                 if (key === 'all') {
                     loadedOrders.forEach(order => {
                         order.empaqueData.forEach((serials, boxId) => {
@@ -491,22 +653,23 @@
                             dataToShow.get(boxId).push(...serials);
                         });
                     });
+                    if (loadedOrders.size > 0) headers = loadedOrders.values().next().value.headers.empaque;
                 } else if (loadedOrders.has(key)) {
-                    dataToShow = loadedOrders.get(key).empaqueData;
+                    const order = loadedOrders.get(key);
+                    dataToShow = order.empaqueData;
+                    headers = order.headers.empaque;
                 }
                 
                 const table = document.getElementById('empaqueTable');
-                if (dataToShow.size === 0) {
+                if (dataToShow.size === 0 || headers.length === 0) {
                      table.innerHTML = `<thead><tr><th>No hay datos de empaque para mostrar.</th></tr></thead>`;
                     return;
                 }
                 
-                const sampleRow = dataToShow.values().next().value[0];
-                const headers = Object.keys(sampleRow);
                 const boxIdHeader = findHeader(headers, PACKING_KEYS.BOX_ID);
                 const serialHeader = findHeader(headers, PACKING_KEYS.SERIAL);
                 const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
-                const packerHeader = findHeader(headers, PACKING_KEYS.PACKER);
+                const employeeIdHeader = findHeader(headers, PACKING_KEYS.EMPLOYEE_ID);
 
                 const filterText = empaqueFilterInput.value.toLowerCase();
                 let tableHTML = `
@@ -521,7 +684,6 @@
                 
                 for (const [boxId, serials] of dataToShow.entries()) {
                     const latestDate = Math.max(...serials.map(s => s[packedDateHeader]));
-                    
                     const serialsMatchFilter = serials.some(s => String(s[serialHeader]).toLowerCase().includes(filterText));
                     if (!String(boxId).toLowerCase().includes(filterText) && !serialsMatchFilter) continue;
 
@@ -537,7 +699,7 @@
                             <tr class="serial-row" data-parentbox="${boxId}">
                                 <td colspan="3">
                                     <strong>Serial:</strong> ${serial[serialHeader]} | 
-                                    <strong>Empacador:</strong> ${serial[packerHeader] || 'N/A'} | 
+                                    <strong>Empacador:</strong> ${serial[employeeIdHeader] || 'N/A'} | 
                                     <strong>Fecha:</strong> ${formatDate(excelSerialToDate(serial[packedDateHeader]))}
                                 </td>
                             </tr>`;
@@ -557,18 +719,73 @@
                 });
             }
 
+            function handleExport() {
+                const headers = loadedOrders.values().next()?.value.headers.rastreo || [];
+                const serialHeader = findHeader(headers, KEY_HEADER_TEXT.SERIAL);
+                const stationHeader = findHeader(headers, KEY_HEADER_TEXT.STATION);
+                const dateRegisteredHeader = findHeader(headers, KEY_HEADER_TEXT.DATE_REGISTERED);
+                
+                if (!serialHeader || !stationHeader || !dateRegisteredHeader) {
+                    showModal('Error de Exportación', `No se pudo identificar una columna clave ("${KEY_HEADER_TEXT.SERIAL}", "${KEY_HEADER_TEXT.STATION}", o "${KEY_HEADER_TEXT.DATE_REGISTERED}"). Verifique el archivo.`, 'error');
+                    return;
+                }
+                
+                if (currentVisibleData.length === 0) {
+                     showModal('Información', 'No hay datos visibles en la tabla para exportar.', 'info');
+                    return;
+                }
+
+                const orderNumber = statOrderNumber.textContent;
+                const finalData = currentVisibleData.map(row => {
+                    const serial = String(row[serialHeader] || '');
+                    const cleanedSerial = serial.replace(/S#/i, '');
+                    return {
+                        'Numero_de_Orden': orderNumber,
+                        'Serial_Para_Reimpresion': cleanedSerial,
+                        'Estacion': row[stationHeader],
+                        'Fecha_y_Hora_Ultimo_Movimiento': formatDate(excelSerialToDate(row[dateRegisteredHeader]))
+                    };
+                });
+
+                const worksheet = XLSX.utils.json_to_sheet([]);
+                const lineFilterText = rastreoLineFilter === 'all' ? 'Todas las Líneas' : `Línea: ${rastreoLineFilter}`;
+                const headerText = `Reporte de Exportación para ${lineFilterText}`;
+
+                XLSX.utils.sheet_add_aoa(worksheet, [[headerText]], { origin: "A1"});
+                XLSX.utils.sheet_add_json(worksheet, finalData, { origin: "A2", skipHeader: false });
+                
+                const merge = { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } };
+                if (!worksheet['!merges']) worksheet['!merges'] = [];
+                worksheet['!merges'].push(merge);
+
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Exportación");
+                
+                const linePart = rastreoLineFilter === 'all' ? 'Todas_Lineas' : `Linea_${rastreoLineFilter}`;
+                const fileName = `Exportacion_Orden_${orderNumber}_${linePart}.xlsx`;
+                XLSX.writeFile(workbook, fileName);
+
+                showModal('Exportación Exitosa', `Se ha generado el archivo "${fileName}" con ${finalData.length} seriales.`, 'success');
+            }
+
+
             function formatCell(value, header) {
                  if (header.toLowerCase().includes('date')) return formatDate(excelSerialToDate(value));
                  return value === undefined ? '' : value;
             }
 
-             function resetView() {
+            function resetView() {
                 loadedOrders.clear();
                 activeOrderKey = 'all';
                 currentMode = 'rastreo';
                 orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">Cargue uno o más archivos para comenzar.</p>`;
                 render();
             }
+
+             // Initialize view
+            rastreoView.style.display = 'flex';
+            rastreoView.style.flexDirection = 'column';
+            empaqueView.style.display = 'none';
 
         });
     </script>
