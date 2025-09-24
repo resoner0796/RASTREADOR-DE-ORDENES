@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control de Órdenes v3</title>
+    <title>Panel de Control de Órdenes (Final)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
@@ -158,11 +158,15 @@
         th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
         thead { position: sticky; top: 0; background-color: var(--surface-color); z-index: 10; }
         th { font-weight: 600; color: var(--text-secondary); font-size: 0.8rem; }
+        
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1); }
         tbody tr.is-scrap td { color: var(--danger-color); }
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1); }
         tbody tr.is-delayed td { color: var(--warning-color); }
-        tbody tr:not(.is-scrap):not(.is-delayed):hover { background-color: #334155; }
+        tbody tr.is-today { background-color: rgba(52, 211, 153, 0.1); }
+        tbody tr.is-today td { color: var(--success-color); }
+        
+        tbody tr:not(.is-scrap):not(.is-delayed):not(.is-today):hover { background-color: #334155; }
         
         #loader, #placeholderText { text-align: center; padding: 60px; color: var(--text-dark); font-size: 1.1rem; }
     </style>
@@ -236,7 +240,7 @@
             const KEY_HEADER_TEXT = {
                 IS_SCRAP: 'Is Scrap',
                 CREATED_BY: 'Created By',
-                DATE: 'Creation Date' // Main date column for delay checks
+                DATE_REGISTERED: 'Date Registered' // Main date for status logic
             };
             const TARGET_COLUMNS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
 
@@ -281,8 +285,6 @@
             });
 
             // --- HELPER FUNCTIONS ---
-            const isAffirmative = (val) => ['true', '1', 'yes', true].includes(String(val).toLowerCase());
-
             function excelSerialToDate(serial) {
                 if (typeof serial !== 'number' || isNaN(serial)) return null;
                 const utc_days = Math.floor(serial - 25569);
@@ -305,6 +307,10 @@
                 const hours = String(date.getHours()).padStart(2, '0');
                 const minutes = String(date.getMinutes()).padStart(2, '0');
                 return `${day}/${month}/${year} ${hours}:${minutes}`;
+            }
+
+            function findHeader(headers, keyText) {
+                return headers.find(h => h.toLowerCase() === keyText.toLowerCase());
             }
 
             // --- CORE LOGIC ---
@@ -332,9 +338,9 @@
                         allData = extractTableData(worksheet);
 
                         if (allData.length > 0) {
-                             // 3. Calculate scrap count from processed data
-                            const scrapHeader = findHeader(Object.keys(allData[0]), KEY_HEADER_TEXT.IS_SCRAP);
-                            const scrapCount = allData.filter(row => isAffirmative(row[scrapHeader])).length;
+                            const headers = Object.keys(allData[0]);
+                            const scrapHeader = findHeader(headers, KEY_HEADER_TEXT.IS_SCRAP);
+                            const scrapCount = allData.filter(row => String(row[scrapHeader]).trim().toUpperCase() === 'X').length;
                             statScrapQty.textContent = scrapCount;
                             render();
                         } else {
@@ -385,10 +391,6 @@
                 }
                 return jsonData;
             }
-            
-            function findHeader(headers, keyText) {
-                return headers.find(h => h.toLowerCase() === keyText.toLowerCase());
-            }
 
             // --- UI RENDERING ---
             function render() {
@@ -396,37 +398,50 @@
 
                 const headers = Object.keys(allData[0]);
                 const scrapHeader = findHeader(headers, KEY_HEADER_TEXT.IS_SCRAP);
-                const dateHeader = findHeader(headers, KEY_HEADER_TEXT.DATE);
+                const dateRegisteredHeader = findHeader(headers, KEY_HEADER_TEXT.DATE_REGISTERED);
                 const createdByHeader = findHeader(headers, KEY_HEADER_TEXT.CREATED_BY);
                 const lineHeader = findHeader(headers, 'Line');
 
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
-                let filteredData = allData.map(row => {
-                    const rowDate = excelSerialToDate(row[dateHeader]);
-                    return {
-                        ...row,
-                        isDelayed: rowDate instanceof Date && rowDate < today && !isAffirmative(row[scrapHeader])
-                    };
+                // Add a status property to each row for easy styling
+                let processedData = allData.map(row => {
+                    let status = 'normal';
+                    const isScrap = String(row[scrapHeader]).trim().toUpperCase() === 'X';
+
+                    if (isScrap) {
+                        status = 'scrap';
+                    } else {
+                        const registeredDate = excelSerialToDate(row[dateRegisteredHeader]);
+                        if (registeredDate instanceof Date) {
+                            if (registeredDate.toDateString() === today.toDateString()) {
+                                status = 'today';
+                            } else if (registeredDate < today) {
+                                status = 'delayed';
+                            }
+                        }
+                    }
+                    return { ...row, status };
                 });
                 
+                let filteredData = processedData;
                 if (currentFilter === 'scrap') {
-                    filteredData = filteredData.filter(row => isAffirmative(row[scrapHeader]));
+                    filteredData = processedData.filter(row => row.status === 'scrap');
                 } else if (currentFilter === 'delayed') {
-                    filteredData = filteredData.filter(row => row.isDelayed);
+                    filteredData = processedData.filter(row => row.status === 'delayed');
                 }
 
                 const searchText = filterInput.value.toLowerCase();
                 if (searchText) {
                     filteredData = filteredData.filter(row =>
-                        Object.values(row).some(val => String(val).toLowerCase().includes(searchText))
+                        Object.entries(row).some(([key, val]) => key !== 'status' && String(val).toLowerCase().includes(searchText))
                     );
                 }
                 
                 const displayHeaders = headers.filter(h => h !== createdByHeader);
 
-                updateTable(filteredData, displayHeaders, { scrapHeader, dateHeader });
+                updateTable(filteredData, displayHeaders, { dateRegisteredHeader });
                 updateLineCounts(filteredData, lineHeader);
             }
 
@@ -447,16 +462,14 @@
 
                 data.forEach(row => {
                     const tr = document.createElement('tr');
-                    const isScrap = isAffirmative(row[keyHeaders.scrapHeader]);
-                    
-                    if (isScrap) tr.classList.add('is-scrap');
-                    else if (row.isDelayed) tr.classList.add('is-delayed');
+                    tr.classList.add(`is-${row.status}`);
                     
                     let cells = '';
                     displayHeaders.forEach(header => {
                         let cellValue = row[header];
-                        if (header === keyHeaders.dateHeader) {
-                            cellValue = formatDate(excelSerialToDate(cellValue));
+                        // Format any date column found, not just the registered one
+                        if (header.toLowerCase().includes('date')) {
+                           cellValue = formatDate(excelSerialToDate(cellValue));
                         }
                         cells += `<td>${cellValue === undefined ? '' : cellValue}</td>`;
                     });
@@ -501,3 +514,4 @@
     </script>
 </body>
 </html>
+
