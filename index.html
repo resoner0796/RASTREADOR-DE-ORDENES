@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control de Órdenes (Final)</title>
+    <title>Panel de Control de Órdenes (Final v2)</title>
     <!-- SheetJS (xlsx) Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
@@ -239,6 +239,7 @@
 
             const KEY_HEADER_TEXT = {
                 IS_SCRAP: 'Is Scrap',
+                NOT_PACKED: 'Not Packed',
                 CREATED_BY: 'Created By',
                 DATE_REGISTERED: 'Date Registered' // Main date for status logic
             };
@@ -286,17 +287,10 @@
 
             // --- HELPER FUNCTIONS ---
             function excelSerialToDate(serial) {
+                // This improved function correctly handles timezone offsets.
                 if (typeof serial !== 'number' || isNaN(serial)) return null;
-                const utc_days = Math.floor(serial - 25569);
-                const utc_value = utc_days * 86400;
-                const date_info = new Date(utc_value * 1000);
-                const fractional_day = serial - Math.floor(serial) + 0.0000001;
-                let total_seconds = Math.floor(86400 * fractional_day);
-                const seconds = total_seconds % 60;
-                total_seconds -= seconds;
-                const hours = Math.floor(total_seconds / (60 * 60));
-                const minutes = Math.floor(total_seconds / 60) % 60;
-                return new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate(), hours, minutes, seconds);
+                const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+                return new Date(excelEpoch.getTime() + serial * 24 * 60 * 60 * 1000);
             }
 
             function formatDate(date) {
@@ -398,14 +392,13 @@
 
                 const headers = Object.keys(allData[0]);
                 const scrapHeader = findHeader(headers, KEY_HEADER_TEXT.IS_SCRAP);
+                const notPackedHeader = findHeader(headers, KEY_HEADER_TEXT.NOT_PACKED);
                 const dateRegisteredHeader = findHeader(headers, KEY_HEADER_TEXT.DATE_REGISTERED);
                 const createdByHeader = findHeader(headers, KEY_HEADER_TEXT.CREATED_BY);
                 const lineHeader = findHeader(headers, 'Line');
 
                 const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                // Add a status property to each row for easy styling
+                
                 let processedData = allData.map(row => {
                     let status = 'normal';
                     const isScrap = String(row[scrapHeader]).trim().toUpperCase() === 'X';
@@ -415,7 +408,7 @@
                     } else {
                         const registeredDate = excelSerialToDate(row[dateRegisteredHeader]);
                         if (registeredDate instanceof Date) {
-                            if (registeredDate.toDateString() === today.toDateString()) {
+                            if (registeredDate.toLocaleDateString() === today.toLocaleDateString()) {
                                 status = 'today';
                             } else if (registeredDate < today) {
                                 status = 'delayed';
@@ -439,13 +432,14 @@
                     );
                 }
                 
-                const displayHeaders = headers.filter(h => h !== createdByHeader);
+                const headersToHide = [scrapHeader, notPackedHeader, createdByHeader].filter(Boolean);
+                const displayHeaders = headers.filter(h => !headersToHide.includes(h));
 
-                updateTable(filteredData, displayHeaders, { dateRegisteredHeader });
+                updateTable(filteredData, displayHeaders);
                 updateLineCounts(filteredData, lineHeader);
             }
 
-            function updateTable(data, displayHeaders, keyHeaders) {
+            function updateTable(data, displayHeaders) {
                 tableBody.innerHTML = '';
 
                 if (!data.length) {
@@ -467,7 +461,6 @@
                     let cells = '';
                     displayHeaders.forEach(header => {
                         let cellValue = row[header];
-                        // Format any date column found, not just the registered one
                         if (header.toLowerCase().includes('date')) {
                            cellValue = formatDate(excelSerialToDate(cellValue));
                         }
