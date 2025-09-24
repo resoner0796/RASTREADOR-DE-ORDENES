@@ -5,124 +5,139 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Analizador de Órdenes — Rastreo de Seriales</title>
 
-<!-- Estilos renovados (oscuro, profesional) -->
+<!-- Estilos: limpio, profesional y legible -->
 <style>
   :root{
-    --bg:#071026; --panel:#0b1724; --muted:#9fb0c8; --accent:#3b82f6;
-    --success:#10b981; --danger:#ef4444; --warn:#f59e0b; --glass: rgba(255,255,255,0.03);
-    font-family: Inter, Roboto, "Segoe UI", system-ui, Arial, sans-serif;
-    color-scheme: dark;
+    --bg:#f5f7fb;
+    --card:#ffffff;
+    --muted:#6b7a90;
+    --accent:#2563eb;
+    --success:#10b981;
+    --danger:#ef4444;
+    --warn:#f59e0b;
+    --glass: rgba(37,99,235,0.06);
+    --radius:12px;
+    font-family: Inter, "Segoe UI", Roboto, system-ui, Arial, sans-serif;
+    color-scheme: light;
   }
-
-  html,body{height:100%; margin:0; background:linear-gradient(180deg,var(--bg) 0%, #041525 100%); color:#e6eef8;}
-  .container{max-width:1150px; margin:28px auto; padding:20px;}
-  header{display:flex; gap:16px; align-items:center; margin-bottom:18px;}
-  header h1{font-size:20px; margin:0; letter-spacing:0.2px}
-  header p {margin:0; color:var(--muted); font-size:13px}
-
-  .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:14px; border-radius:12px; box-shadow: 0 8px 30px rgba(2,6,23,0.6);}
-  .flex{display:flex; gap:12px; align-items:center;}
-  .col{flex:1;}
-  label{display:block; font-size:13px; color:var(--muted); margin-bottom:8px;}
-  input[type=file]{color:var(--muted);}
-  textarea{width:100%; min-height:120px; background:transparent; border:1px dashed var(--glass); color:inherit; padding:10px; border-radius:8px; resize:vertical;}
-  button{background:var(--accent); border:none; color:white; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600;}
-  button.ghost{background:transparent; border:1px solid rgba(255,255,255,0.06);}
-  button.small{padding:6px 10px; font-size:13px; border-radius:8px;}
-  .cards{display:grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-top:12px;}
-  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:14px; border-radius:10px; display:flex; flex-direction:column; gap:6px;}
+  html,body{height:100%; margin:0; background:var(--bg); color:#0f1724;}
+  .wrap{max-width:1200px; margin:28px auto; padding:20px;}
+  header{display:flex; align-items:center; gap:18px; margin-bottom:18px;}
+  .brand{display:flex; flex-direction:column;}
+  h1{font-size:20px; margin:0; color:#0b1220;}
+  p.lead{margin:0;color:var(--muted);font-size:13px;}
+  .top-row{display:flex; gap:14px; align-items:flex-start;}
+  .panel{background:var(--card); border-radius:var(--radius); padding:16px; box-shadow: 0 8px 28px rgba(15,23,42,0.06); flex:1;}
+  .side{width:320px; min-width:240px;}
+  label{display:block;font-size:13px;color:var(--muted); margin-bottom:8px;}
+  input[type=file]{width:100%;}
+  textarea{width:100%; min-height:120px; border-radius:10px; border:1px solid #e6eef8; padding:10px; font-size:13px; color:#08203a; resize:vertical;}
+  .controls{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+  button{background:var(--accent); color:white; border:none; padding:10px 12px; border-radius:10px; cursor:pointer; font-weight:600;}
+  button.ghost{background:transparent; border:1px solid rgba(15,23,42,0.06); color:#0b1220;}
+  button.small{padding:8px 10px; font-size:13px; border-radius:8px;}
+  .cards{display:grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-top:14px;}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,1), rgba(250,252,255,1)); border-radius:10px; padding:12px; border:1px solid rgba(15,23,42,0.04);}
   .card .title{font-size:12px; color:var(--muted);}
-  .card .value{font-size:20px; font-weight:700;}
-  .card .note{font-size:12px; color:var(--muted);}
-
-  .filters{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; align-items:center;}
-  select, .small-input{background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); color:inherit; padding:8px 10px; border-radius:8px;}
-  .hint{font-size:12px; color:var(--muted); margin-top:8px;}
-
-  .table-wrap{max-height:410px; overflow:auto; border-radius:10px; margin-top:12px; border:1px solid rgba(255,255,255,0.03);}
-  table{width:100%; border-collapse:collapse; font-size:13px; min-width:900px;}
-  thead th{position:sticky; top:0; background:linear-gradient(180deg,#071b30,#062235); color:var(--muted); font-weight:700; padding:10px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.03);}
-  tbody td{padding:10px; border-bottom:1px solid rgba(255,255,255,0.02);}
-  tbody tr:nth-child(even){background: rgba(255,255,255,0.01);}
-  tbody tr:hover{background: rgba(59,130,246,0.06);}
-
-  /* Row highlights */
-  .row-scrap{ background: linear-gradient(90deg, rgba(239,68,68,0.06), rgba(239,68,68,0.03)); border-left:4px solid rgba(239,68,68,0.9); }
-  .row-no-mov{ background: linear-gradient(90deg, rgba(245,158,11,0.06), rgba(245,158,11,0.03)); border-left:4px solid rgba(245,158,11,0.85); }
-
-  .tag{display:inline-block; padding:6px 8px; border-radius:999px; font-weight:700; font-size:12px;}
-  .tag.success{background: rgba(16,185,129,0.09); color:var(--success);}
-  .tag.danger{background: rgba(239,68,68,0.09); color:var(--danger);}
-  .tag.warn{background: rgba(245,158,11,0.09); color:var(--warn);}
-
+  .card .value{font-size:20px; font-weight:800; margin-top:6px;}
+  .filters{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px;}
+  select, .small-input{padding:8px 10px; border-radius:8px; border:1px solid #e6eef8; background:white; color:#0b1220; font-size:13px;}
+  .table-wrap{margin-top:14px; border-radius:10px; overflow:auto; box-shadow: 0 4px 20px rgba(15,23,42,0.04); background:var(--card); border:1px solid rgba(15,23,42,0.03);}
+  table{width:100%; border-collapse:collapse; min-width:900px;}
+  thead th{background:#0f1724; color:white; position:sticky; top:0; padding:12px; text-align:left; font-size:13px;}
+  tbody td{padding:10px 12px; border-bottom:1px solid rgba(15,23,42,0.03); font-size:13px; color:#0b1220;}
+  tbody tr:nth-child(even){background:rgba(15,23,42,0.02);}
+  tbody tr:hover{background:rgba(37,99,235,0.04);}
+  /* Highlights */
+  .row-scrap td{ background: linear-gradient(90deg, rgba(239,68,68,0.06), rgba(239,68,68,0.03)); }
+  .row-no-mov td{ background: linear-gradient(90deg, rgba(245,158,11,0.06), rgba(245,158,11,0.03)); }
+  .legend{display:flex; gap:8px; align-items:center; margin-left:auto; color:var(--muted); font-size:13px;}
+  .tag{display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; font-weight:700; font-size:13px;}
+  .tag.danger{background:rgba(239,68,68,0.08); color:var(--danger);}
+  .tag.warn{background:rgba(245,158,11,0.08); color:var(--warn);}
   .footer{margin-top:12px; color:var(--muted); font-size:13px;}
-  @media (max-width:760px){ header{flex-direction:column; align-items:flex-start;} .table-wrap{overflow:auto;} }
+  @media (max-width:980px){ .top-row{flex-direction:column;} .side{width:100%} .panel{width:100%} }
 </style>
 </head>
 <body>
-  <div class="container">
+  <div class="wrap">
     <header>
-      <div>
+      <div class="brand">
         <h1>Analizador de Órdenes — Rastreo de Seriales</h1>
-        <p>Sube tu Excel o pega la tabla (desde Excel Ctrl+C → Ctrl+V). Detecta scrap, sin movimiento y facilita reimpresiones.</p>
+        <p class="lead">Sube tu Excel o pega la tabla (desde Excel: Ctrl+C → Ctrl+V). Detecta scrap, sin movimiento y facilita reimpresiones.</p>
       </div>
-      <div style="margin-left:auto" class="small">
-        <div class="hint">Zona horaria: <strong>America/Monterrey</strong></div>
+      <div class="legend" aria-hidden="true" style="margin-left:auto">
+        <div class="tag danger">SCRAP</div>
+        <div class="tag warn">Sin movimiento (últimos 2 días)</div>
       </div>
     </header>
 
-    <div class="panel" role="region" aria-label="Herramienta principal">
-      <div class="flex" style="gap:20px; align-items:flex-start;">
-        <div style="min-width:260px">
-          <label>Subir archivo (.xlsx / .xls / .csv)</label>
-          <input id="file" type="file" accept=".xlsx,.xls,.csv" />
-          <div class="hint">También puedes pegar la tabla en el recuadro de la derecha.</div>
+    <div class="top-row">
+      <!-- LEFT: Upload & Paste -->
+      <aside class="side panel" aria-label="Carga y pegado">
+        <label for="file">Subir archivo (.xlsx / .xls / .csv)</label>
+        <input id="file" type="file" accept=".xlsx,.xls,.csv" />
+
+        <label style="margin-top:12px">Pegar datos (desde Excel: seleccionar -> Ctrl+C -> aquí Ctrl+V)</label>
+        <textarea id="pasteArea" placeholder="Pegado: incluye encabezados (Serial, Creation Date, Created By, NotPacked, IsScrap, Área, Línea, Station, Status, Date registered)"></textarea>
+
+        <div class="controls">
+          <button id="analyze" class="small">Analizar datos</button>
+          <button id="clear" class="small ghost">Limpiar</button>
+          <button id="sample" class="small ghost">Cargar ejemplo</button>
+          <button id="help" class="small ghost">¿Cómo pegar?</button>
         </div>
 
-        <div style="flex:1">
-          <label>Pegar datos (desde Excel: selecciona -> Ctrl + C -> aquí Ctrl + V)</label>
-          <textarea id="pasteArea" placeholder="Pegado: columnas como Serial, Creation Date, Created By, NotPacked, IsScrap, Área, Línea, Station, Status, Date registered"></textarea>
-          <div style="display:flex; gap:8px; margin-top:10px;">
-            <button id="analyze" class="small">Analizar datos</button>
-            <button id="clear" class="small ghost">Limpiar</button>
-            <button id="sample" class="small ghost">Cargar ejemplo</button>
-            <button id="help" class="small ghost" title="Cómo pegar correctamente">¿Cómo pegar?</button>
+        <div class="footer" style="margin-top:12px">
+          Zona horaria: <strong>America/Monterrey</strong> — El análisis compara fechas (hoy/ayer/anteayer).
+        </div>
+      </aside>
+
+      <!-- RIGHT: Results -->
+      <section class="panel" aria-label="Resultados">
+        <div style="display:flex; gap:12px; align-items:center; justify-content:space-between;">
+          <div style="display:flex; gap:12px; align-items:center;">
+            <div style="font-weight:700; color:#0b1220">Resumen</div>
+            <div style="color:var(--muted)">Vista rápida de métricas</div>
+          </div>
+
+          <div style="display:flex; gap:8px; align-items:center;">
+            <div class="filters" style="margin:0;">
+              <select id="areaFilter"><option value="">Todas las Áreas</option></select>
+              <select id="lineFilter"><option value="">Todas las Líneas</option></select>
+              <select id="stationFilter"><option value="">Todas las Stations</option></select>
+              <select id="statusFilter"><option value="">Todos los Status</option></select>
+            </div>
+            <button id="exportCSV" class="small ghost">Copiar tabla</button>
           </div>
         </div>
-      </div>
 
-      <div class="filters" style="margin-top:12px;">
-        <label class="small">Filtro rápido:</label>
-        <select id="areaFilter"><option value="">Todas las Áreas</option></select>
-        <select id="lineFilter"><option value="">Todas las Líneas</option></select>
-        <select id="stationFilter"><option value="">Todas las Stations</option></select>
-        <select id="statusFilter"><option value="">Todos los Status</option></select>
-        <button id="exportCSV" class="small ghost" title="Copiar tabla visible">Copiar tabla</button>
-        <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
-          <div class="small hint">Leyenda:</div>
-          <div class="tag danger">SCRAP</div>
-          <div class="tag warn">Sin movimiento (últimos 2 días)</div>
-        </div>
-      </div>
+        <div id="summary" class="cards" aria-live="polite"></div>
 
-      <div id="summary" class="cards" aria-live="polite" style="margin-top:12px"></div>
-
-      <div class="results">
-        <div class="table-wrap panel" id="tableWrap" style="margin-top:12px; padding:0;">
+        <div class="table-wrap" role="region" aria-label="Tabla de resultados" style="margin-top:12px; padding:0;">
           <table id="resultsTable" role="table" aria-label="Resultados">
             <thead>
               <tr>
-                <th>Serial</th><th>Área</th><th>Línea</th><th>Station</th><th>Status</th><th>NotPacked</th><th>IsScrap</th><th>Date registered</th><th>Comentario</th>
+                <th style="min-width:160px">Serial</th>
+                <th>Área</th>
+                <th>Línea</th>
+                <th>Station</th>
+                <th>Status</th>
+                <th>NotPacked</th>
+                <th>IsScrap</th>
+                <th>Date registered</th>
+                <th>Comentario</th>
               </tr>
             </thead>
             <tbody></tbody>
           </table>
         </div>
-      </div>
 
-      <div class="footer">
-        Consejo: el parser es flexible con encabezados (ignora mayúsculas/minúsculas). Si tus fechas traen horas, igual las normaliza en la zona <strong>America/Monterrey</strong>.
-      </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+          <button id="exportExcel" class="small ghost" title="Descargar .xlsx (opcional)">Exportar .xlsx</button>
+          <button id="copyBtn" class="small">Copiar visible</button>
+        </div>
+      </section>
     </div>
   </div>
 
@@ -131,9 +146,10 @@
 
   <script>
   (function(){
+    // Zona horaria a usar
     const TZ = 'America/Monterrey';
 
-    // canonical header variants (case-insensitive)
+    // Variantes de encabezado (busca por subcadenas)
     const canonical = {
       serial: ['serial','id','serial number','serialno'],
       creationDate: ['creation date','created date','date created','creationdate'],
@@ -161,8 +177,10 @@
     const stationFilter = document.getElementById('stationFilter');
     const statusFilter = document.getElementById('statusFilter');
     const exportCSV = document.getElementById('exportCSV');
+    const copyBtn = document.getElementById('copyBtn');
+    const exportExcelBtn = document.getElementById('exportExcel');
 
-    let parsedRows = []; // canonical objects
+    let parsedRows = []; // array canonical objects
 
     // --- Helpers ---
     function findColMap(headers){
@@ -188,49 +206,43 @@
       return ['true','1','si','sí','yes','y','x','t'].includes(s);
     }
 
-    // Return yyyy-mm-dd in TZ for a given Date or date-like input
+    // Return yyyy-mm-dd in TZ (string) or null
     function toTZDateString(dateInput){
       if (!dateInput) return null;
       const d = (dateInput instanceof Date) ? dateInput : new Date(dateInput);
       if (isNaN(d)) return null;
       try {
-        const df = new Intl.DateTimeFormat('en', { timeZone: TZ, year:'numeric', month:'2-digit', day:'2-digit' });
-        const parts = df.formatToParts(d);
+        const parts = new Intl.DateTimeFormat('en', { timeZone: TZ, year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(d);
         const y = parts.find(p=>p.type==='year').value;
         const m = parts.find(p=>p.type==='month').value;
         const day = parts.find(p=>p.type==='day').value;
         return `${y}-${m}-${day}`;
       } catch(e){
-        // fallback
         const iso = d.toISOString();
         return iso.split('T')[0];
       }
     }
 
-    // get today, yesterday, anteayer strings in TZ
+    // today/yesterday/anteayer in TZ as yyyy-mm-dd
     function getRelativeDates(){
       const tzNowStr = new Date().toLocaleString('en-US', { timeZone: TZ });
       const tzNow = new Date(tzNowStr);
       const day0 = new Date(tzNow.getFullYear(), tzNow.getMonth(), tzNow.getDate());
       const day1 = new Date(day0); day1.setDate(day0.getDate()-1);
       const day2 = new Date(day0); day2.setDate(day0.getDate()-2);
-      const fmt = d => {
-        const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
-        return `${y}-${m}-${dd}`;
-      };
+      const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       return { today: fmt(day0), yesterday: fmt(day1), anteayer: fmt(day2) };
     }
 
-    // Parse pasted text (CSV/TSV) and return {headers, rows}
+    // Parse pasted CSV/TSV/text using SheetJS if possible, fallback to simple parse
     function parseClipboardText(text){
-      // Try to let SheetJS parse CSV/TSV robustly
       try {
+        // Let SheetJS try to parse (CSV/TSV/xsv)
         const wb = XLSX.read(text, { type:'string', raw:false, codepage:65001 });
         const sheet = wb.Sheets[wb.SheetNames[0]];
         const arr = XLSX.utils.sheet_to_json(sheet, { raw:false, defval:'' });
         return { headers: Object.keys(arr[0]||{}), rows: arr };
       } catch(e){
-        // fallback simple parse
         const lines = text.trim().split(/\r\n|\n/).filter(l=>l.trim());
         if (lines.length<1) return { headers:[], rows:[] };
         const delim = lines[0].includes('\t') ? '\t' : (lines[0].includes(',') ? ',' : null);
@@ -245,7 +257,7 @@
       }
     }
 
-    // Main processing of clipboard/csv text
+    // Process pasted/csv text into parsedRows (canonical objects)
     function processClipboard(text){
       const parsed = parseClipboardText(text);
       if (!parsed || !parsed.headers.length){
@@ -262,7 +274,7 @@
             const headerName = headers[map[key]];
             return raw[headerName] !== undefined ? raw[headerName] : raw[Object.keys(raw)[map[key]]];
           }
-          // try direct keys case-insensitive
+          // try direct header names case-insensitive
           for (const k of Object.keys(raw)){
             if (k.trim().toLowerCase() === key.toLowerCase()) return raw[k];
           }
@@ -274,26 +286,24 @@
         obj.line = (getByMap('line') || '').toString().trim();
         obj.station = (getByMap('station') || '').toString().trim();
         obj.status = (getByMap('status') || '').toString().trim();
-        obj.notPacked = getByMap('notPacked') || getByMap('NotPacked') || '';
-        obj.isScrap = getByMap('isScrap') || getByMap('IsScrap') || '';
+        obj.notPacked = getByMap('notPacked') || '';
+        obj.isScrap = getByMap('isScrap') || '';
         obj.dateRegisteredRaw = getByMap('dateRegistered') || getByMap('Date registered') || getByMap('Date Registered') || '';
 
-        // Try parse date robustly: excel numeric serial or string
+        // Try parse date robustly: Excel serial or string
         let parsedDate = null;
         if (obj.dateRegisteredRaw){
-          const maybeNum = Number(String(obj.dateRegisteredRaw).trim());
-          if (!isNaN(maybeNum) && String(obj.dateRegisteredRaw).trim().length < 8 && String(obj.dateRegisteredRaw).indexOf('-')===-1 && String(obj.dateRegisteredRaw).indexOf('/')===-1){
-            // probable Excel serial (small length)
+          const rawStr = String(obj.dateRegisteredRaw).trim();
+          const maybeNum = Number(rawStr);
+          // detect Excel serial (no '-' or '/' and numeric and reasonably short)
+          if (!isNaN(maybeNum) && rawStr.length < 8 && rawStr.indexOf('-')===-1 && rawStr.indexOf('/')===-1){
             const excelStart = new Date(Date.UTC(1899,11,30));
             parsedDate = new Date(excelStart.getTime() + maybeNum * 24*60*60*1000);
           } else {
-            // try Date parse, then try replace / with - if needed
-            let tryDate = new Date(obj.dateRegisteredRaw);
-            if (!isNaN(tryDate)) parsedDate = tryDate;
-            else {
-              const t2 = new Date(String(obj.dateRegisteredRaw).replace(/\./g,'-').replace(/\//g,'-'));
-              if (!isNaN(t2)) parsedDate = t2;
-            }
+            // try Date parse, replace / with - and try again
+            let d = new Date(rawStr);
+            if (isNaN(d)) d = new Date(rawStr.replace(/\./g,'-').replace(/\//g,'-'));
+            if (!isNaN(d)) parsedDate = d;
           }
         }
         obj.dateRegistered = parsedDate;
@@ -303,7 +313,7 @@
       runAnalysis();
     }
 
-    // File upload reading (xlsx/csv)
+    // File upload: read first sheet, convert to CSV for transparency and process
     fileInput.addEventListener('change', async (e) => {
       const f = e.target.files && e.target.files[0];
       if (!f) return;
@@ -312,7 +322,6 @@
         const wb = XLSX.read(data, { type: 'array' });
         const first = wb.Sheets[wb.SheetNames[0]];
         const csv = XLSX.utils.sheet_to_csv(first);
-        // Put CSV in textarea for transparency and process
         pasteArea.value = csv;
         processClipboard(csv);
       } catch (err) {
@@ -320,7 +329,7 @@
       }
     });
 
-    // Run analysis and update UI
+    // Analysis & rendering
     function runAnalysis(){
       const rel = getRelativeDates();
       const total = parsedRows.length;
@@ -335,8 +344,6 @@
 
         const ds = toTZDateString(r.dateRegistered);
         if (!ds) noDate.push(r);
-
-        // If last registered date is NOT yesterday -> counts as "no mov yesterday"
         if (!ds || ds !== rel.yesterday) noMovYesterday.push(r);
         if (!ds || ds !== rel.anteayer) noMovAnteayer.push(r);
 
@@ -346,15 +353,15 @@
         if (r.status) statuses.add(r.status);
       });
 
-      // render summary cards
+      // render summary
       summaryEl.innerHTML = '';
-      function c(title, big, hint=''){ const div=document.createElement('div'); div.className='card'; div.innerHTML = `<div class="title">${title}</div><div class="value">${big}</div>${hint?`<div class="note">${hint}</div>`:''}`; summaryEl.appendChild(div); }
-      c('Total seriales', total);
-      c('Seriales en scrap', scrapCount, `<span class="tag danger">${scrapCount}</span>`);
-      c('No empaquetados (NotPacked)', notPackedCount, `<span class="tag">${notPackedCount}</span>`);
-      c('Sin fecha de registro', noDate.length, `<span class="small">Revisar por posible falta de movimiento</span>`);
-      c(`No mov. ayer (${rel.yesterday})`, noMovYesterday.length, `<span class="small">No registraron movimiento ayer</span>`);
-      c(`No mov. anteayer (${rel.anteayer})`, noMovAnteayer.length, `<span class="small">No registraron movimiento anteayer</span>`);
+      function addCard(title, big, hint=''){ const d=document.createElement('div'); d.className='card'; d.innerHTML = `<div class="title">${title}</div><div class="value">${big}</div>${hint?`<div class="title" style="margin-top:8px;color:var(--muted);font-size:13px">${hint}</div>`:''}`; summaryEl.appendChild(d); }
+      addCard('Total seriales', total);
+      addCard('Seriales en scrap', scrapCount, `${scrapCount} identificados`);
+      addCard('No empaquetados', notPackedCount, `${notPackedCount} identificados`);
+      addCard('Sin fecha de registro', noDate.length, 'Revisar por falta de movimiento');
+      addCard(`No mov. ayer (${rel.yesterday})`, noMovYesterday.length, 'No registraron movimiento ayer');
+      addCard(`No mov. anteayer (${rel.anteayer})`, noMovAnteayer.length, 'No registraron movimiento anteayer');
 
       populateFilter(areaFilter, Array.from(areas).sort());
       populateFilter(lineFilter, Array.from(lines).sort());
@@ -373,9 +380,7 @@
       if (current) selectEl.value = current;
     }
 
-    // Render table; coloring rules:
-    // - Scrap rows (IsScrap truthy) -> red class (priority)
-    // - Else if last registered date NOT in [today,yesterday,anteayer] OR missing -> yellow (sin movimiento reciente)
+    // Render table with highlights; Employee NOT included anywhere
     function renderTable(rows, rel){
       resultsTbody.innerHTML = '';
       const af = areaFilter.value, lf = lineFilter.value, sf = stationFilter.value, stf = statusFilter.value;
@@ -392,14 +397,12 @@
         const tr = document.createElement('tr');
         const ds = toTZDateString(r.dateRegistered) || '';
 
-        // Determine highligh
         const isScrap = truthy(r.isScrap);
         const noMovementRecent = (!ds) || (ds !== rel.today && ds !== rel.yesterday && ds !== rel.anteayer);
 
         if (isScrap) tr.classList.add('row-scrap');
         else if (noMovementRecent) tr.classList.add('row-no-mov');
 
-        // build comment
         let comment = '';
         if (isScrap) comment += 'SCRAP ';
         if (!ds) comment += 'SIN FECHA ';
@@ -410,17 +413,16 @@
           if (noMovementRecent && !isScrap) comment += 'No mov. recent ';
         }
 
-        // show styled tags
-        const isScrapTag = isScrap ? `<span class="tag danger">SCRAP</span>` : `<span class="tag" style="opacity:0.7">${escapeHtml(String(r.isScrap||''))}</span>`;
-        const notPackedTag = truthy(r.notPacked) ? `<span class="tag warn">NotPacked</span>` : `<span class="tag" style="opacity:0.7">${escapeHtml(String(r.notPacked||''))}</span>`;
+        const notPackedTag = truthy(r.notPacked) ? 'NotPacked' : (r.notPacked || '');
+        const isScrapTag = isScrap ? 'SCRAP' : (r.isScrap || '');
 
         tr.innerHTML = `<td><strong>${escapeHtml(r.serial||'')}</strong></td>
                         <td>${escapeHtml(r.area||'')}</td>
                         <td>${escapeHtml(r.line||'')}</td>
                         <td>${escapeHtml(r.station||'')}</td>
                         <td>${escapeHtml(r.status||'')}</td>
-                        <td>${notPackedTag}</td>
-                        <td>${isScrapTag}</td>
+                        <td>${escapeHtml(notPackedTag)}</td>
+                        <td>${escapeHtml(isScrapTag)}</td>
                         <td>${escapeHtml(ds)}</td>
                         <td>${escapeHtml(comment)}</td>`;
         resultsTbody.appendChild(tr);
@@ -431,10 +433,11 @@
       return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
+    // BUTTONS and events
     analyzeBtn.addEventListener('click', ()=> {
       const txt = pasteArea.value.trim();
       if (!txt){
-        alert('Pega la tabla en el cuadro o sube un archivo Excel primero.');
+        alert('Pega la tabla en el recuadro o sube un archivo Excel primero.');
         return;
       }
       processClipboard(txt);
@@ -463,7 +466,7 @@ S-1005,2025-09-16,Rosa,false,false,Manufactura,Linea A,ST-1,OK,2025-09-20`;
     });
 
     helpBtn.addEventListener('click', ()=> {
-      alert('Para pegar desde Excel: selecciona el rango en Excel -> Ctrl+C -> haz click en el cuadro aquí -> Ctrl+V -> luego "Analizar datos". También puedes subir el archivo .xlsx/.csv.');
+      alert('Para pegar desde Excel: selecciona el rango → Ctrl+C → haz click aquí → Ctrl+V → luego "Analizar datos". También puedes subir el archivo .xlsx o .csv con "Subir archivo".');
     });
 
     [areaFilter, lineFilter, stationFilter, statusFilter].forEach(s => s.addEventListener('change', ()=> {
@@ -488,16 +491,39 @@ S-1005,2025-09-16,Rosa,false,false,Manufactura,Linea A,ST-1,OK,2025-09-20`;
       }
     });
 
-    // Small no-auto-analyze paste handler (user decides when to analyze)
-    pasteArea.addEventListener('paste', (ev) => {
-      // We keep analyze manual to avoid accidental runs while editing
-      setTimeout(()=> {
-        // nothing automatic
-      },50);
+    // Copy visible table as HTML/CSV quick copy
+    copyBtn.addEventListener('click', async ()=>{
+      const rows = Array.from(resultsTbody.querySelectorAll('tr'));
+      if (!rows.length){ alert('No hay datos para copiar'); return; }
+      // copy CSV like exportCSV
+      exportCSV.click();
     });
 
-    // expose helper for console debugging (optional)
-    window.__debug = { parsedRows, runAnalysis, renderTable };
+    // OPTIONAL: quick .xlsx export using SheetJS (client-side)
+    exportExcelBtn.addEventListener('click', ()=>{
+      const rows = Array.from(resultsTbody.querySelectorAll('tr'));
+      if (!rows.length){ alert('No hay datos para exportar'); return; }
+      const data = [];
+      // header
+      data.push(['Serial','Área','Línea','Station','Status','NotPacked','IsScrap','Date registered','Comentario']);
+      rows.forEach(tr => {
+        const tds = Array.from(tr.querySelectorAll('td')).map(td=>td.textContent.trim());
+        data.push(tds);
+      });
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Resultados');
+      XLSX.writeFile(wb, 'resultados_seriales.xlsx');
+    });
+
+    // Keep paste from auto analyzing (user clicks analyze)
+    pasteArea.addEventListener('paste', () => {
+      // no auto-run, but allow user to paste and click 'Analizar datos'
+    });
+
+    // Expose for debugging
+    window._serialApp = { parsedRows, runAnalysis, renderTable };
+
   })();
   </script>
 </body>
