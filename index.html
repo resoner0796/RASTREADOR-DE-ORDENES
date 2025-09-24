@@ -175,27 +175,27 @@
                 flex-direction: column;
                 gap: 12px;
             }
-            /* Reordenar elementos para la vista móvil */
-            .app-header { order: 1; margin-bottom: 8px;}
-            .global-header { order: 2; }
-            .header { order: 3; }
-            .sidebar { order: 4; }
-            .main-content { order: 5; }
-
-            /* Ocultar elementos de escritorio y simplificar contenedores */
-            .sidebar {
-                display: contents; /* Hace que los hijos del sidebar se comporten como hijos directos del flex container */
-            }
-            .sidebar > h2 { display: none; } /* Oculta el "Panel de Control" general */
-            .main-content {
-                display: contents; /* Idem para el contenido principal */
-            }
             
+            /* CORREGIDO: Aplanar la estructura para que los hijos se puedan reordenar */
+            .sidebar, .main-content, #rastreoView {
+                display: contents; 
+            }
+            .sidebar > h2 { display: none; }
+
+            /* CORREGIDO: Asignar el nuevo orden vertical a cada elemento individual */
+            .app-header { order: 1; }
+            .global-header { order: 2; }
+            .header { order: 3; } /* Contiene summary y switcher */
+            #uploadCard { order: 4; } /* Panel de Control */
+            #orderListCard { order: 5; } /* Órdenes Cargadas */
+            #filtersCard { order: 6; } /* Filtros y Acciones */
+            #tableCard { order: 7; } /* La tarjeta de la tabla de rastreo */
+            #empaqueView { order: 7; } /* La vista de empaque también va al final */
+
             /* Ajustar tarjetas de estadísticas según el nuevo diseño */
             .global-dashboard-card { grid-template-columns: 1fr 1fr; }
             .summary-card { 
                 grid-template-columns: 1fr 1fr; 
-                /* Busca el stat-item que contiene #statOrderNumber y lo hace abarcar 2 columnas */
                 & > .stat-item:has(#statOrderNumber) {
                     grid-column: 1 / -1;
                 }
@@ -213,7 +213,7 @@
                 margin-bottom: 0 !important;
             }
              .card.mobile-collapsible h3.mobile-trigger {
-                margin-bottom: 0; /* Quitar margen inferior del h3 cuando es un trigger */
+                margin-bottom: 0;
                 cursor: pointer;
                 user-select: none;
                 display: flex;
@@ -230,7 +230,7 @@
 
             /* Estilos cuando la tarjeta está expandida */
             .card.mobile-collapsible.expanded > *:not(.mobile-trigger) {
-                max-height: 1500px; /* Un valor suficientemente grande */
+                max-height: 1500px;
                 opacity: 1;
                 margin-top: 16px !important;
             }
@@ -334,7 +334,7 @@
                              </div>
                         </div>
                     </div>
-                    <div class="card" style="flex-grow:1; display:flex; flex-direction:column;">
+                    <div class="card" id="tableCard" style="flex-grow:1; display:flex; flex-direction:column;">
                         <input type="text" id="rastreoFilterInput" placeholder="Buscar en la tabla por serial, status, etc..." style="margin-bottom: 16px;">
                         <div id="lineCountsContainer"></div>
                         <div class="table-wrapper">
@@ -1173,7 +1173,7 @@
                  return value === undefined ? '' : value;
             }
 
-            // --- NUEVO: Lógica de adaptación a móvil ---
+            // --- Lógica de adaptación a móvil ---
             let isMobile = window.innerWidth <= 992;
             const collapsibleCards = [
                 { id: 'uploadCard', title: 'Panel de Control' }, 
@@ -1190,15 +1190,13 @@
                     const trigger = cardElement.querySelector('h3');
                     if (trigger) {
                         trigger.classList.add('mobile-trigger');
-                        // Cambiar el título del primer h3 de la tarjeta de filtros
                         if (cardInfo.id === 'filtersCard') {
                             const firstH3 = cardElement.querySelector('.filter-container h3');
                             if(firstH3) firstH3.textContent = cardInfo.title;
                         }
-                        // Agregar el evento de clic solo una vez
                         if (!trigger.dataset.mobileListener) {
                             trigger.addEventListener('click', () => {
-                                if(window.innerWidth <= 992) { // Solo activar en móvil
+                                if(window.innerWidth <= 992) { 
                                     cardElement.classList.toggle('expanded');
                                 }
                             });
@@ -1217,7 +1215,6 @@
                     const trigger = cardElement.querySelector('h3');
                     if(trigger) trigger.classList.remove('mobile-trigger');
 
-                    // Restaurar título original
                     if (cardInfo.id === 'filtersCard') {
                          const firstH3 = cardElement.querySelector('.filter-container h3');
                          if(firstH3) firstH3.textContent = 'Filtrar por Estado';
@@ -1225,7 +1222,6 @@
                  });
             }
             
-            // Listener para cambiar de modo al redimensionar la ventana
             window.addEventListener('resize', () => {
                 const newIsMobile = window.innerWidth <= 992;
                 if (newIsMobile !== isMobile) {
@@ -1235,11 +1231,10 @@
                     } else {
                         teardownMobileMode();
                     }
-                    render(); // Re-renderizar la tabla con las columnas correctas
+                    render();
                 }
             });
             
-            // Carga inicial
             loadOrdersFromLocalStorage();
             if (isMobile) {
                 setupMobileMode();
