@@ -269,7 +269,7 @@
             .main-container { display: flex; flex-direction: column; gap: 12px; }
             .sidebar { position: static; height: auto; }
             .sidebar, .main-content { display: contents !important; }
-            #sapView .sidebar { display: none; }
+            #sap-uploadCard { display: none; }
             .sidebar > h2 { display: none; }
             #adminBtn { display: none; }
             #areaSelectBtn { flex-grow: 1 !important; }
@@ -279,9 +279,7 @@
             .header { order: 2; }
             #uploadCard, #sap-uploadCard { order: 3; }
             #orderListCard, #sap-orderListCard { order: 4; }
-            #mobile-controls-row { order: 5; }
-            #tableCard { order: 6; }
-            #empaqueView { order: 6; }
+            #rastreoView, #empaqueView { order: 5; }
             #sap-tableCard { order: 7; }
             .global-dashboard-card { grid-template-columns: 1fr 1fr; }
             .summary-card { grid-template-columns: 1fr 1fr; & > .stat-item:has(.stat-value-wrapper > #statOrderNumber) { grid-column: 1 / -1; } }
@@ -310,8 +308,7 @@
         }
         
         @media (min-width: 993px) {
-            .app-header { text-align: center; }
-            #mainModeSwitcher { margin-left: auto; margin-right: auto; }
+            .app-header, #mainModeSwitcher { width: calc(100% - 276px); margin-left: 276px; }
             #mobile-controls-row { display: none; }
             #desktop-controls-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
             .desktop-filters-group { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; flex-grow: 1; }
@@ -1420,7 +1417,7 @@
                 style.innerHTML = `
                     :root { --surface-color: #1E293B; --border-color: #334155; --danger-color: #FB7185; --warning-color: #FBBF24; --orange-color: #F97316; --success-color: #34D399; --text-primary: #F8FAFC; --text-secondary: #94A3B8; }
                     table { color: var(--text-primary); background-color: var(--surface-color); border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 14px; table-layout: auto; width: auto; }
-                    th, td { padding: 12px 18px; text-align: center; border: 1px solid var(--border-color); white-space: nowrap; }
+                    th, td { padding: 12px 24px; text-align: center !important; border: 1px solid var(--border-color); white-space: nowrap; }
                     thead { display: table-header-group !important; background-color: #1a2436; position: static !important; }
                     th { font-weight: 600; color: var(--text-secondary); font-size: 12px; }
                     tr { display: table-row !important; }
