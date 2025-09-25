@@ -103,7 +103,7 @@
             gap: 16px;
             position: sticky;
             align-self: start;
-
+            
             /* === AJUSTE DE POSICIÓN VERTICAL === */
             /* Modifica el valor de 'top' para mover el panel hacia arriba o abajo. */
             /* Un valor más pequeño (ej. 180px) lo subirá; un valor más grande (ej. 200px) lo bajará. */
@@ -327,7 +327,8 @@
         }
         
         @media (min-width: 993px) {
-             /* === AJUSTE DE ALINEACIÓN HORIZONTAL DEL SWITCH === */
+            .app-header { text-align: center; }
+            /* === AJUSTE DE ALINEACIÓN HORIZONTAL DEL SWITCH === */
             /* Esta regla centra el switch sobre la columna de contenido. */
             /* El valor 276px es la suma del ancho del panel (260px) y el espacio (16px). */
             #mainModeSwitcher { 
