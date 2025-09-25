@@ -133,7 +133,7 @@
         
         .actions-container { display: grid; grid-template-columns: 1fr; gap: 10px; }
         @media (min-width: 600px) {
-            .actions-container { grid-template-columns: 1fr 1fr; }
+            .actions-container { grid-template-columns: 1fr 1fr 1fr; }
         }
 
         .filter-container { display: flex; flex-direction: column; gap: 16px; }
@@ -165,7 +165,7 @@
         
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
-        tbody tr.is-very_delayed { background-color: rgba(249, 115, 22, 0.1) !important; }
+        tbody tr.is-very_delayed { background-color: rgba(249, 115, 22, 0.1) !important; } /* Naranja */
         tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
         tbody tr.is-delayed td { color: var(--warning-color) !important; }
@@ -430,6 +430,7 @@
                                      <div class="actions-container">
                                          <button id="exportViewButton" class="btn" disabled>Exportar reimpresión</button>
                                          <button id="exportPdfButton" class="btn" disabled>Exportar PDF</button>
+                                         <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
                                      </div>
                                 </div>
                             </div>
@@ -531,6 +532,7 @@
             let orderToUpdateKey = null;
             let rastreoStatusFilter = 'all';
             let rastreoLineFilter = 'all';
+            let isInitialLoad = true;
 
             // Key Maps
             const TRACKING_KEYS = { SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', DATE_REGISTERED: 'Date Registered', LINE: 'Line', STATION: 'Station' };
@@ -633,7 +635,7 @@
             // ===================================
             // === CORE APP CONTROL & UTILITIES ===
             // ===================================
-            function switchMainMode(mode) {
+            function switchMainMode(mode, shouldRender = true) {
                 mainMode = mode;
                 localStorage.setItem('mainMode', mode);
                 document.body.classList.toggle('mode-fwd', mode === 'fwd');
@@ -641,7 +643,9 @@
                 modeFwd.classList.toggle('active', mode === 'fwd');
                 modeSap.classList.toggle('active', mode === 'sap');
                 appTitle.textContent = mode === 'fwd' ? 'Centro de Rastreo de Órdenes' : 'Análisis de Órdenes SAP';
-                render();
+                if (shouldRender) {
+                    render();
+                }
             }
             
             function showModal(title, content, type = 'info', showCopyBtn = false) {
@@ -1275,12 +1279,15 @@
                 doc.autoTable({
                     head: [headers],
                     body: body,
-                    didParseCell: function (data) {
+                    willDrawCell: function (data) {
                         const status = currentVisibleData[data.row.index]?.status;
                         const color = statusColors[status];
                         if (color) {
-                            data.cell.styles.fillColor = color;
+                            doc.setFillColor(color[0], color[1], color[2]);
                         }
+                    },
+                    styles: {
+                        fillColor: [30, 41, 59] 
                     }
                 });
 
@@ -1550,9 +1557,7 @@
                         ordersFromDB.set(doc.id, data);
                     });
                     loadedOrders = ordersFromDB;
-                    syncFwdAndSapDates();
-                    updateOrderList();
-                    render();
+                    updateUI();
                 }, err => {
                     console.error("Error escuchando datos de FWD: ", err);
                     showModal('Error de Conexión', 'No se pudo conectar a la base de datos de FWD en tiempo real.', 'error');
@@ -1567,21 +1572,28 @@
                     } else {
                         sapData = [];
                     }
-                    syncFwdAndSapDates();
-                    updateOrderList();
-                    render();
+                    updateUI();
                 }, err => {
                     console.error("Error escuchando datos de SAP: ", err);
                     showModal('Error de Conexión', 'No se pudo conectar a la base de datos de SAP en tiempo real.', 'error');
                 });
             }
+            
+            function updateUI() {
+                syncFwdAndSapDates();
+                updateOrderList();
+                if (isInitialLoad) {
+                    mainMode = localStorage.getItem('mainMode') || 'fwd';
+                    switchMainMode(mainMode, false);
+                    isInitialLoad = false;
+                }
+                render();
+            }
 
             // === INITIALIZATION ===
-            mainMode = localStorage.getItem('mainMode') || 'fwd';
             if (isMobile) setupMobileMode();
             setupFwdListener();
             setupSapListener();
-            switchMainMode(mainMode); // Set UI to last used mode
         });
     </script>
 </body>
