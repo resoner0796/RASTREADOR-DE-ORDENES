@@ -107,7 +107,7 @@
             /* === AJUSTE DE POSICIÓN VERTICAL === */
             /* Modifica el valor de 'top' para mover el panel hacia arriba o abajo. */
             /* Un valor más pequeño (ej. 180px) lo subirá; un valor más grande (ej. 200px) lo bajará. */
-            top: 10px;
+            top: 192px;
 
             /* La altura se ajusta automáticamente según el valor de 'top'. No es necesario cambiarla. */
             height: calc(100vh - 208px); /* Se calcula como (valor de top + padding inferior del body) */
@@ -198,7 +198,7 @@
         /* Switchers */
         .mode-switcher { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 4px; background-color: rgba(0,0,0,0.1); border-radius: 10px; }
         .light-theme .mode-switcher { background-color: rgba(0,0,0,0.05); }
-        #mainModeSwitcher { grid-template-columns: 1fr 1fr; margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto; }
+        #mainModeSwitcher { grid-template-columns: 1fr 1fr; margin-bottom: 24px; max-width: 400px; }
         .mode-switcher button { padding: 8px; border: none; background-color: transparent; color: var(--text-secondary); font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
         .mode-switcher button.active { background-color: var(--surface-color); color: var(--text-primary); box-shadow: 0 2px 10px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
         .light-theme .mode-switcher button.active { color: var(--primary-color); }
@@ -327,7 +327,13 @@
         }
         
         @media (min-width: 993px) {
-            #mainModeSwitcher { margin-left: auto; margin-right: auto; }
+             /* === AJUSTE DE ALINEACIÓN HORIZONTAL DEL SWITCH === */
+            /* Esta regla centra el switch sobre la columna de contenido. */
+            /* El valor 276px es la suma del ancho del panel (260px) y el espacio (16px). */
+            #mainModeSwitcher { 
+                width: calc(100% - 276px);
+                margin-left: 276px;
+            }
             #mobile-controls-row { display: none; }
             #desktop-controls-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
             .desktop-filters-group { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; flex-grow: 1; }
