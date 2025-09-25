@@ -627,6 +627,7 @@
                 modeFwd.classList.toggle('active', mode === 'fwd');
                 modeSap.classList.toggle('active', mode === 'sap');
                 appTitle.textContent = mode === 'fwd' ? 'Centro de Rastreo de Órdenes' : 'Análisis de Órdenes SAP';
+                render();
             }
             
             function showModal(title, content, type = 'info', showCopyBtn = false) {
