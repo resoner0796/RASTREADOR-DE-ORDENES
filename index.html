@@ -15,7 +15,7 @@
     <style>
         :root {
             --bg-color: #0F172A; --surface-color: #1E293B; --border-color: #334155;
-            --primary-color: #38BDF8; --danger-color: #FB7185; --warning-color: #FBBF24;
+            --primary-color: #38BDF8; --danger-color: #FB7185; --warning-color: #FBBF24; --orange-color: #F97316;
             --success-color: #34D399; --text-primary: #F8FAFC; --text-secondary: #94A3B8;
             --text-dark: #64748B;
         }
@@ -158,6 +158,8 @@
         
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
+        tbody tr.is-very_delayed { background-color: rgba(249, 115, 22, 0.1) !important; } /* Naranja */
+        tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
         tbody tr.is-delayed td { color: var(--warning-color) !important; }
         tbody tr.is-today { background-color: rgba(52, 211, 153, 0.1) !important; }
@@ -619,6 +621,9 @@
                 }
             });
 
+            // ===================================
+            // === CORE APP CONTROL & UTILITIES ===
+            // ===================================
             function switchMainMode(mode) {
                 mainMode = mode;
                 localStorage.setItem('mainMode', mode);
@@ -675,8 +680,6 @@
             }
             function findHeader(headers, keyText) { return headers && headers.find(h => h && h.toLowerCase() === keyText.toLowerCase()); }
             
-            // ... (El resto de las funciones FWD se mantienen igual que en la versión anterior)
-
             // =========================
             // === FWD VIEW FUNCTIONS ===
             // =========================
@@ -718,6 +721,7 @@
                         
                         Promise.all(updatePromises).then(() => {
                             showModal('Éxito', `${results.length} orden(es) cargada(s) y guardada(s).`, 'success');
+                            // The real-time listener will handle the UI update
                         });
                     })
                     .catch(err => {
@@ -791,7 +795,7 @@
             
             function processRastreoData(data) {
                 if (!data || data.length === 0) return [];
-                const reynosaTodayString = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Matamoros' });
+                const now = new Date();
                 const headers = Object.keys(data[0] || {});
                 const scrapHeader = findHeader(headers, TRACKING_KEYS.IS_SCRAP);
                 const dateHeader = findHeader(headers, TRACKING_KEYS.DATE_REGISTERED);
@@ -804,12 +808,17 @@
                         status = 'scrap';
                     } else {
                         const dateSerial = row[dateHeader];
-                        if (dateSerial) {
-                            const decodedDate = XLSX.SSF.parse_date_code(dateSerial);
-                            if (decodedDate) {
-                                const serialDateString = `${decodedDate.y}-${String(decodedDate.m).padStart(2, '0')}-${String(decodedDate.d).padStart(2, '0')}`;
-                                if (serialDateString === reynosaTodayString) status = 'today';
-                                else if (serialDateString < reynosaTodayString) status = 'delayed';
+                        const registeredDate = excelSerialToDate(dateSerial);
+                        if (registeredDate) {
+                            const ageInMillis = now.getTime() - registeredDate.getTime();
+                            const ageInHours = ageInMillis / (1000 * 60 * 60);
+
+                            if (ageInHours > 25) {
+                                status = 'very_delayed';
+                            } else if (ageInHours > 8) {
+                                status = 'delayed';
+                            } else {
+                                status = 'today';
                             }
                         }
                     }
@@ -906,8 +915,6 @@
                             await deleteOrderFromFirebase(key);
                             loadedOrders.delete(key);
                             if (activeOrderKey === key) activeOrderKey = 'all';
-                            updateOrderList();
-                            render();
                         }
                     };
                     item.appendChild(deleteBtn);
@@ -1003,7 +1010,14 @@
                 }
                 createRastreoLineFilters(dataToShow, headers);
                 let filteredData = dataToShow;
-                if (rastreoStatusFilter !== 'all') filteredData = filteredData.filter(row => row.status === rastreoStatusFilter);
+                if (rastreoStatusFilter !== 'all') {
+                    if (rastreoStatusFilter === 'delayed') {
+                        filteredData = dataToShow.filter(row => row.status === 'delayed' || row.status === 'very_delayed');
+                    } else {
+                        filteredData = dataToShow.filter(row => row.status === rastreoStatusFilter);
+                    }
+                }
+                
                 const lineHeader = findHeader(headers, TRACKING_KEYS.LINE);
                 if (rastreoLineFilter !== 'all' && lineHeader) filteredData = filteredData.filter(row => row[lineHeader] === rastreoLineFilter);
                 const searchText = rastreoFilterInput.value.toLowerCase();
@@ -1243,7 +1257,7 @@
                     const data = order.rastreoData || [];
                     const remaining = (order.orderQty || 0) - (order.packedQty || 0);
                     const today = data.filter(r => r.status === 'today').length;
-                    const delayed = data.filter(r => r.status === 'delayed').length;
+                    const delayed = data.filter(r => r.status === 'delayed' || r.status === 'very_delayed').length;
                     const scrap = data.filter(r => r.status === 'scrap').length;
 
                     reportHTML += `
@@ -1297,11 +1311,9 @@
                     try {
                         const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
                         const processed = processSapFile(workbook);
-                        // No se asigna a sapData aquí. El listener se encargará de eso cuando el guardado sea exitoso.
                         await saveSapDataToFirebase(processed); 
                         sapDateFilter = 'default';
-                        // No es necesario llamar a render aquí, el listener lo hará.
-                        showModal('Éxito', 'Archivo SAP cargado y guardado correctamente. Los datos se actualizarán en todos los dispositivos.', 'success');
+                        showModal('Éxito', 'Archivo SAP cargado y guardado. Los datos se actualizarán en todos los dispositivos.', 'success');
                     } catch (err) {
                         console.error("Error procesando archivo SAP:", err);
                         showModal('Error', `No se pudo procesar el archivo SAP. <br><small>${err.message}</small>`, 'error');
@@ -1371,10 +1383,10 @@
                     return;
                 }
                 const ordersToday = sapData.filter(row => row.isToday).length;
-                const ordersCompleted = sapData.filter(row => row.status === 'complete').length;
+                const ordersCompletedToday = sapData.filter(row => row.status === 'complete' && row.isToday).length;
 
                 sapTotalOrdersStat.textContent = ordersToday;
-                sapCompletedOrdersStat.textContent = ordersCompleted;
+                sapCompletedOrdersStat.textContent = ordersCompletedToday;
             }
 
             function updateSapOrderList() {
@@ -1476,7 +1488,9 @@
             
             function syncFwdAndSapDates() {
                 if (loadedOrders.size === 0 || sapData.length === 0) return;
+
                 const sapDateMap = new Map(sapData.map(order => [String(order.Orden), order.Finish]));
+                
                 loadedOrders.forEach((orderData, orderKey) => {
                     if (sapDateMap.has(orderKey)) {
                         const sapFinishDateSerial = sapDateMap.get(orderKey);
@@ -1545,6 +1559,23 @@
                 }, err => {
                     console.error("Error escuchando datos de FWD: ", err);
                     showModal('Error de Conexión', 'No se pudo conectar a la base de datos de FWD en tiempo real.', 'error');
+                });
+            }
+
+            function setupSapListener() {
+                db.collection('sap_data').doc('current_data').onSnapshot(docRef => {
+                    if (docRef.exists) {
+                        const data = docRef.data();
+                        sapData = data.orders || [];
+                    } else {
+                        sapData = [];
+                    }
+                    syncFwdAndSapDates();
+                    updateOrderList();
+                    render();
+                }, err => {
+                    console.error("Error escuchando datos de SAP: ", err);
+                    showModal('Error de Conexión', 'No se pudo conectar a la base de datos de SAP en tiempo real.', 'error');
                 });
             }
 
