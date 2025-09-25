@@ -522,8 +522,6 @@
             // Element cache
             const doc = (id) => document.getElementById(id);
             const appTitle = doc('app-title');
-
-            // FWD View Elements
             const fileDropArea = doc('fileDropArea');
             const fileInput = doc('fileInput');
             const updateFileInput = doc('updateFileInput');
@@ -547,8 +545,6 @@
             const lineCountsContainer = doc('lineCountsContainer');
             const placeholderText = doc('placeholderText');
             const empaqueFilterInput = doc('empaqueFilterInput');
-
-            // SAP View Elements
             const sapFileDropArea = doc('sapFileDropArea');
             const sapFileInput = doc('sapFileInput');
             const sapPlaceholderText = doc('sapPlaceholderText');
@@ -556,12 +552,8 @@
             const sapTotalOrdersStat = doc('sapTotalOrdersStat');
             const sapCompletedOrdersStat = doc('sapCompletedOrdersStat');
             const sapResetFilterBtn = doc('sapResetFilter');
-
-            // Main Mode Switcher
             const modeFwd = doc('modeFwd');
             const modeSap = doc('modeSap');
-
-            // Modal Elements
             const modalOverlay = doc('modalOverlay');
             const modalTitle = doc('modalTitle');
             const modalBody = doc('modalBody');
@@ -673,8 +665,6 @@
             }
             function findHeader(headers, keyText) { return headers && headers.find(h => h && h.toLowerCase() === keyText.toLowerCase()); }
             
-            // ... (El resto de las funciones FWD se mantienen igual que en la versión anterior)
-
             // =========================
             // === FWD VIEW FUNCTIONS ===
             // =========================
@@ -693,11 +683,9 @@
                         ordersFromDB.set(doc.id, data);
                     });
                     loadedOrders = ordersFromDB;
-                    updateOrderList();
-                    render();
                 } catch (e) {
-                    console.error("Error al cargar datos desde Firebase: ", e);
-                    showModal('Error de Conexión', 'No se pudieron cargar los datos desde la base de datos.', 'error');
+                    console.error("Error al cargar datos FWD desde Firebase: ", e);
+                    showModal('Error de Conexión', 'No se pudieron cargar los datos FWD desde la base de datos.', 'error');
                 }
             }
             
@@ -739,6 +727,7 @@
                         
                         Promise.all(updatePromises).then(() => {
                             showModal('Éxito', `${results.length} orden(es) cargada(s) y guardada(s).`, 'success');
+                            syncFwdAndSapDates();
                             updateOrderList();
                             setActiveOrder(isUpdate ? orderToUpdateKey : lastKey);
                         });
@@ -872,7 +861,7 @@
                 }
                 const groupedByDate = new Map();
                 for (const [key, order] of loadedOrders.entries()) {
-                    const date = order.orderDate || new Date();
+                    const date = order.orderDate || new Date(0);
                     const dateString = formatDate(date);
                     if (!groupedByDate.has(dateString)) groupedByDate.set(dateString, []);
                     groupedByDate.get(dateString).push({ key, ...order });
@@ -1286,16 +1275,41 @@
             // ========================
             // === SAP VIEW FUNCTIONS ===
             // ========================
-            function handleSapFile(file) {
+            async function saveSapDataToFirebase(data) {
+                try {
+                    const dataToSave = { orders: data, lastUpdated: new Date() };
+                    await db.collection('sap_data').doc('current_data').set(dataToSave);
+                } catch (e) {
+                    console.error("Error al guardar datos SAP en Firebase: ", e);
+                    showModal('Error', 'No se pudieron guardar los datos de SAP en la nube.', 'error');
+                }
+            }
+
+            async function loadSapDataFromFirebase() {
+                try {
+                    const docRef = await db.collection('sap_data').doc('current_data').get();
+                    if (docRef.exists) {
+                        const data = docRef.data();
+                        sapData = data.orders || [];
+                    }
+                } catch (e) {
+                    console.error("Error al cargar datos SAP desde Firebase: ", e);
+                    showModal('Error', 'No se pudieron cargar los datos de SAP desde la nube.', 'error');
+                }
+            }
+
+            async function handleSapFile(file) {
                 if (!file) return;
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = async (e) => {
                     try {
                         const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-                        sapData = processSapFile(workbook);
+                        const processed = processSapFile(workbook);
+                        sapData = processed;
+                        await saveSapDataToFirebase(sapData);
                         sapDateFilter = 'default';
                         renderSapView();
-                        showModal('Éxito', 'Archivo SAP cargado y procesado correctamente.', 'success');
+                        showModal('Éxito', 'Archivo SAP cargado y guardado correctamente.', 'success');
                     } catch (err) {
                         console.error("Error procesando archivo SAP:", err);
                         showModal('Error', `No se pudo procesar el archivo SAP. <br><small>${err.message}</small>`, 'error');
@@ -1468,6 +1482,22 @@
                  return value === undefined || value === null ? '' : value;
             }
             
+            function syncFwdAndSapDates() {
+                if (loadedOrders.size === 0 || sapData.length === 0) return;
+
+                const sapDateMap = new Map(sapData.map(order => [String(order.Orden), order.Finish]));
+                
+                loadedOrders.forEach((orderData, orderKey) => {
+                    if (sapDateMap.has(orderKey)) {
+                        const sapFinishDateSerial = sapDateMap.get(orderKey);
+                        const sapFinishDate = excelSerialToDate(sapFinishDateSerial);
+                        if(sapFinishDate) {
+                            orderData.orderDate = sapFinishDate;
+                        }
+                    }
+                });
+            }
+
             let isMobile = window.innerWidth <= 992;
             const cardIds = ['uploadCard', 'orderListCard', 'filtersCard', 'actionsCard', 'sap-uploadCard', 'sap-orderListCard'];
             function setupMobileMode() {
@@ -1506,8 +1536,18 @@
             });
 
             // Initial Load
-            loadOrdersFromFirebase();
-            if (isMobile) setupMobileMode();
+            async function initializeApp() {
+                await Promise.all([
+                    loadOrdersFromFirebase(),
+                    loadSapDataFromFirebase()
+                ]);
+                syncFwdAndSapDates();
+                updateOrderList();
+                render();
+                 if (isMobile) setupMobileMode();
+            }
+
+            initializeApp();
         });
     </script>
 </body>
