@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Control de Producción v2.4</title>
+    <title>Centro de Control de Producción v2.5</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -66,6 +65,9 @@
             top: 16px;
             height: calc(100vh - 32px);
             align-self: start;
+        }
+        .sidebar .card h3 {
+            text-align: center;
         }
         #sapView .sidebar {
             height: calc(100vh - 32px);
@@ -173,6 +175,8 @@
         .btn:hover, .filter-btn:hover { background-color: #475569; color: var(--text-primary); }
         .filter-btn.active { color: var(--bg-color); font-weight: 700; background-color: var(--primary-color); border-color: var(--primary-color); }
         .btn { width: 100%; padding: 10px; background-color: var(--primary-color); color: var(--bg-color); font-weight: 700;}
+        .btn.btn-danger { background-color: var(--danger-color); }
+        .btn.btn-danger:hover { background-color: #f8516d; }
         .btn:disabled { background-color: #334155; color: var(--text-dark); cursor: not-allowed; border-color: #475569;}
         .btn:hover:not(:disabled) { background-color: #67CFFB;}
         #lineCountsContainer { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
@@ -248,7 +252,8 @@
         #modalBody .status-report strong { color: var(--text-secondary); }
         #modalBody input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); margin-top: 10px; box-sizing: border-box;}
         #modalBody .area-list { list-style: none; padding: 0; margin-top: 16px; }
-        #modalBody .area-list li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color); }
+        #modalBody .area-list li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color); gap: 10px;}
+        #modalBody .area-list li input { flex-grow: 1; margin: 0; }
 
 
         body.mode-fwd #sapView { display: none !important; }
@@ -1188,9 +1193,9 @@
                     <button class="btn" id="exportStatusButtonMobile" ${!hasOrders ? 'disabled' : ''}>Reporte de Estatus</button>
                 `;
                  const desktopActionsHTML = `
-                    <button class="btn" id="exportViewButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Exportar reimpresión</button>
-                    <button class="btn" id="exportImageButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Exportar Captura</button>
-                    <button class="btn" id="exportStatusButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Reporte de Estatus</button>
+                    <button class="btn" id="exportViewButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Reimpresión</button>
+                    <button class="btn" id="exportImageButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Captura</button>
+                    <button class="btn" id="exportStatusButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Reporte</button>
                 `;
                 mobileControls.actions.innerHTML = actionsHTML;
                 desktopControls.actions.innerHTML = desktopActionsHTML;
@@ -1467,7 +1472,7 @@
                 cloneContainer.style.position = 'absolute';
                 cloneContainer.style.left = '-9999px';
                 cloneContainer.style.top = '0';
-                cloneContainer.style.width = 'auto'; 
+                cloneContainer.style.width = '1400px'; 
                 cloneContainer.style.background = getComputedStyle(document.documentElement).getPropertyValue('--bg-color').trim();
                 cloneContainer.style.padding = '1px';
 
@@ -1847,7 +1852,12 @@
 
                 let content = '<h3>Gestionar Áreas</h3><ul class="area-list">';
                 areas.forEach(area => {
-                    content += `<li><input type="text" class="area-name-input" data-id="${area.id}" value="${area.name}"> <button class="btn save-area-btn" data-id="${area.id}" style="width: auto; padding: 5px 10px;">Guardar</button></li>`;
+                    content += `<li><input type="text" class="area-name-input" data-id="${area.id}" value="${area.name}"> 
+                        <div>
+                           <button class="btn save-area-btn" data-id="${area.id}" style="width: auto; padding: 5px 10px;">Guardar</button>
+                           <button class="btn btn-danger delete-area-btn" data-id="${area.id}" style="width: auto; padding: 5px 10px; margin-left: 5px;">Eliminar</button>
+                        </div>
+                    </li>`;
                 });
                 content += `</ul>
                     <h3 style="margin-top: 20px;">Crear Nueva Área</h3>
@@ -1871,15 +1881,48 @@
                         const areaId = e.target.dataset.id;
                         const newName = doc('modalBody').querySelector(`.area-name-input[data-id="${areaId}"]`).value.trim().toUpperCase();
                         if (newName && newName !== areaId) {
-                            // This is complex: requires moving subcollections. For now, we only update the name field.
                             await db.collection('areas').doc(areaId).update({ name: newName });
-                            showModal('Éxito', 'Nombre del área actualizado.', 'success');
+                            if(currentArea === areaId) {
+                                areaSelectBtn.textContent = `Área: ${newName}`;
+                            }
                             showAdminPanel(); // Refresh
                         }
                     });
                 });
-            }
 
+                doc('modalBody').querySelectorAll('.delete-area-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                         const areaId = e.target.dataset.id;
+                         if (areas.length <= 1) {
+                            showModal('Acción no permitida', 'No puedes eliminar la última área.', 'warning');
+                            return;
+                         }
+                         if (confirm(`¿Estás seguro de que quieres eliminar el área "${areaId}" y todos sus datos? Esta acción no se puede deshacer.`)) {
+                            await deleteAreaAndSubcollections(areaId);
+                            showModal('Éxito', `Área "${areaId}" eliminada.`, 'success');
+                            if (currentArea === areaId) {
+                                const remainingArea = areas.find(a => a.id !== areaId);
+                                currentArea = remainingArea.id;
+                                localStorage.setItem('currentArea', currentArea);
+                                areaSelectBtn.textContent = `Área: ${currentArea}`;
+                                setupListenersForArea(currentArea);
+                            }
+                            showAdminPanel();
+                         }
+                    });
+                });
+            }
+            
+            async function deleteAreaAndSubcollections(areaId) {
+                const subcollections = ['orders', 'sap_data'];
+                for (const subcollection of subcollections) {
+                    const snapshot = await db.collection('areas').doc(areaId).collection(subcollection).get();
+                    const batch = db.batch();
+                    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                }
+                await db.collection('areas').doc(areaId).delete();
+            }
 
             // ===================================
             // === INITIALIZATION & MIGRATION ===
