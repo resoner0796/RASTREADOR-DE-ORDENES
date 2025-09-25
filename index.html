@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Control de Producción v2.9</title>
+    <title>Centro de Control de Producción v3.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
@@ -15,7 +15,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Tinos&display=swap" rel="stylesheet">
     <style>
         /* =================================== */
-        /* === REDISEÑO GLASSMORPHISM v2.9 === */
+        /* === REDISEÑO GLASSMORPHISM v3.0 === */
         /* =================================== */
         :root {
             /* Se definen los temas abajo */
@@ -89,14 +89,8 @@
         .app-header { text-align: center; margin-bottom: 16px; position: relative; }
         .app-branding { font-family: 'Tinos', 'Times New Roman', serif; font-weight: 400; font-size: 2.2rem; color: var(--text-primary); letter-spacing: 2px; margin: 0; }
         .app-title { font-size: 1.25rem; font-weight: 600; color: var(--text-secondary); margin: 4px 0 0 0; }
-        
-        #fwdView > .global-header, #sapView > .global-header {
-            max-width: 900px;
-            margin: 0 auto 16px auto;
-        }
-
-        .main-container { width: 100%; display: grid; grid-template-columns: 260px 1fr; grid-template-rows: auto 1fr; grid-template-areas: "sidebar header" "sidebar main"; gap: 16px; }
-        #sapView .main-container { grid-template-rows: 1fr; grid-template-areas: "sidebar main"; }
+        .main-container { width: 100%; display: grid; grid-template-columns: 260px 1fr; grid-template-rows: auto auto 1fr; grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; gap: 16px; }
+        #sapView .main-container { grid-template-rows: auto 1fr; grid-template-areas: "sidebar main"; }
         
         /* Barra Lateral */
         .sidebar { grid-area: sidebar; background-color: transparent; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 16px; height: calc(100vh - 32px); align-self: start; }
@@ -181,11 +175,11 @@
         .order-item .icon-btn:hover { color: var(--text-primary); filter: grayscale(0) opacity(1); }
         
         /* Switchers */
-        .mode-switcher { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 4px; background-color: transparent; border-radius: 8px; margin-bottom: 16px; }
-        .header .mode-switcher { border: 1px solid var(--border-color); border-radius: 10px; }
+        .mode-switcher { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 4px; background-color: rgba(0,0,0,0.1); border-radius: 10px; }
+        .light-theme .mode-switcher { background-color: rgba(0,0,0,0.05); }
         #mainModeSwitcher { grid-template-columns: 1fr 1fr; margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto; }
         .mode-switcher button { padding: 8px; border: none; background-color: transparent; color: var(--text-secondary); font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
-        .mode-switcher button.active { background-color: var(--surface-color); color: var(--text-primary); }
+        .mode-switcher button.active { background-color: var(--surface-color); color: var(--text-primary); box-shadow: 0 2px 10px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
         .light-theme .mode-switcher button.active { color: var(--primary-color); }
         
         /* Stats */
@@ -255,8 +249,7 @@
         /* Transiciones de Vista */
         #fwdView, #sapView { transition: opacity 0.3s ease-in-out; }
         body.mode-fwd #sapView, body.mode-sap #fwdView { display: none; }
-        body.mode-rastreo #empaqueView { display: none !important; }
-        body.mode-empaque #rastreoView { display: none !important; }
+        #empaqueView { display: none; }
         
         .date-group { margin-bottom: 8px; }
         .date-header { width: 100%; background-color: transparent; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer; display: flex; justify-content: space-between; align-items: center; text-align: left; }
@@ -314,6 +307,7 @@
         }
         
         @media (min-width: 993px) {
+            .app-header, #mainModeSwitcher { width: calc(100% - 276px); margin-left: 276px; }
             #mobile-controls-row { display: none; }
             #desktop-controls-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
             .desktop-filters-group { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; flex-grow: 1; }
@@ -477,12 +471,6 @@
         </div>
 
         <div id="sapView">
-            <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
-                 <div class="global-dashboard-card">
-                       <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
-                       <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
-                </div>
-            </header>
             <div class="main-container">
                 <aside class="sidebar animated-startup" style="animation-delay: 0.2s;">
                     <h2>Panel SAP</h2>
@@ -503,10 +491,10 @@
                 </aside>
                 <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
                      <div class="global-dashboard-card">
-                            <p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>
-                        </div>
+                           <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
+                           <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
                     </div>
-                </aside>
+                </header>
                 <main class="main-content animated-startup" style="animation-delay: 0.4s;">
                      <div class="card" id="sap-tableCard">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
@@ -944,8 +932,9 @@
             
             function switchMode(mode) {
                 currentMode = mode;
-                document.body.classList.toggle('mode-rastreo', mode === 'rastreo');
-                document.body.classList.toggle('mode-empaque', mode === 'empaque');
+                doc('rastreoView').style.display = mode === 'rastreo' ? 'block' : 'none';
+                doc('empaqueView').style.display = mode === 'empaque' ? 'block' : 'none';
+
                 modeRastreo.classList.toggle('active', mode === 'rastreo');
                 modeEmpaque.classList.toggle('active', mode === 'empaque');
                 render();
@@ -1010,7 +999,7 @@
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = 'icon-btn'; deleteBtn.title = 'Eliminar orden';
                     deleteBtn.innerHTML = `🗑️`;
-                    deleteBtn.onclick = async () => {
+                    deleteBtn.onclick = () => {
                          showConfirmationModal(`¿Estás seguro de que quieres eliminar la orden ${key}?`, async () => {
                             await deleteOrderFromFirebase(key);
                             loadedOrders.delete(key);
@@ -1995,7 +1984,6 @@
             currentArea = localStorage.getItem('currentArea') || 'MULTIPORT';
             areaSelectBtn.textContent = `Área: ${currentArea}`;
             applyTheme(currentTheme);
-            document.body.classList.add('mode-rastreo');
 
             // Set initial view display property
             doc('fwdView').style.display = mainMode === 'fwd' ? 'block' : 'none';
