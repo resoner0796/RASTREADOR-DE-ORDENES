@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Control de Producción v2.6</title>
+    <title>Centro de Control de Producción v2.7</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
@@ -202,7 +202,19 @@
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
         tbody tr.is-very_delayed { 
             background-color: rgba(249, 115, 22, 0.1) !important; 
-            animation: pulse-orange 1.5s infinite ease-in-out;
+            position: relative;
+            overflow: hidden;
+        }
+        tbody tr.is-very_delayed::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(249, 115, 22, 0.15) 50%, rgba(255,255,255,0) 80%);
+            transform: translateX(100%);
+            animation: shine-orange-reverse 3s infinite linear;
         }
         tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
@@ -280,8 +292,10 @@
         #fwdView, #sapView {
             transition: opacity 0.3s ease-in-out;
         }
-        body.mode-fwd #sapView { opacity: 0; display: none; }
-        body.mode-sap #fwdView { opacity: 0; display: none; }
+
+        body.mode-fwd #sapView, body.mode-sap #fwdView { 
+            display: none;
+        }
 
         body.mode-rastreo #empaqueView { display: none !important; }
         body.mode-empaque #rastreoView { display: none !important; }
@@ -312,13 +326,13 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes pulse-orange {
-            0%, 100% { background-color: rgba(249, 115, 22, 0.1); }
-            50% { background-color: rgba(249, 115, 22, 0.3); }
-        }
         @keyframes shine-green {
             0% { transform: translateX(-100%); }
             100% { transform: translateX(100%); }
+        }
+        @keyframes shine-orange-reverse {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
         }
         .animated-startup {
             animation: fadeInUp 0.5s ease-out forwards;
@@ -632,7 +646,7 @@
 
         <div id="sapView">
             <div class="main-container">
-                <aside class="sidebar">
+                <aside class="sidebar animated-startup" style="animation-delay: 0.2s;">
                     <h2>Panel SAP</h2>
                     <div class="card" id="sap-uploadCard">
                         <h3>Panel de Control</h3>
@@ -649,13 +663,13 @@
                         </div>
                     </div>
                 </aside>
-                <header class="global-header card">
+                <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
                      <div class="global-dashboard-card">
                            <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
                            <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
                     </div>
                 </header>
-                <main class="main-content">
+                <main class="main-content animated-startup" style="animation-delay: 0.4s;">
                      <div class="card" id="sap-tableCard">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
                             <h3>Detalle de Órdenes SAP</h3>
@@ -841,13 +855,16 @@
             function switchMainMode(mode) {
                 if (mainMode === mode) return;
 
-                const oldView = mainMode === 'fwd' ? doc('fwdView') : doc('sapView');
-                const newView = mode === 'fwd' ? doc('sapView') : doc('fwdView');
+                const oldView = doc(`${mainMode}View`);
+                const newView = doc(`${mode}View`);
 
                 oldView.style.opacity = 0;
 
                 setTimeout(() => {
+                    oldView.style.display = 'none';
                     document.body.classList.remove('mode-fwd', 'mode-sap');
+                    
+                    newView.style.display = 'block';
                     document.body.classList.add(`mode-${mode}`);
                     
                     requestAnimationFrame(() => {
@@ -1559,7 +1576,8 @@
                 cloneContainer.style.position = 'absolute';
                 cloneContainer.style.left = '-9999px';
                 cloneContainer.style.top = '0';
-                cloneContainer.style.width = '1400px'; 
+                cloneContainer.style.width = 'auto'; 
+                cloneContainer.style.minWidth = '1200px';
                 cloneContainer.style.background = getComputedStyle(document.documentElement).getPropertyValue('--bg-color').trim();
                 cloneContainer.style.padding = '1px';
 
@@ -1570,7 +1588,7 @@
                 style.innerHTML = `
                     :root { --surface-color: #1E293B; --border-color: #334155; --danger-color: #FB7185; --warning-color: #FBBF24; --orange-color: #F97316; --success-color: #34D399; --text-primary: #F8FAFC; --text-secondary: #94A3B8; }
                     table { color: var(--text-primary); background-color: var(--surface-color); border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 14px; table-layout: auto; width: auto; }
-                    th, td { padding: 10px 14px; text-align: center; border: 1px solid var(--border-color); white-space: nowrap; }
+                    th, td { padding: 12px 18px; text-align: center; border: 1px solid var(--border-color); white-space: nowrap; }
                     thead { display: table-header-group !important; background-color: #1a2436; position: static !important; }
                     th { font-weight: 600; color: var(--text-secondary); font-size: 12px; }
                     tr { display: table-row !important; }
@@ -2126,7 +2144,10 @@
             currentArea = localStorage.getItem('currentArea') || 'MULTIPORT';
             areaSelectBtn.textContent = `Área: ${currentArea}`;
 
-            switchMainMode(mainMode);
+            // Set initial view display property
+            doc('fwdView').style.display = mainMode === 'fwd' ? 'block' : 'none';
+            doc('sapView').style.display = mainMode === 'sap' ? 'block' : 'none';
+
             if (isMobile) setupMobileMode();
             
             migrateOldData().then(() => {
