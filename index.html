@@ -117,7 +117,7 @@
         .sidebar .card h3 { text-align: center; }
         #sapView .sidebar > h2 { text-align: center; }
         #sapView .sidebar { height: calc(100vh - 208px); }
-        #orderListCard, #sap-orderListCard { display: flex; flex-direction: column; overflow: hidden; flex-grow: 1; }
+        #orderListCard, #sap-orderListCard { display: flex; flex-direction: column; overflow: hidden; }
         #orderList, #sapOrderList { flex-grow: 1; overflow-y: auto; }
         
         /* Layout General */
@@ -285,9 +285,9 @@
         /* Media Queries */
         @media (max-width: 992px) {
             body { padding: 8px; }
-            .page-layout { display: flex; flex-direction: column; }
+            .main-container { display: flex; flex-direction: column; gap: 12px; }
             .sidebar { position: static; height: auto; }
-            .sidebar, .main-column { display: contents !important; }
+            .sidebar, .main-content { display: contents !important; }
             #sap-uploadCard { display: none; }
             .sidebar > h2 { display: none; }
             #adminBtn { display: none; }
@@ -327,6 +327,7 @@
         }
         
         @media (min-width: 993px) {
+            #mainModeSwitcher { margin-left: auto; margin-right: auto; }
             #mobile-controls-row { display: none; }
             #desktop-controls-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
             .desktop-filters-group { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; flex-grow: 1; }
@@ -341,181 +342,194 @@
 </head>
 <body class="dark-theme">
     <div class="app-container">
-        
-        <div class="page-layout">
-            
-            <aside class="sidebar animated-startup" style="animation-delay: 0.2s;">
-                <h2 style="display: block;">Panel de Control</h2>
-                <div class="card" id="uploadCard">
-                    <h3>Panel de Control</h3>
-                    <div class="card-content">
-                         <div style="display: flex; gap: 10px; margin-bottom: 16px;">
-                             <button id="areaSelectBtn" class="btn" style="flex: 1; align-self: stretch;">Área: MULTIPORT</button>
-                             <div style="display: flex; flex-direction: column; gap: 8px;">
-                                 <button id="adminBtn" class="btn" style="padding: 6px 12px; line-height: 1;">⚙️</button>
-                                 <button id="themeToggleBtn" class="btn" style="padding: 6px 12px; font-size: 1.2rem; line-height: 1;">☀️</button>
-                             </div>
-                         </div>
-                        <div id="fileDropArea" class="file-drop-area disabled">
-                            <p>Arrastra archivos (.xlsx) para cargar/actualizar</p>
-                            <p><span>o haz clic para seleccionar</span></p>
-                        </div>
-                        <input type="file" id="fileInput" accept=".xlsx, .xls" multiple style="display: none;">
-                        <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
-                    </div>
-                </div>
-                <div class="card" style="flex-grow: 1;" id="orderListCard">
-                    <h3>Órdenes Cargadas</h3>
-                    <div id="orderList" class="card-content">
-                        <p class="text-dark" style="font-size:0.9rem;">Cargando órdenes desde la base de datos...</p>
-                    </div>
-                </div>
-            </aside>
-    
-            <div class="main-column">
-                <header class="app-header animated-startup" style="animation-delay: 0s;">
-                    <h1 class="app-branding">CORNING</h1>
-                    <h2 id="app-title" class="app-title">Centro de Rastreo de Órdenes</h2>
-                </header>
-                <div id="mainModeSwitcher" class="mode-switcher card animated-startup" style="animation-delay: 0.1s;">
-                    <button id="modeFwd" class="active">FWD</button>
-                    <button id="modeSap">SAP</button>
-                </div>
+        <header class="app-header animated-startup" style="animation-delay: 0s;">
+            <h1 class="app-branding">CORNING</h1>
+            <h2 id="app-title" class="app-title">Centro de Rastreo de Órdenes</h2>
+        </header>
 
-                <div id="fwdView">
-                    <div class="main-content-wrapper" style="display: flex; flex-direction: column; gap: 16px;">
-                        <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
-                            <div class="global-dashboard-card">
-                                    <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
-                                    <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
-                            </div>
-                        </header>
-                        <section class="header card animated-startup" style="animation-delay: 0.4s;">
-                            <div class="mode-switcher">
-                                <button id="modeRastreo" class="active">Rastreo</button>
-                                <button id="modeEmpaque">Empaque</button>
-                            </div>
-                            <div id="summaryCard" class="summary-card">
-                                <div class="stat-item">
-                                    <h3>Orden</h3>
-                                    <div class="stat-value-wrapper">
-                                        <p id="statOrderNumber">N/A</p>
-                                        <p id="statCatalogNumber"></p>
-                                    </div>
-                                </div>
-                                <div class="stat-item">
-                                    <h3>Cant. Orden</h3>
-                                    <div class="stat-value-wrapper">
-                                        <p id="statOrderQty">0</p>
-                                    </div>
-                                </div>
-                                <div class="stat-item">
-                                    <h3>Cant. Empacada</h3>
-                                    <div class="stat-value-wrapper">
-                                        <p id="statPackedQty">0</p>
-                                    </div>
-                                </div>
-                                <div class="stat-item">
-                                    <h3>Restante</h3>
-                                    <div class="stat-value-wrapper">
-                                        <p id="statRemainingQty">0</p>
-                                    </div>
-                                </div>
-                                <div class="stat-item">
-                                    <h3>Cant. en Scrap</h3>
-                                    <div class="stat-value-wrapper">
-                                        <p id="statScrapQty">0</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-                        <main class="main-content animated-startup" style="animation-delay: 0.5s;">
-                            <div id="rastreoView">
-                                <div class="card-row" id="mobile-controls-row">
-                                    <div class="card mobile-collapsible" id="filtersCard">
-                                        <h3 class="mobile-trigger">Filtros</h3>
-                                        <div class="card-content">
-                                            <div class="filter-container">
-                                                <div>
-                                                    <h3>Filtrar por Estado</h3>
-                                                    <div id="rastreoStatusFilters" class="filter-group"></div>
-                                                </div>
-                                                <div>
-                                                    <h3>Filtrar por Línea</h3>
-                                                    <div id="rastreoLineFilters" class="filter-group"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="card mobile-collapsible" id="actionsCard">
-                                        <h3 class="mobile-trigger">Acciones</h3>
-                                        <div class="card-content">
-                                            <div class="actions-container"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card" id="tableCard">
-                                    <div id="desktop-controls-container">
-                                        <div class="desktop-filters-group">
-                                            <div class="filter-group-inline">
-                                                <span class="filter-label">Estado:</span>
-                                                <div id="rastreoStatusFiltersDesktop" class="filter-group"></div>
-                                            </div>
-                                            <div class="filter-group-inline">
-                                                <span class="filter-label">Línea:</span>
-                                                <div id="rastreoLineFiltersDesktop" class="filter-group"></div>
-                                            </div>
-                                        </div>
-                                        <div class="desktop-actions-group">
-                                            <div id="desktop-actions-wrapper" class="filter-group"></div>
-                                        </div>
-                                    </div>
-                                    <input type="text" id="rastreoFilterInput" placeholder="Buscar en la tabla por serial, status, etc..." style="margin-bottom: 16px;">
-                                    <div id="lineCountsContainer"></div>
-                                    <div class="table-wrapper">
-                                        <table id="rastreoTable"></table>
-                                        <p id="placeholderText">Cargando datos...</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="empaqueView">
-                                <div class="card" style="height:100%;">
-                                    <input type="text" id="empaqueFilterInput" placeholder="Buscar por Serial o BoxID..." style="margin-bottom:16px">
-                                    <div id="empaqueTableContainer" class="table-wrapper">
-                                        <table id="empaqueTable"></table>
-                                    </div>
-                                    <div id="empaqueMobileContainer"></div>
-                                </div>
-                            </div>
-                        </main>
-                    </div>
-                </div>
-
-                <div id="sapView">
-                     <div class="main-content-wrapper" style="display: flex; flex-direction: column; gap: 16px;">
-                        <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
-                             <div class="global-dashboard-card">
-                                    <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
-                                    <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
-                             </div>
-                        </header>
-                        <main class="main-content animated-startup" style="animation-delay: 0.4s;">
-                             <div class="card" id="sap-tableCard">
-                                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
-                                     <h3>Detalle de Órdenes SAP</h3>
-                                     <button id="sapResetFilter" class="filter-btn" style="display: none;">Mostrar Hoy/Tarde</button>
-                                 </div>
-                                 <div class="table-wrapper">
-                                     <table id="sapTable"></table>
-                                     <p id="sapPlaceholderText">Cargue un archivo para ver los datos de SAP.</p>
-                                 </div>
-                             </div>
-                        </main>
-                    </div>
-                </div>
-            </div>
-
+        <div id="mainModeSwitcher" class="mode-switcher card animated-startup" style="animation-delay: 0.1s;">
+            <button id="modeFwd" class="active">FWD</button>
+            <button id="modeSap">SAP</button>
         </div>
+
+        <div id="fwdView">
+            <div class="main-container">
+                <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
+                    <div class="global-dashboard-card">
+                            <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
+                            <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
+                    </div>
+                </header>
+                <aside class="sidebar animated-startup" style="animation-delay: 0.2s;">
+                    <h2>Panel de Control</h2>
+                    <div class="card" id="uploadCard">
+                        <h3>Panel de Control</h3>
+                        <div class="card-content">
+                             <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                                 <button id="areaSelectBtn" class="btn" style="flex: 1; align-self: stretch;">Área: MULTIPORT</button>
+                                 <div style="display: flex; flex-direction: column; gap: 8px;">
+                                     <button id="adminBtn" class="btn" style="padding: 6px 12px; line-height: 1;">⚙️</button>
+                                     <button id="themeToggleBtn" class="btn" style="padding: 6px 12px; font-size: 1.2rem; line-height: 1;">☀️</button>
+                                 </div>
+                             </div>
+                            <div id="fileDropArea" class="file-drop-area disabled">
+                                <p>Arrastra archivos (.xlsx) para cargar/actualizar</p>
+                                <p><span>o haz clic para seleccionar</span></p>
+                            </div>
+                            <input type="file" id="fileInput" accept=".xlsx, .xls" multiple style="display: none;">
+                            <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
+                        </div>
+                    </div>
+                    <div class="card" style="flex-grow: 1;" id="orderListCard">
+                        <h3>Órdenes Cargadas</h3>
+                        <div id="orderList" class="card-content">
+                            <p class="text-dark" style="font-size:0.9rem;">Cargando órdenes desde la base de datos...</p>
+                        </div>
+                    </div>
+                </aside>
+        
+                <section class="header card animated-startup" style="animation-delay: 0.4s;">
+                        <div class="mode-switcher">
+                            <button id="modeRastreo" class="active">Rastreo</button>
+                            <button id="modeEmpaque">Empaque</button>
+                        </div>
+                    <div id="summaryCard" class="summary-card">
+                           <div class="stat-item">
+                                <h3>Orden</h3>
+                                <div class="stat-value-wrapper">
+                                    <p id="statOrderNumber">N/A</p>
+                                    <p id="statCatalogNumber"></p>
+                                </div>
+                           </div>
+                           <div class="stat-item">
+                               <h3>Cant. Orden</h3>
+                               <div class="stat-value-wrapper">
+                                   <p id="statOrderQty">0</p>
+                               </div>
+                           </div>
+                           <div class="stat-item">
+                               <h3>Cant. Empacada</h3>
+                               <div class="stat-value-wrapper">
+                                   <p id="statPackedQty">0</p>
+                               </div>
+                            </div>
+                           <div class="stat-item">
+                               <h3>Restante</h3>
+                               <div class="stat-value-wrapper">
+                                   <p id="statRemainingQty">0</p>
+                               </div>
+                            </div>
+                           <div class="stat-item">
+                               <h3>Cant. en Scrap</h3>
+                               <div class="stat-value-wrapper">
+                                   <p id="statScrapQty">0</p>
+                               </div>
+                           </div>
+                    </div>
+                </section>
+        
+                <main class="main-content animated-startup" style="animation-delay: 0.5s;">
+                    <div id="rastreoView">
+                        <div class="card-row" id="mobile-controls-row">
+                            <div class="card mobile-collapsible" id="filtersCard">
+                                <h3 class="mobile-trigger">Filtros</h3>
+                                <div class="card-content">
+                                    <div class="filter-container">
+                                        <div>
+                                            <h3>Filtrar por Estado</h3>
+                                            <div id="rastreoStatusFilters" class="filter-group"></div>
+                                        </div>
+                                        <div>
+                                            <h3>Filtrar por Línea</h3>
+                                            <div id="rastreoLineFilters" class="filter-group"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card mobile-collapsible" id="actionsCard">
+                                <h3 class="mobile-trigger">Acciones</h3>
+                                <div class="card-content">
+                                    <div class="actions-container"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card" id="tableCard">
+                            <div id="desktop-controls-container">
+                                <div class="desktop-filters-group">
+                                    <div class="filter-group-inline">
+                                        <span class="filter-label">Estado:</span>
+                                        <div id="rastreoStatusFiltersDesktop" class="filter-group"></div>
+                                    </div>
+                                    <div class="filter-group-inline">
+                                        <span class="filter-label">Línea:</span>
+                                        <div id="rastreoLineFiltersDesktop" class="filter-group"></div>
+                                    </div>
+                                </div>
+                                <div class="desktop-actions-group">
+                                    <div id="desktop-actions-wrapper" class="filter-group"></div>
+                                </div>
+                            </div>
+                            <input type="text" id="rastreoFilterInput" placeholder="Buscar en la tabla por serial, status, etc..." style="margin-bottom: 16px;">
+                            <div id="lineCountsContainer"></div>
+                            <div class="table-wrapper">
+                                <table id="rastreoTable"></table>
+                                <p id="placeholderText">Cargando datos...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="empaqueView">
+                        <div class="card" style="height:100%;">
+                            <input type="text" id="empaqueFilterInput" placeholder="Buscar por Serial o BoxID..." style="margin-bottom:16px">
+                            <div id="empaqueTableContainer" class="table-wrapper">
+                                <table id="empaqueTable"></table>
+                            </div>
+                            <div id="empaqueMobileContainer"></div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+
+        <div id="sapView">
+            <div class="main-container">
+                <aside class="sidebar animated-startup" style="animation-delay: 0.2s;">
+                    <h2>Panel SAP</h2>
+                    <div class="card" id="sap-uploadCard">
+                        <h3>Panel de Control</h3>
+                         <div id="sapFileDropArea" class="file-drop-area disabled">
+                             <p>Arrastra un archivo de SAP (.xlsx)</p>
+                             <p><span>o haz clic para seleccionar</span></p>
+                         </div>
+                        <input type="file" id="sapFileInput" accept=".xlsx, .xls" style="display: none;">
+                    </div>
+                    <div class="card" style="flex-grow: 1;" id="sap-orderListCard">
+                        <h3>Órdenes Cargadas</h3>
+                        <div id="sapOrderList" class="card-content">
+                           <p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>
+                        </div>
+                    </div>
+                </aside>
+                <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
+                     <div class="global-dashboard-card">
+                            <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
+                            <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
+                     </div>
+                </header>
+                <main class="main-content animated-startup" style="animation-delay: 0.4s;">
+                     <div class="card" id="sap-tableCard">
+                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
+                             <h3>Detalle de Órdenes SAP</h3>
+                             <button id="sapResetFilter" class="filter-btn" style="display: none;">Mostrar Hoy/Tarde</button>
+                         </div>
+                         <div class="table-wrapper">
+                             <table id="sapTable"></table>
+                             <p id="sapPlaceholderText">Cargue un archivo para ver los datos de SAP.</p>
+                         </div>
+                     </div>
+                </main>
+            </div>
+        </div>
+
     </div>
     
     <div id="modalOverlay" class="modal-overlay">
@@ -526,6 +540,7 @@
              <button id="copyReportBtn" class="btn" style="margin-top: 20px; display:none;">Copiar al Portapapeles</button>
         </div>
     </div>
+
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyDtlj3ppT9WBGMR60SZx0TZmAo3BXQWDX0",
@@ -1058,8 +1073,8 @@
                         statCatalogNumber.textContent = 'No hay órdenes para hoy';
                     }
                 
-                } else if (loadedOrders.has(key)) {
-                    ordersToProcess = [loadedOrders.get(key)];
+                } else if (loadedOrders.has(activeOrderKey)) {
+                    ordersToProcess = [loadedOrders.get(activeOrderKey)];
                     statOrderNumber.textContent = activeOrderKey;
                     statCatalogNumber.textContent = ordersToProcess[0].catalogNumber;
                 } else if (loadedOrders.size > 0) {
