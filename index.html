@@ -68,6 +68,11 @@
             background-color: var(--surface-color); border-radius: 12px;
             padding: 20px; border: 1px solid var(--border-color);
         }
+        .card-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
         h2, h3 {
             margin-top: 0; margin-bottom: 12px; color: var(--text-secondary);
             font-weight: 600; font-size: 1rem;
@@ -239,13 +244,14 @@
             }
             .sidebar, .main-content, #rastreoView { display: contents !important; }
             .sidebar > h2 { display: none; }
+
+            .card-row { grid-template-columns: 1fr; }
             
             .global-header { order: 1; }
             .header { order: 2; }
             #uploadCard, #sap-uploadCard { order: 3; }
             #orderListCard, #sap-orderListCard { order: 4; }
-            #filtersCard { order: 5; }
-            #actionsCard { order: 6; }
+            .card-row { order: 5; } /* Wrapper for filters/actions */
             #tableCard, #sap-tableCard { order: 7; }
             #empaqueView { order: 7; }
             
@@ -386,35 +392,37 @@
         
                 <main class="main-content">
                     <div id="rastreoView">
-                        <div class="card" id="filtersCard">
-                            <h3>Filtros</h3>
-                            <div class="card-content">
-                                <div class="filter-container">
-                                    <div>
-                                        <h3>Filtrar por Estado</h3>
-                                        <div id="rastreoStatusFilters" class="filter-group">
-                                            <button class="filter-btn active" data-filter="all">Todos</button>
-                                            <button class="filter-btn" data-filter="today">En Movimiento</button>
-                                            <button class="filter-btn" data-filter="delayed">Sin Movimiento</button>
-                                            <button class="filter-btn" data-filter="scrap">Scrap</button>
+                        <div class="card-row">
+                            <div class="card" id="filtersCard">
+                                <h3>Filtros</h3>
+                                <div class="card-content">
+                                    <div class="filter-container">
+                                        <div>
+                                            <h3>Filtrar por Estado</h3>
+                                            <div id="rastreoStatusFilters" class="filter-group">
+                                                <button class="filter-btn active" data-filter="all">Todos</button>
+                                                <button class="filter-btn" data-filter="today">En Movimiento</button>
+                                                <button class="filter-btn" data-filter="delayed">Sin Movimiento</button>
+                                                <button class="filter-btn" data-filter="scrap">Scrap</button>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div>
-                                        <h3>Filtrar por Línea</h3>
-                                        <div id="rastreoLineFilters" class="filter-group">
-                                            <p id="rastreoLineFiltersPlaceholder" class="text-dark" style="font-size: 0.9rem;">Cargue un archivo para ver los filtros.</p>
+                                        <div>
+                                            <h3>Filtrar por Línea</h3>
+                                            <div id="rastreoLineFilters" class="filter-group">
+                                                <p id="rastreoLineFiltersPlaceholder" class="text-dark" style="font-size: 0.9rem;">Cargue un archivo para ver los filtros.</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="card" id="actionsCard">
-                            <h3>Acciones</h3>
-                            <div class="card-content">
-                                 <div class="actions-container">
-                                     <button id="exportViewButton" class="btn" disabled>Exportar reimpresión</button>
-                                     <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
-                                 </div>
+                            <div class="card" id="actionsCard">
+                                <h3>Acciones</h3>
+                                <div class="card-content">
+                                     <div class="actions-container">
+                                         <button id="exportViewButton" class="btn" disabled>Exportar reimpresión</button>
+                                         <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
+                                     </div>
+                                </div>
                             </div>
                         </div>
                         <div class="card" id="tableCard">
@@ -613,6 +621,7 @@
 
             function switchMainMode(mode) {
                 mainMode = mode;
+                localStorage.setItem('mainMode', mode);
                 document.body.classList.toggle('mode-fwd', mode === 'fwd');
                 document.body.classList.toggle('mode-sap', mode === 'sap');
                 modeFwd.classList.toggle('active', mode === 'fwd');
@@ -1308,8 +1317,10 @@
                         sapData = processed;
                         await saveSapDataToFirebase(sapData);
                         sapDateFilter = 'default';
-                        renderSapView();
-                        showModal('Éxito', 'Archivo SAP cargado y guardado correctamente.', 'success');
+                        syncFwdAndSapDates(); 
+                        updateOrderList();
+                        render();
+                        showModal('Éxito', 'Archivo SAP cargado, guardado y sincronizado.', 'success');
                     } catch (err) {
                         console.error("Error procesando archivo SAP:", err);
                         showModal('Error', `No se pudo procesar el archivo SAP. <br><small>${err.message}</small>`, 'error');
@@ -1321,7 +1332,7 @@
             function processSapFile(workbook) {
                 const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                 if (!worksheet) throw new Error("No se encontró una hoja de cálculo en el archivo.");
-                const getCellValue = (cellAddress) => (worksheet[cellAddress] ? worksheet[cellAddress].v : undefined);
+                const getCellValue = (cellAddress) => (worksheet[cellAddress] ? worksheet[cellAddress].v : null);
                 
                 const processedData = [];
                 const range = XLSX.utils.decode_range(worksheet['!ref']);
@@ -1351,8 +1362,8 @@
 
                     processedData.push({
                         'Orden': orderId,
-                        'Catalogo': getCellValue('D' + rowNum),
-                        'Special Stock': [stock1, stock2].filter(Boolean).join(' / '),
+                        'Catalogo': getCellValue('D' + rowNum) || null,
+                        'Special Stock': [stock1, stock2].filter(Boolean).join(' / ') || null,
                         'Finish': finishDateSerial,
                         'Total orden': total,
                         'Total confirmado': confirmed,
@@ -1535,16 +1546,19 @@
                 }
             });
 
-            // Initial Load
             async function initializeApp() {
+                mainMode = localStorage.getItem('mainMode') || 'fwd';
+                
                 await Promise.all([
                     loadOrdersFromFirebase(),
                     loadSapDataFromFirebase()
                 ]);
+
                 syncFwdAndSapDates();
                 updateOrderList();
+                switchMainMode(mainMode);
                 render();
-                 if (isMobile) setupMobileMode();
+                if (isMobile) setupMobileMode();
             }
 
             initializeApp();
