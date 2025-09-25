@@ -162,6 +162,8 @@
         tbody tr.is-complete-sap td { color: var(--success-color) !important; }
         tbody tr.is-incomplete-sap { background-color: rgba(251, 191, 36, 0.1) !important; }
         tbody tr.is-incomplete-sap td { color: var(--warning-color) !important; }
+        tbody tr.is-late-sap { background-color: rgba(251, 113, 133, 0.1) !important; }
+        tbody tr.is-late-sap td { color: var(--danger-color) !important; }
         
         .serial-details-container, .mobile-packing-list {
             display: flex; flex-direction: column;
@@ -351,10 +353,8 @@
                     </div>
                     <div class="card" style="flex-grow: 1;" id="orderListCard">
                         <h3>Órdenes Cargadas</h3>
-                        <div class="card-content">
-                            <div id="orderList">
-                                <p class="text-dark" style="font-size:0.9rem;">Cargando órdenes desde la base de datos...</p>
-                            </div>
+                        <div id="orderList" class="card-content" style="overflow-y: auto;">
+                            <p class="text-dark" style="font-size:0.9rem;">Cargando órdenes desde la base de datos...</p>
                         </div>
                     </div>
                 </aside>
@@ -1306,34 +1306,59 @@
 
                 const getCellValue = (cellAddress) => (worksheet[cellAddress] ? worksheet[cellAddress].v : undefined);
                 
-                const headerMap = {
-                    Order: getCellValue('A1'),
-                    Finish: getCellValue('G1'),
-                    TotalOrden: getCellValue('I1'),
-                    TotalConfirmado: getCellValue('J1'),
+                // Definir los nombres de cabecera esperados
+                const HEADERS = {
+                    ORDER: 'Orden',
+                    CATALOGO: 'Catalogo',
+                    STOCK1: 'Special Stock',
+                    STOCK2: 'Special Stock', // Se repite, lo manejaremos
+                    FINISH: 'Finish',
+                    TOTAL: 'Total',
+                    CONFIRMADO: 'Confirmado'
                 };
 
-                if(!headerMap.Order || !headerMap.Finish || !headerMap.TotalOrden || !headerMap.TotalConfirmado) {
-                    throw new Error("No se encontraron las cabeceras esperadas en las celdas A1, G1, I1, J1.");
-                }
+                // Verificar que las cabeceras existan en las celdas especificadas
+                if (getCellValue('A1') !== HEADERS.ORDER) throw new Error("Cabecera 'Orden' no encontrada en la celda A1.");
+                if (getCellValue('D1') !== HEADERS.CATALOGO) throw new Error("Cabecera 'Catalogo' no encontrada en la celda D1.");
+                if (getCellValue('G1') !== HEADERS.FINISH) throw new Error("Cabecera 'Finish' no encontrada en la celda G1.");
+                if (getCellValue('I1') !== HEADERS.TOTAL) throw new Error("Cabecera 'Total' no encontrada en la celda I1.");
+                if (getCellValue('J1') !== HEADERS.CONFIRMADO) throw new Error("Cabecera 'Confirmado' no encontrada en la celda J1.");
 
                 const processedData = [];
                 const range = XLSX.utils.decode_range(worksheet['!ref']);
-                for (let i = range.s.r + 1; i <= range.e.r; i++) {
-                    const orderId = worksheet['A' + (i + 1)]?.v;
-                    if (!orderId) continue; // Skip empty rows
+                const reynosaTodayString = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Matamoros' });
 
-                    const total = parseFloat(worksheet['I' + (i + 1)]?.v) || 0;
-                    const confirmed = parseFloat(worksheet['J' + (i + 1)]?.v) || 0;
+                for (let i = range.s.r + 1; i <= range.e.r; i++) {
+                    const orderId = getCellValue('A' + (i + 1));
+                    if (!orderId) continue;
+
+                    const total = parseFloat(getCellValue('I' + (i + 1))) || 0;
+                    const confirmed = parseFloat(getCellValue('J' + (i + 1))) || 0;
                     const faltante = total - confirmed;
+                    
+                    const stock1 = getCellValue('B' + (i + 1)) || '';
+                    const stock2 = getCellValue('L' + (i + 1)) || '';
+
+                    let status = 'incomplete';
+                    const finishDateSerial = getCellValue('G' + (i + 1));
+                    const finishDate = excelSerialToDate(finishDateSerial);
+                    const finishDateString = finishDate ? finishDate.toISOString().slice(0, 10) : '';
+
+                    if (faltante <= 0) {
+                        status = 'complete';
+                    } else if (finishDateString && finishDateString < reynosaTodayString) {
+                        status = 'late';
+                    }
 
                     processedData.push({
                         'Orden': orderId,
-                        'Finish': worksheet['G' + (i + 1)]?.v,
+                        'Catalogo': getCellValue('D' + (i + 1)),
+                        'Special Stock': [stock1, stock2].filter(Boolean).join(' / '),
+                        'Finish': finishDateSerial,
                         'Total orden': total,
                         'Total confirmado': confirmed,
                         'Faltante': faltante,
-                        'status': faltante <= 0 ? 'complete' : 'incomplete'
+                        'status': status
                     });
                 }
                 return processedData;
@@ -1368,14 +1393,53 @@
             }
 
             function updateSapOrderList() {
-                if(sapData.length === 0) {
+                 if (sapData.length === 0) {
                     sapOrderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>`;
                     return;
                 }
-                sapOrderList.innerHTML = sapData.map(order => {
-                    const itemClass = order.status === 'complete' ? 'is-complete' : '';
-                    return `<div class="order-item"><button class="order-btn ${itemClass}">${order['Orden']}</button></div>`
-                }).join('');
+                
+                const groupedByDate = new Map();
+                sapData.forEach(order => {
+                    const date = excelSerialToDate(order['Finish']) || new Date(0);
+                    const dateString = formatDate(date);
+                    if (!groupedByDate.has(dateString)) groupedByDate.set(dateString, []);
+                    groupedByDate.get(dateString).push(order);
+                });
+
+                const sortedDates = Array.from(groupedByDate.keys()).sort((a, b) => {
+                    const dateA = new Date(a.split('/').reverse().join('-'));
+                    const dateB = new Date(b.split('/').reverse().join('-'));
+                    return dateB - dateA;
+                });
+
+                const todayString = new Date().toLocaleDateString('es-ES', { 
+                    timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' 
+                });
+                
+                let html = '';
+                sortedDates.forEach(dateString => {
+                    const orders = groupedByDate.get(dateString);
+                    const isToday = dateString === todayString;
+                    html += `<div class="date-group ${isToday ? 'expanded' : ''}">`;
+                    html += `<button class="date-header">
+                                <span>📅 ${dateString}</span> 
+                                ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''}
+                                <span class="collapse-icon">►</span>
+                             </button>`;
+                    html += `<div class="orders-for-date">`;
+                    orders.forEach(order => {
+                        const itemClass = order.status === 'complete' ? 'is-complete' : '';
+                        html += `<div class="order-item"><button class="order-btn ${itemClass}" disabled>${order['Orden']}</button></div>`;
+                    });
+                    html += `</div></div>`;
+                });
+                
+                sapOrderList.innerHTML = html;
+                sapOrderList.querySelectorAll('.date-header').forEach(header => {
+                    header.addEventListener('click', () => {
+                        header.parentElement.classList.toggle('expanded');
+                    });
+                });
             }
             
             function updateSapTable() {
@@ -1385,13 +1449,15 @@
                     return;
                 }
 
-                const headers = ['Orden', 'Finish', 'Total orden', 'Total confirmado', 'Faltante'];
+                const headers = ['Orden', 'Catalogo', 'Special Stock', 'Finish', 'Total orden', 'Total confirmado', 'Faltante'];
                 table.innerHTML = `
                     <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
                     <tbody>
                         ${sapData.map(row => `
                             <tr class="is-${row.status}-sap">
                                 <td data-label="Orden">${row['Orden']}</td>
+                                <td data-label="Catalogo">${row['Catalogo']}</td>
+                                <td data-label="Special Stock">${row['Special Stock']}</td>
                                 <td data-label="Finish">${formatDate(excelSerialToDate(row['Finish']))}</td>
                                 <td data-label="Total orden">${row['Total orden']}</td>
                                 <td data-label="Total confirmado">${row['Total confirmado']}</td>
