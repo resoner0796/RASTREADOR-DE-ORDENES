@@ -24,6 +24,10 @@
             color: var(--text-primary); margin: 0; padding: 16px;
             display: flex; justify-content: center;
         }
+        .app-container {
+            width: 100%;
+            max-width: 1800px;
+        }
         .app-header {
             text-align: center;
             margin-bottom: 16px;
@@ -43,7 +47,7 @@
             margin: 4px 0 0 0;
         }
         .main-container {
-            width: 100%; max-width: 1600px; display: grid;
+            width: 100%; display: grid;
             grid-template-columns: 260px 1fr;
             grid-template-rows: auto auto 1fr;
             grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; 
@@ -90,6 +94,7 @@
             display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 4px;
             background-color: var(--bg-color); border-radius: 8px; margin-bottom: 16px;
         }
+        #mainModeSwitcher { grid-template-columns: 1fr 1fr; margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto; }
         .mode-switcher button {
             padding: 8px; border: none; background-color: transparent; color: var(--text-secondary);
             font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s;
@@ -168,7 +173,7 @@
             .packing-info { text-align: right; }
         }
 
-        #loader, #placeholderText { text-align: center; padding: 60px; color: var(--text-dark); font-size: 1.1rem; }
+        #loader, #placeholderText, #sapPlaceholderText { text-align: center; padding: 60px; color: var(--text-dark); font-size: 1.1rem; }
         
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -190,6 +195,8 @@
         #modalBody .status-report p { margin: 4px 0; }
         #modalBody .status-report strong { color: var(--text-secondary); }
 
+        body.mode-fwd #sapView { display: none !important; }
+        body.mode-sap #fwdView { display: none !important; }
         body.mode-rastreo #empaqueView { display: none !important; }
         body.mode-empaque #rastreoView { display: none !important; }
         
@@ -216,9 +223,10 @@
 
         @media (max-width: 992px) {
             body { padding: 8px; }
-            .main-container {
+            .main-container, #sapView {
                 display: flex; flex-direction: column; gap: 12px;
             }
+            #sapView { grid-template-columns: 1fr; }
             .sidebar, .main-content, #rastreoView { display: contents !important; }
             .sidebar > h2 { display: none; }
             
@@ -250,19 +258,19 @@
             }
             .card.mobile-collapsible.expanded h3.mobile-trigger::after { transform: rotate(90deg); }
             
-            #rastreoTable thead { display: none; }
+            #rastreoTable thead, #empaqueTable thead, #sapTable thead { display: none; }
             
-            #rastreoTable tr { 
+            #rastreoTable tr, #sapTable tr { 
                 display: block; margin-bottom: 1rem; border-radius: 8px; 
                 border: 1px solid var(--border-color); padding: 1rem; 
             }
-            #rastreoTable td { 
+            #rastreoTable td, #sapTable td { 
                 display: flex; justify-content: space-between; text-align: right; 
                 border: none; padding: 0.5rem 0; white-space: normal;
                 border-bottom: 1px solid #0f172a80;
             }
-            #rastreoTable tr td:last-child { border-bottom: none; }
-            #rastreoTable td::before { 
+            #rastreoTable tr td:last-child, #sapTable tr td:last-child { border-bottom: none; }
+            #rastreoTable td::before, #sapTable td::before { 
                 content: attr(data-label); float: left; font-weight: bold; 
                 text-align: left; margin-right: 1rem; color: var(--text-secondary);
             }
@@ -306,114 +314,146 @@
         }
     </style>
 </head>
-<body class="mode-rastreo">
-    <div style="width: 100%; max-width: 1800px;">
+<body class="mode-fwd mode-rastreo">
+    <div class="app-container">
         <header class="app-header">
             <h1 class="app-branding">CORNING</h1>
             <h2 class="app-title">Centro de Rastreo de Órdenes</h2>
         </header>
-        <div class="main-container">
-            <aside class="sidebar">
-                <h2>Panel de Control</h2>
-                <div class="card" id="uploadCard">
-                    <h3>Panel de Control</h3>
-                    <div class="card-content">
-                        <div id="fileDropArea" class="file-drop-area">
-                            <p>Arrastra archivos (.xlsx) para cargar/actualizar</p>
-                            <p><span>o haz clic para seleccionar</span></p>
-                        </div>
-                        <input type="file" id="fileInput" accept=".xlsx, .xls" multiple style="display: none;">
-                        <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
-                    </div>
-                </div>
-                <div class="card" style="flex-grow: 1;" id="orderListCard">
-                    <h3>Órdenes Cargadas</h3>
-                    <div class="card-content">
-                        <div id="orderList">
-                            <p class="text-dark" style="font-size:0.9rem;">Cargando órdenes desde la base de datos...</p>
-                        </div>
-                    </div>
-                </div>
-            </aside>
-    
-            <header class="global-header card">
-                <div class="global-dashboard-card">
-                       <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
-                       <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
-                </div>
-            </header>
-    
-            <section class="header card">
-                 <div class="mode-switcher">
-                    <button id="modeRastreo" class="active">Rastreo</button>
-                    <button id="modeEmpaque">Empaque</button>
-                </div>
-                <div id="summaryCard" class="summary-card">
-                       <div class="stat-item">
-                            <h3>Orden</h3>
-                            <p id="statOrderNumber">N/A</p>
-                            <p id="statCatalogNumber"></p>
-                       </div>
-                       <div class="stat-item"><h3>Cant. Orden</h3><p id="statOrderQty">0</p></div>
-                       <div class="stat-item"><h3>Cant. Empacada</h3><p id="statPackedQty">0</p></div>
-                       <div class="stat-item"><h3>Restante</h3><p id="statRemainingQty">0</p></div>
-                       <div class="stat-item"><h3>Cant. en Scrap</h3><p id="statScrapQty">0</p></div>
-                </div>
-            </section>
-    
-            <main class="main-content">
-                <div id="rastreoView">
-                    <div class="card" id="filtersCard">
-                        <h3>Filtros</h3>
+
+        <div id="mainModeSwitcher" class="mode-switcher card">
+            <button id="modeFwd" class="active">FWD</button>
+            <button id="modeSap">SAP</button>
+        </div>
+
+        <div id="fwdView">
+            <div class="main-container">
+                <aside class="sidebar">
+                    <h2>Panel de Control</h2>
+                    <div class="card" id="uploadCard">
+                        <h3>Panel de Control</h3>
                         <div class="card-content">
-                            <div class="filter-container">
-                                <div>
-                                    <h3>Filtrar por Estado</h3>
-                                    <div id="rastreoStatusFilters" class="filter-group">
-                                        <button class="filter-btn active" data-filter="all">Todos</button>
-                                        <button class="filter-btn" data-filter="today">En Movimiento</button>
-                                        <button class="filter-btn" data-filter="delayed">Sin Movimiento</button>
-                                        <button class="filter-btn" data-filter="scrap">Scrap</button>
+                            <div id="fileDropArea" class="file-drop-area">
+                                <p>Arrastra archivos (.xlsx) para cargar/actualizar</p>
+                                <p><span>o haz clic para seleccionar</span></p>
+                            </div>
+                            <input type="file" id="fileInput" accept=".xlsx, .xls" multiple style="display: none;">
+                            <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
+                        </div>
+                    </div>
+                    <div class="card" style="flex-grow: 1;" id="orderListCard">
+                        <h3>Órdenes Cargadas</h3>
+                        <div class="card-content">
+                            <div id="orderList">
+                                <p class="text-dark" style="font-size:0.9rem;">Cargando órdenes desde la base de datos...</p>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+        
+                <header class="global-header card">
+                    <div class="global-dashboard-card">
+                           <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
+                           <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
+                    </div>
+                </header>
+        
+                <section class="header card">
+                     <div class="mode-switcher">
+                        <button id="modeRastreo" class="active">Rastreo</button>
+                        <button id="modeEmpaque">Empaque</button>
+                    </div>
+                    <div id="summaryCard" class="summary-card">
+                           <div class="stat-item">
+                                <h3>Orden</h3>
+                                <p id="statOrderNumber">N/A</p>
+                                <p id="statCatalogNumber"></p>
+                           </div>
+                           <div class="stat-item"><h3>Cant. Orden</h3><p id="statOrderQty">0</p></div>
+                           <div class="stat-item"><h3>Cant. Empacada</h3><p id="statPackedQty">0</p></div>
+                           <div class="stat-item"><h3>Restante</h3><p id="statRemainingQty">0</p></div>
+                           <div class="stat-item"><h3>Cant. en Scrap</h3><p id="statScrapQty">0</p></div>
+                    </div>
+                </section>
+        
+                <main class="main-content">
+                    <div id="rastreoView">
+                        <div class="card" id="filtersCard">
+                            <h3>Filtros</h3>
+                            <div class="card-content">
+                                <div class="filter-container">
+                                    <div>
+                                        <h3>Filtrar por Estado</h3>
+                                        <div id="rastreoStatusFilters" class="filter-group">
+                                            <button class="filter-btn active" data-filter="all">Todos</button>
+                                            <button class="filter-btn" data-filter="today">En Movimiento</button>
+                                            <button class="filter-btn" data-filter="delayed">Sin Movimiento</button>
+                                            <button class="filter-btn" data-filter="scrap">Scrap</button>
+                                        </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <h3>Filtrar por Línea</h3>
-                                    <div id="rastreoLineFilters" class="filter-group">
-                                        <p id="rastreoLineFiltersPlaceholder" class="text-dark" style="font-size: 0.9rem;">Cargue un archivo para ver los filtros.</p>
+                                    <div>
+                                        <h3>Filtrar por Línea</h3>
+                                        <div id="rastreoLineFilters" class="filter-group">
+                                            <p id="rastreoLineFiltersPlaceholder" class="text-dark" style="font-size: 0.9rem;">Cargue un archivo para ver los filtros.</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="card" id="actionsCard">
-                        <h3>Acciones</h3>
-                        <div class="card-content">
-                             <div class="actions-container">
-                                 <button id="exportViewButton" class="btn" disabled>Exportar reimpresión</button>
-                                 <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
-                             </div>
+                        <div class="card" id="actionsCard">
+                            <h3>Acciones</h3>
+                            <div class="card-content">
+                                 <div class="actions-container">
+                                     <button id="exportViewButton" class="btn" disabled>Exportar reimpresión</button>
+                                     <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
+                                 </div>
+                            </div>
+                        </div>
+                        <div class="card" id="tableCard">
+                            <input type="text" id="rastreoFilterInput" placeholder="Buscar en la tabla por serial, status, etc..." style="margin-bottom: 16px;">
+                            <div id="lineCountsContainer"></div>
+                            <div class="table-wrapper">
+                                 <table id="rastreoTable"></table>
+                                 <p id="placeholderText">Cargando datos...</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="card" id="tableCard">
-                        <input type="text" id="rastreoFilterInput" placeholder="Buscar en la tabla por serial, status, etc..." style="margin-bottom: 16px;">
-                        <div id="lineCountsContainer"></div>
-                        <div class="table-wrapper">
-                             <table id="rastreoTable"></table>
-                             <p id="placeholderText">Cargando datos...</p>
+                    <div id="empaqueView">
+                        <div class="card" style="height:100%;">
+                            <input type="text" id="empaqueFilterInput" placeholder="Buscar por Serial o BoxID..." style="margin-bottom:16px">
+                            <div id="empaqueTableContainer" class="table-wrapper">
+                                 <table id="empaqueTable"></table>
+                            </div>
+                            <div id="empaqueMobileContainer"></div>
                         </div>
                     </div>
-                </div>
-                <div id="empaqueView">
-                    <div class="card" style="height:100%;">
-                        <input type="text" id="empaqueFilterInput" placeholder="Buscar por Serial o BoxID..." style="margin-bottom:16px">
-                        <div id="empaqueTableContainer" class="table-wrapper">
-                             <table id="empaqueTable"></table>
-                        </div>
-                        <div id="empaqueMobileContainer"></div>
-                    </div>
-                </div>
-            </main>
+                </main>
+            </div>
         </div>
+
+        <div id="sapView">
+            <div class="card">
+                <h3>Cargar Archivo SAP</h3>
+                <div id="sapFileDropArea" class="file-drop-area">
+                    <p>Arrastra un archivo de SAP (.xlsx) aquí</p>
+                    <p><span>o haz clic para seleccionar</span></p>
+                </div>
+                <input type="file" id="sapFileInput" accept=".xlsx, .xls" style="display: none;">
+            </div>
+            <div class="card">
+                <h3>Resumen SAP</h3>
+                <div id="sapSummaryCard" class="summary-card">
+                    </div>
+            </div>
+             <div class="card">
+                <h3>Órdenes SAP</h3>
+                <div class="table-wrapper">
+                    <table id="sapTable"></table>
+                    <p id="sapPlaceholderText">Cargue un archivo para ver los datos de SAP.</p>
+                </div>
+            </div>
+        </div>
+
     </div>
     
     <div id="modalOverlay" class="modal-overlay">
@@ -438,47 +478,72 @@
         const db = firebase.firestore();
 
         document.addEventListener('DOMContentLoaded', () => {
+            // State variables
             let loadedOrders = new Map();
+            let sapData = [];
             let activeOrderKey = 'all';
             let currentMode = 'rastreo';
+            let mainMode = 'fwd';
             let currentVisibleData = []; 
             let orderToUpdateKey = null;
-            
             let rastreoStatusFilter = 'all';
             let rastreoLineFilter = 'all';
 
+            // Key Maps
             const TRACKING_KEYS = { SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', DATE_REGISTERED: 'Date Registered', LINE: 'Line', STATION: 'Station' };
             const PACKING_KEYS = { SERIAL: 'Serial Number', EMPLOYEE_ID: 'Employee ID', PACKED_DATE: 'Finish Packed Date', BOX_ID: 'BoxID' };
-            
-            const fileDropArea = document.getElementById('fileDropArea');
-            const fileInput = document.getElementById('fileInput');
-            const updateFileInput = document.getElementById('updateFileInput');
-            const orderList = document.getElementById('orderList');
-            const statOrderNumber = document.getElementById('statOrderNumber');
-            const statCatalogNumber = document.getElementById('statCatalogNumber');
-            const statOrderQty = document.getElementById('statOrderQty');
-            const statPackedQty = document.getElementById('statPackedQty');
-            const statRemainingQty = document.getElementById('statRemainingQty');
-            const statScrapQty = document.getElementById('statScrapQty');
-            const totalOrdersStat = document.getElementById('totalOrdersStat');
-            const completedOrdersStat = document.getElementById('completedOrdersStat');
-            const modeRastreo = document.getElementById('modeRastreo');
-            const modeEmpaque = document.getElementById('modeEmpaque');
-            const rastreoFilterInput = document.getElementById('rastreoFilterInput');
-            const rastreoStatusFilters = document.getElementById('rastreoStatusFilters');
-            const rastreoLineFilters = document.getElementById('rastreoLineFilters');
-            const rastreoLineFiltersPlaceholder = document.getElementById('rastreoLineFiltersPlaceholder');
-            const exportViewButton = document.getElementById('exportViewButton');
-            const exportStatusButton = document.getElementById('exportStatusButton');
-            const lineCountsContainer = document.getElementById('lineCountsContainer');
-            const placeholderText = document.getElementById('placeholderText');
-            const empaqueFilterInput = document.getElementById('empaqueFilterInput');
-            const modalOverlay = document.getElementById('modalOverlay');
-            const modalTitle = document.getElementById('modalTitle');
-            const modalBody = document.getElementById('modalBody');
-            const modalClose = document.getElementById('modalClose');
-            const copyReportBtn = document.getElementById('copyReportBtn');
+            const SAP_KEYS = ['Order', 'Sched. finish', 'Target qty', 'Del, qty'];
 
+            // Element cache
+            const doc = (id) => document.getElementById(id);
+            const appTitle = doc('app-title');
+
+            // FWD View Elements
+            const fileDropArea = doc('fileDropArea');
+            const fileInput = doc('fileInput');
+            const updateFileInput = doc('updateFileInput');
+            const orderList = doc('orderList');
+            const statOrderNumber = doc('statOrderNumber');
+            const statCatalogNumber = doc('statCatalogNumber');
+            const statOrderQty = doc('statOrderQty');
+            const statPackedQty = doc('statPackedQty');
+            const statRemainingQty = doc('statRemainingQty');
+            const statScrapQty = doc('statScrapQty');
+            const totalOrdersStat = doc('totalOrdersStat');
+            const completedOrdersStat = doc('completedOrdersStat');
+            const modeRastreo = doc('modeRastreo');
+            const modeEmpaque = doc('modeEmpaque');
+            const rastreoFilterInput = doc('rastreoFilterInput');
+            const rastreoStatusFilters = doc('rastreoStatusFilters');
+            const rastreoLineFilters = doc('rastreoLineFilters');
+            const rastreoLineFiltersPlaceholder = doc('rastreoLineFiltersPlaceholder');
+            const exportViewButton = doc('exportViewButton');
+            const exportStatusButton = doc('exportStatusButton');
+            const lineCountsContainer = doc('lineCountsContainer');
+            const placeholderText = doc('placeholderText');
+            const empaqueFilterInput = doc('empaqueFilterInput');
+
+            // SAP View Elements
+            const sapFileDropArea = doc('sapFileDropArea');
+            const sapFileInput = doc('sapFileInput');
+            const sapPlaceholderText = doc('sapPlaceholderText');
+
+            // Main Mode Switcher
+            const modeFwd = doc('modeFwd');
+            const modeSap = doc('modeSap');
+
+            // Modal Elements
+            const modalOverlay = doc('modalOverlay');
+            const modalTitle = doc('modalTitle');
+            const modalBody = doc('modalBody');
+            const modalClose = doc('modalClose');
+            const copyReportBtn = doc('copyReportBtn');
+
+            // === EVENT LISTENERS ===
+            modeFwd.addEventListener('click', () => switchMainMode('fwd'));
+            modeSap.addEventListener('click', () => switchMainMode('sap'));
+
+            // FWD Listeners
             fileDropArea.addEventListener('click', () => fileInput.click());
             fileDropArea.addEventListener('dragover', (e) => { e.preventDefault(); fileDropArea.classList.add('dragover'); });
             fileDropArea.addEventListener('dragleave', () => fileDropArea.classList.remove('dragover'));
@@ -488,11 +553,28 @@
             });
             fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFiles(e.target.files); });
             updateFileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFiles(e.target.files, true); });
-            
             modeRastreo.addEventListener('click', () => switchMode('rastreo'));
             modeEmpaque.addEventListener('click', () => switchMode('empaque'));
-
             rastreoFilterInput.addEventListener('input', () => renderRastreoView(activeOrderKey));
+            empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
+            exportViewButton.addEventListener('click', handleReprintExport);
+            exportStatusButton.addEventListener('click', handleStatusReport);
+
+            // SAP Listeners
+            sapFileDropArea.addEventListener('click', () => sapFileInput.click());
+            sapFileDropArea.addEventListener('dragover', (e) => { e.preventDefault(); sapFileDropArea.classList.add('dragover'); });
+            sapFileDropArea.addEventListener('dragleave', () => sapFileDropArea.classList.remove('dragover'));
+            sapFileDropArea.addEventListener('drop', (e) => {
+                e.preventDefault(); sapFileDropArea.classList.remove('dragover');
+                if (e.dataTransfer.files.length) handleSapFile(e.dataTransfer.files[0]);
+            });
+            sapFileInput.addEventListener('change', (e) => { if (e.target.files.length) handleSapFile(e.target.files[0]); });
+            
+            // Shared Listeners
+            modalClose.addEventListener('click', hideModal);
+            modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
+            
+            // ... (Filter listeners are a bit more complex, keeping them separate)
             rastreoStatusFilters.addEventListener('click', (e) => {
                 if (e.target.matches('.filter-btn')) {
                     rastreoStatusFilters.querySelector('.active').classList.remove('active');
@@ -512,14 +594,18 @@
                 }
             });
 
-            empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
+            // === MAIN FUNCTIONS ===
+            function switchMainMode(mode) {
+                mainMode = mode;
+                document.body.classList.toggle('mode-fwd', mode === 'fwd');
+                document.body.classList.toggle('mode-sap', mode === 'sap');
+                modeFwd.classList.toggle('active', mode === 'fwd');
+                modeSap.classList.toggle('active', mode === 'sap');
+                appTitle.textContent = mode === 'fwd' ? 'Centro de Rastreo de Órdenes' : 'Análisis de Órdenes SAP';
+            }
             
-            exportViewButton.addEventListener('click', handleReprintExport);
-            exportStatusButton.addEventListener('click', handleStatusReport);
+            // ... (rest of the functions, unchanged ones first)
 
-            modalClose.addEventListener('click', hideModal);
-            modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
-            
             function showModal(title, content, type = 'info', showCopyBtn = false) {
                  modalOverlay.querySelector('.modal-content').className = `modal-content ${type}`;
                  modalTitle.textContent = title;
@@ -834,21 +920,25 @@
             }
 
             function render() {
-                const hasOrders = loadedOrders.size > 0;
-                placeholderText.style.display = hasOrders ? 'none' : 'block';
-                exportViewButton.disabled = !hasOrders;
-                exportStatusButton.disabled = !hasOrders;
-                if (!hasOrders) {
-                    document.getElementById('rastreoTable').innerHTML = '';
-                    document.getElementById('empaqueTableContainer').innerHTML = `<table id="empaqueTable"></table>`;
-                    document.getElementById('empaqueMobileContainer').innerHTML = '';
-                }
-                renderSummary();
-                updateGlobalDashboard();
-                if (currentMode === 'rastreo') {
-                    renderRastreoView(activeOrderKey);
-                } else {
-                    renderEmpaqueView(activeOrderKey);
+                if (mainMode === 'fwd') {
+                    const hasOrders = loadedOrders.size > 0;
+                    placeholderText.style.display = hasOrders ? 'none' : 'block';
+                    exportViewButton.disabled = !hasOrders;
+                    exportStatusButton.disabled = !hasOrders;
+                    if (!hasOrders) {
+                        doc('rastreoTable').innerHTML = '';
+                        doc('empaqueTableContainer').innerHTML = `<table id="empaqueTable"></table>`;
+                        doc('empaqueMobileContainer').innerHTML = '';
+                    }
+                    renderSummary();
+                    updateGlobalDashboard();
+                    if (currentMode === 'rastreo') {
+                        renderRastreoView(activeOrderKey);
+                    } else {
+                        renderEmpaqueView(activeOrderKey);
+                    }
+                } else if (mainMode === 'sap') {
+                    renderSapView();
                 }
             }
 
@@ -943,7 +1033,7 @@
             }
             
             function updateRastreoTable(data, headers) {
-                const table = document.getElementById('rastreoTable');
+                const table = doc('rastreoTable');
                 if (!table) return;
                 const isMobile = window.innerWidth <= 992;
                 let headersToRender;
@@ -1005,8 +1095,8 @@
                     dataToShow = order.empaqueData || new Map(); headers = order.headers.empaque || [];
                 }
 
-                const desktopContainer = document.getElementById('empaqueTableContainer');
-                const mobileContainer = document.getElementById('empaqueMobileContainer');
+                const desktopContainer = doc('empaqueTableContainer');
+                const mobileContainer = doc('empaqueMobileContainer');
                 const noDataMsg = `<p class="text-dark" style="padding: 20px; text-align: center;">No hay datos de empaque disponibles.</p>`;
                 if (!dataToShow || dataToShow.size === 0 || !headers || headers.length === 0) {
                     desktopContainer.innerHTML = `<table id="empaqueTable"><thead><tr><th>No hay datos de empaque disponibles.</th></tr></thead></table>`;
@@ -1106,27 +1196,26 @@
                 }
                 try {
                     const lineHeader = findHeader(Object.keys(currentVisibleData[0]), TRACKING_KEYS.LINE);
-                    const lineInfo = lineHeader && currentVisibleData[0][lineHeader] ? `Línea: ${currentVisibleData[0][lineHeader]}` : 'Línea no especificada';
-
+                    const lineInfo = lineHeader && rastreoLineFilter !== 'all' ? rastreoLineFilter : 'Multiples_Lineas';
+                    
                     const dataToExport = currentVisibleData.map(row => {
                         const serial = row[TRACKING_KEYS.SERIAL] || '';
                         return {
-                            [TRACKING_KEYS.SERIAL]: serial.startsWith('S#') ? serial.substring(2) : serial,
-                            [TRACKING_KEYS.STATION]: row[TRACKING_KEYS.STATION],
+                            'Product Serial Number': serial.startsWith('S#') ? serial.substring(2) : serial,
+                            'Line': row[TRACKING_KEYS.LINE],
+                            'Station': row[TRACKING_KEYS.STATION],
                             'Status': row.status,
-                            [TRACKING_KEYS.DATE_REGISTERED]: formatDateTime(excelSerialToDate(row[TRACKING_KEYS.DATE_REGISTERED]))
+                            'Date Registered': formatDateTime(excelSerialToDate(row[TRACKING_KEYS.DATE_REGISTERED]))
                         };
                     });
                     
-                    const worksheet = XLSX.utils.json_to_sheet(dataToExport, { origin: 'A2', skipHeader: true });
-                    XLSX.utils.sheet_add_aoa(worksheet, [[lineInfo]], { origin: 'A1' });
-                    XLSX.utils.sheet_add_aoa(worksheet, [['Product Serial Number', 'Station', 'Status', 'Date Registered']], { origin: 'A2' });
-                    
+                    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
                     const workbook = XLSX.utils.book_new();
                     XLSX.utils.book_append_sheet(workbook, worksheet, 'Reimpresión');
                     
                     const orderName = (activeOrderKey && activeOrderKey !== 'all') ? activeOrderKey : 'Multiples_Ordenes';
-                    XLSX.writeFile(workbook, `Reimpresion_${orderName}_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}.xlsx`);
+                    const dateStamp = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
+                    XLSX.writeFile(workbook, `Reimpresion_${orderName}_Linea_${lineInfo}_${dateStamp}.xlsx`);
                 } catch(e) {
                     console.error("Error al exportar para reimpresión:", e);
                     showModal('Error', 'Ocurrió un error al generar el archivo de reimpresión.', 'error');
@@ -1166,6 +1255,86 @@
                 reportHTML += `</div>`;
                 showModal(`Reporte de Órdenes Incompletas`, reportHTML, 'info', true);
             }
+            
+            // === SAP VIEW FUNCTIONS ===
+            function handleSapFile(file) {
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                        sapData = processSapFile(workbook);
+                        renderSapView();
+                        showModal('Éxito', 'Archivo SAP cargado y procesado correctamente.', 'success');
+                    } catch (err) {
+                        console.error("Error procesando archivo SAP:", err);
+                        showModal('Error', 'No se pudo procesar el archivo SAP.', 'error');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+
+            function processSapFile(workbook) {
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                let headerRowIndex = -1;
+                let headers = [];
+
+                for(let i = 0; i < jsonData.length; i++) {
+                    const row = jsonData[i];
+                    if (SAP_KEYS.every(key => row.includes(key))) {
+                        headerRowIndex = i;
+                        headers = row;
+                        break;
+                    }
+                }
+                if (headerRowIndex === -1) throw new Error("Cabeceras SAP no encontradas.");
+                
+                const dataRows = jsonData.slice(headerRowIndex + 1);
+                return dataRows.map(row => {
+                    const rowData = {};
+                    headers.forEach((header, index) => {
+                        rowData[header] = row[index];
+                    });
+                    const target = parseFloat(rowData['Target qty']) || 0;
+                    const delivered = parseFloat(rowData['Del, qty']) || 0;
+                    rowData['Restante'] = target - delivered;
+                    return rowData;
+                }).filter(row => row['Order']); // Filtrar filas vacías
+            }
+
+            function renderSapView() {
+                const table = doc('sapTable');
+                const summaryContainer = doc('sapSummaryCard');
+                sapPlaceholderText.style.display = sapData.length > 0 ? 'none' : 'block';
+
+                if (sapData.length === 0) {
+                    table.innerHTML = '';
+                    summaryContainer.innerHTML = '';
+                    return;
+                }
+
+                const headers = [...SAP_KEYS, 'Restante'];
+                table.innerHTML = `
+                    <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+                    <tbody>
+                        ${sapData.map(row => `
+                            <tr>
+                                ${headers.map(h => `<td data-label="${h}">${row[h] !== undefined ? row[h] : ''}</td>`).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>`;
+
+                const totalTarget = sapData.reduce((sum, row) => sum + (parseFloat(row['Target qty']) || 0), 0);
+                const totalDelivered = sapData.reduce((sum, row) => sum + (parseFloat(row['Del, qty']) || 0), 0);
+                summaryContainer.innerHTML = `
+                    <div class="stat-item"><h3>Órdenes Totales</h3><p>${sapData.length}</p></div>
+                    <div class="stat-item"><h3>Cant. Requerida</h3><p>${totalTarget.toLocaleString()}</p></div>
+                    <div class="stat-item"><h3>Cant. Entregada</h3><p id="statPackedQty">${totalDelivered.toLocaleString()}</p></div>
+                    <div class="stat-item"><h3>Cant. Restante</h3><p id="statRemainingQty">${(totalTarget - totalDelivered).toLocaleString()}</p></div>
+                `;
+            }
+
 
             function formatCell(value, header, isDateTime = false) {
                  if (isDateTime) return formatDateTime(excelSerialToDate(value));
@@ -1177,7 +1346,7 @@
             const cardIds = ['uploadCard', 'orderListCard', 'filtersCard', 'actionsCard'];
             function setupMobileMode() {
                 cardIds.forEach(id => {
-                    const cardElement = document.getElementById(id);
+                    const cardElement = doc(id);
                     if (!cardElement) return;
                     cardElement.classList.add('mobile-collapsible');
                     const trigger = cardElement.querySelector('h3');
@@ -1194,7 +1363,7 @@
             }
             function teardownMobileMode() {
                  cardIds.forEach(id => {
-                    const cardElement = document.getElementById(id);
+                    const cardElement = doc(id);
                     if (!cardElement) return;
                     cardElement.classList.remove('mobile-collapsible', 'expanded');
                     const trigger = cardElement.querySelector('h3');
@@ -1209,6 +1378,8 @@
                     render();
                 }
             });
+
+            // Initial Load
             loadOrdersFromFirebase();
             if (isMobile) setupMobileMode();
         });
