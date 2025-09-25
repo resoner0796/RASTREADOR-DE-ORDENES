@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centro de Control de Producción v2.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -375,10 +377,10 @@
                 </header>
         
                 <section class="header card">
-                     <div class="mode-switcher">
-                        <button id="modeRastreo" class="active">Rastreo</button>
-                        <button id="modeEmpaque">Empaque</button>
-                    </div>
+                       <div class="mode-switcher">
+                            <button id="modeRastreo" class="active">Rastreo</button>
+                            <button id="modeEmpaque">Empaque</button>
+                        </div>
                     <div id="summaryCard" class="summary-card">
                            <div class="stat-item">
                                 <h3>Orden</h3>
@@ -421,8 +423,9 @@
                                 <h3>Acciones</h3>
                                 <div class="card-content">
                                      <div class="actions-container">
-                                         <button id="exportViewButton" class="btn" disabled>Exportar reimpresión</button>
-                                         <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
+                                          <button id="exportViewButton" class="btn" disabled>Exportar reimpresión</button>
+                                          <button id="exportPdfButton" class="btn" disabled>Exportar a PDF</button>
+                                          <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
                                      </div>
                                 </div>
                             </div>
@@ -551,6 +554,7 @@
             const rastreoLineFilters = doc('rastreoLineFilters');
             const rastreoLineFiltersPlaceholder = doc('rastreoLineFiltersPlaceholder');
             const exportViewButton = doc('exportViewButton');
+            const exportPdfButton = doc('exportPdfButton'); // CACHE PARA BOTÓN PDF
             const exportStatusButton = doc('exportStatusButton');
             const lineCountsContainer = doc('lineCountsContainer');
             const placeholderText = doc('placeholderText');
@@ -587,6 +591,7 @@
             rastreoFilterInput.addEventListener('input', () => renderRastreoView(activeOrderKey));
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
             exportViewButton.addEventListener('click', handleReprintExport);
+            exportPdfButton.addEventListener('click', handlePdfExport); // LISTENER PARA BOTÓN PDF
             exportStatusButton.addEventListener('click', handleStatusReport);
             sapFileDropArea.addEventListener('click', () => sapFileInput.click());
             sapFileDropArea.addEventListener('dragover', (e) => { e.preventDefault(); sapFileDropArea.classList.add('dragover'); });
@@ -642,15 +647,15 @@
                  copyReportBtn.textContent = 'Copiar al Portapapeles';
                  copyReportBtn.style.display = showCopyBtn ? 'block' : 'none';
                  if (showCopyBtn) {
-                    copyReportBtn.onclick = () => {
-                        const reportContent = modalBody.querySelector('.status-report')?.innerText || modalBody.innerText;
-                        navigator.clipboard.writeText(reportContent).then(() => {
-                            copyReportBtn.textContent = '¡Copiado!';
-                            setTimeout(() => copyReportBtn.textContent = 'Copiar al Portapapeles', 2000);
-                        }, () => {
-                           showModal('Error', 'No se pudo copiar el reporte.', 'error');
-                        });
-                    };
+                     copyReportBtn.onclick = () => {
+                         const reportContent = modalBody.querySelector('.status-report')?.innerText || modalBody.innerText;
+                         navigator.clipboard.writeText(reportContent).then(() => {
+                             copyReportBtn.textContent = '¡Copiado!';
+                             setTimeout(() => copyReportBtn.textContent = 'Copiar al Portapapeles', 2000);
+                         }, () => {
+                            showModal('Error', 'No se pudo copiar el reporte.', 'error');
+                         });
+                     };
                  }
                  modalOverlay.classList.add('visible');
             }
@@ -935,6 +940,7 @@
                     const hasOrders = loadedOrders.size > 0;
                     placeholderText.style.display = hasOrders ? 'none' : 'block';
                     exportViewButton.disabled = !hasOrders;
+                    exportPdfButton.disabled = !hasOrders; // HABILITAR/DESHABILITAR BOTÓN PDF
                     exportStatusButton.disabled = !hasOrders;
                     if (!hasOrders) {
                         doc('rastreoTable').innerHTML = '';
@@ -1139,7 +1145,10 @@
                 let mobileHTML = `<div class="mobile-packing-list">`;
                 let entriesFound = 0;
 
-                for (const [boxId, serials] of dataToShow.entries()) {
+                // *** AJUSTE: Convertir el Map a un array y revertirlo para mostrar el último BoxID primero ***
+                const reversedEntries = Array.from(dataToShow.entries()).reverse();
+
+                for (const [boxId, serials] of reversedEntries) {
                     if(!serials || serials.length === 0) continue;
                     
                     const serialsMatchFilter = serials.some(s => 
@@ -1240,6 +1249,71 @@
                 }
             }
             
+            // *** NUEVA FUNCIÓN PARA EXPORTAR A PDF ***
+            function handlePdfExport() {
+                if (!currentVisibleData || currentVisibleData.length === 0) {
+                    showModal('Exportar PDF', 'No hay datos en la vista actual para exportar.', 'warning');
+                    return;
+                }
+
+                const tableToExport = doc('rastreoTable');
+                if (!tableToExport || tableToExport.rows.length === 0) {
+                    showModal('Exportar PDF', 'La tabla está vacía o no se pudo encontrar.', 'error');
+                    return;
+                }
+                
+                const originalButtonText = exportPdfButton.textContent;
+                exportPdfButton.textContent = 'Generando PDF...';
+                exportPdfButton.disabled = true;
+
+                html2canvas(tableToExport, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#1E293B'
+                }).then(canvas => {
+                    try {
+                        const { jsPDF } = window.jspdf;
+                        const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                        const imgWidth = canvas.width;
+                        const imgHeight = canvas.height;
+                        
+                        const pdfWidth = 297; // A4 landscape width in mm
+                        const pdfHeight = 210; // A4 landscape height in mm
+                        const margin = 10;
+
+                        const ratio = imgWidth / imgHeight;
+                        let finalImgWidth = pdfWidth - (margin * 2);
+                        let finalImgHeight = finalImgWidth / ratio;
+                        
+                        if (finalImgHeight > pdfHeight - (margin * 2)) {
+                            finalImgHeight = pdfHeight - (margin * 2);
+                            finalImgWidth = finalImgHeight * ratio;
+                        }
+                        
+                        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+                        const x = (pdfWidth - finalImgWidth) / 2;
+                        const y = (pdfHeight - finalImgHeight) / 2;
+
+                        pdf.addImage(imgData, 'JPEG', x, y, finalImgWidth, finalImgHeight);
+                        
+                        const orderName = (activeOrderKey && activeOrderKey !== 'all') ? activeOrderKey : 'Multiples_Ordenes';
+                        const dateStamp = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
+                        pdf.save(`Reporte_Rastreo_${orderName}_${dateStamp}.pdf`);
+                    } catch (e) {
+                        console.error("Error al generar el PDF:", e);
+                        showModal('Error', 'Ocurrió un error al generar el archivo PDF.', 'error');
+                    } finally {
+                        exportPdfButton.textContent = originalButtonText;
+                        render(); // Re-enable based on state
+                    }
+                }).catch(err => {
+                    console.error("Error en html2canvas:", err);
+                    showModal('Error', 'Ocurrió un error al capturar la tabla para el PDF.', 'error');
+                    exportPdfButton.textContent = originalButtonText;
+                    render(); // Re-enable based on state
+                });
+            }
+
             function handleStatusReport() {
                 const incompleteOrders = Array.from(loadedOrders.entries())
                     .filter(([key, order]) => (order.orderQty > order.packedQty))
@@ -1391,9 +1465,9 @@
 
             function updateSapOrderList() {
                  if (sapData.length === 0) {
-                    sapOrderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>`;
-                    return;
-                }
+                     sapOrderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>`;
+                     return;
+                 }
                 
                 const groupedByDate = new Map();
                 sapData.forEach(order => {
@@ -1419,10 +1493,10 @@
                     const isToday = dateString === todayString;
                     html += `<div class="date-group ${isToday ? 'expanded' : ''}">`;
                     html += `<button class="date-header" data-date="${dateString}">
-                                <span>📅 ${dateString}</span> 
-                                ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''}
-                                <span class="collapse-icon">►</span>
-                             </button>`;
+                                 <span>📅 ${dateString}</span> 
+                                 ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''}
+                                 <span class="collapse-icon">►</span>
+                               </button>`;
                     html += `<div class="orders-for-date">`;
                     orders.forEach(order => {
                         const itemClass = order.status === 'complete' ? 'is-complete' : '';
