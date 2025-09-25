@@ -466,7 +466,7 @@
                 </header>
                 <main class="main-content">
                      <div class="card" id="sap-tableCard">
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
                             <h3>Detalle de Órdenes SAP</h3>
                             <button id="sapResetFilter" class="filter-btn" style="display: none;">Mostrar Hoy/Tarde</button>
                         </div>
@@ -506,7 +506,7 @@
             // State variables
             let loadedOrders = new Map();
             let sapData = [];
-            let sapDateFilter = 'default'; // 'default' shows today/late, otherwise it's a date string
+            let sapDateFilter = 'default';
             let activeOrderKey = 'all';
             let currentMode = 'rastreo';
             let mainMode = 'fwd';
@@ -571,8 +571,6 @@
             // === EVENT LISTENERS ===
             modeFwd.addEventListener('click', () => switchMainMode('fwd'));
             modeSap.addEventListener('click', () => switchMainMode('sap'));
-
-            // FWD Listeners
             fileDropArea.addEventListener('click', () => fileInput.click());
             fileDropArea.addEventListener('dragover', (e) => { e.preventDefault(); fileDropArea.classList.add('dragover'); });
             fileDropArea.addEventListener('dragleave', () => fileDropArea.classList.remove('dragover'));
@@ -588,8 +586,6 @@
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
             exportViewButton.addEventListener('click', handleReprintExport);
             exportStatusButton.addEventListener('click', handleStatusReport);
-
-            // SAP Listeners
             sapFileDropArea.addEventListener('click', () => sapFileInput.click());
             sapFileDropArea.addEventListener('dragover', (e) => { e.preventDefault(); sapFileDropArea.classList.add('dragover'); });
             sapFileDropArea.addEventListener('dragleave', () => sapFileDropArea.classList.remove('dragover'));
@@ -602,11 +598,8 @@
                 sapDateFilter = 'default';
                 renderSapView();
             });
-            
-            // Shared Listeners
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
-            
             rastreoStatusFilters.addEventListener('click', (e) => {
                 if (e.target.matches('.filter-btn')) {
                     rastreoStatusFilters.querySelector('.active').classList.remove('active');
@@ -626,7 +619,6 @@
                 }
             });
 
-            // === MAIN FUNCTIONS ===
             function switchMainMode(mode) {
                 mainMode = mode;
                 document.body.classList.toggle('mode-fwd', mode === 'fwd');
@@ -681,6 +673,8 @@
             }
             function findHeader(headers, keyText) { return headers && headers.find(h => h && h.toLowerCase() === keyText.toLowerCase()); }
             
+            // ... (El resto de las funciones FWD se mantienen igual que en la versión anterior)
+
             // =========================
             // === FWD VIEW FUNCTIONS ===
             // =========================
@@ -1313,20 +1307,8 @@
             function processSapFile(workbook) {
                 const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                 if (!worksheet) throw new Error("No se encontró una hoja de cálculo en el archivo.");
-
                 const getCellValue = (cellAddress) => (worksheet[cellAddress] ? worksheet[cellAddress].v : undefined);
                 
-                const SAP_FILE_HEADERS = {
-                    ORDER: 'Order', CATALOGO: 'Material', STOCK: 'Special Stock',
-                    FINISH: 'Sched. finish', TOTAL: 'Target qty', CONFIRMADO: 'Del. qty'
-                };
-
-                if (getCellValue('A1') !== SAP_FILE_HEADERS.ORDER) throw new Error("Cabecera 'Order' no encontrada en la celda A1.");
-                if (getCellValue('D1') !== SAP_FILE_HEADERS.CATALOGO) throw new Error("Cabecera 'Material' no encontrada en la celda D1.");
-                if (getCellValue('G1') !== SAP_FILE_HEADERS.FINISH) throw new Error("Cabecera 'Sched. finish' no encontrada en la celda G1.");
-                if (getCellValue('I1') !== SAP_FILE_HEADERS.TOTAL) throw new Error("Cabecera 'Target qty' no encontrada en la celda I1.");
-                if (getCellValue('J1') !== SAP_FILE_HEADERS.CONFIRMADO) throw new Error("Cabecera 'Del. qty' no encontrada en la celda J1.");
-
                 const processedData = [];
                 const range = XLSX.utils.decode_range(worksheet['!ref']);
                 const reynosaTodayString = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Matamoros' });
@@ -1340,10 +1322,8 @@
                     const total = parseFloat(getCellValue('I' + rowNum)) || 0;
                     const confirmed = parseFloat(getCellValue('J' + rowNum)) || 0;
                     const faltante = total - confirmed;
-                    
                     const stock1 = getCellValue('B' + rowNum) || '';
                     const stock2 = getCellValue('L' + rowNum) || '';
-
                     let status = 'incomplete';
                     const finishDateSerial = getCellValue('G' + rowNum);
                     const finishDate = excelSerialToDate(finishDateSerial);
