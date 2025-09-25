@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Control de Producción v2.1</title>
+    <title>Centro de Control de Producción v2.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -62,7 +62,6 @@
         .sidebar {
             grid-area: sidebar; background-color: var(--surface-color); border-radius: 12px;
             padding: 20px; display: flex; flex-direction: column; gap: 16px;
-            /* Sticky styles */
             position: sticky;
             top: 16px;
             height: calc(100vh - 32px);
@@ -99,41 +98,6 @@
         }
         h3 { font-size: 0.9rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;}
         
-        /* Collapsible Card Styles */
-        .card.collapsible .card-content {
-            display: none;
-            padding-top: 16px;
-        }
-        .card.collapsible.expanded .card-content {
-            display: block;
-        }
-        .card.collapsible h3 {
-            margin-bottom: 0;
-            border-bottom: 1px solid var(--border-color);
-            cursor: pointer;
-            user-select: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .card.collapsible.expanded h3 {
-            margin-bottom: 0;
-        }
-        .card.collapsible:not(.expanded) h3 {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-        .card.collapsible h3::after {
-            content: '►';
-            display: inline-block;
-            font-size: 0.7rem;
-            transition: transform 0.2s;
-            color: var(--text-secondary);
-        }
-        .card.collapsible.expanded h3::after {
-            transform: rotate(90deg);
-        }
-
         .file-drop-area {
             border: 2px dashed var(--border-color); border-radius: 8px; padding: 24px 20px;
             text-align: center; cursor: pointer; transition: all 0.2s ease;
@@ -175,15 +139,16 @@
         }
         .stat-item h3 { margin-bottom: 8px; font-size: 0.9rem; font-weight: 500; }
         .stat-item .stat-value-wrapper {
-            margin-top: auto; /* Pushes value to the bottom */
+            margin-top: auto;
         }
         .stat-item p { margin: 0; font-size: 1.75rem; font-weight: 700; }
         #statOrderNumber { color: var(--primary-color); }
         #statCatalogNumber { font-size: 1rem; color: var(--text-primary); font-weight: 500; margin-top: 4px; height: auto; }
-        #statPackedQty, #sapCompletedOrdersStat { color: var(--success-color); }
+        #statPackedQty, #sapCompletedOrdersStat, #completedOrdersStat { color: var(--success-color); }
         #statRemainingQty, #sapTotalOrdersStat { color: var(--warning-color); } #statScrapQty { color: var(--danger-color); }
 
         .table-wrapper { overflow: auto; flex-grow: 1; }
+        #tableCard { display: flex; flex-direction: column; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; font-size: 0.9rem;}
         thead { position: sticky; top: 0; background-color: var(--surface-color); z-index: 10; }
@@ -306,7 +271,7 @@
                 display: flex; flex-direction: column; gap: 12px;
             }
             .sidebar {
-                position: static; /* Disable sticky on mobile */
+                position: static;
                 height: auto;
             }
             .sidebar, .main-content, #rastreoView { display: contents !important; }
@@ -314,12 +279,14 @@
 
             .card-row { grid-template-columns: 1fr; }
             
+            #desktop-controls-container { display: none; }
+            
             .global-header { order: 1; }
             .header { order: 2; }
             #uploadCard, #sap-uploadCard { order: 3; }
             #orderListCard, #sap-orderListCard { order: 4; }
-            .card-row { order: 5; } /* Wrapper for filters/actions */
-            #tableCard, #sap-tableCard { order: 7; }
+            #mobile-controls-row { order: 5; }
+            #tableCard { order: 7; }
             #empaqueView { order: 7; }
             
             .global-dashboard-card { grid-template-columns: 1fr 1fr; }
@@ -396,6 +363,43 @@
                 padding: 0 1rem 1rem 1rem;
             }
         }
+        
+        @media (min-width: 993px) {
+            #mobile-controls-row { display: none; }
+            #desktop-controls-container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 20px;
+                margin-bottom: 16px;
+                padding-bottom: 16px;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .desktop-filters-group, .desktop-actions-group {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+                flex-wrap: wrap;
+            }
+            .filter-group-inline {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .filter-label {
+                font-size: 0.9rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                white-space: nowrap;
+            }
+            #desktop-controls-container .btn, #desktop-controls-container .filter-btn {
+                width: auto;
+                padding: 6px 12px;
+                font-size: 0.85rem;
+            }
+        }
+        
         @media (min-width: 993px) {
             #empaqueMobileContainer { display: none; }
         }
@@ -485,8 +489,8 @@
         
                 <main class="main-content">
                     <div id="rastreoView">
-                        <div class="card-row">
-                            <div class="card collapsible" id="filtersCard">
+                        <div class="card-row" id="mobile-controls-row">
+                            <div class="card" id="filtersCard">
                                 <h3>Filtros</h3>
                                 <div class="card-content">
                                     <div class="filter-container">
@@ -508,18 +512,33 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="card collapsible" id="actionsCard">
+                            <div class="card" id="actionsCard">
                                 <h3>Acciones</h3>
                                 <div class="card-content">
                                      <div class="actions-container">
                                           <button id="exportViewButton" class="btn" disabled>Exportar reimpresión</button>
                                           <button id="exportPdfButton" class="btn" disabled>Exportar a PDF</button>
-                                          <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
+                                          <button id="exportStatusButton" class="btn" disabled>Reporte de Estatus</button>
                                      </div>
                                 </div>
                             </div>
                         </div>
                         <div class="card" id="tableCard">
+                            <div id="desktop-controls-container">
+                                <div class="desktop-filters-group">
+                                    <div class="filter-group-inline">
+                                        <span class="filter-label">Estado:</span>
+                                        <div id="rastreoStatusFiltersDesktop" class="filter-group"></div>
+                                    </div>
+                                    <div class="filter-group-inline">
+                                        <span class="filter-label">Línea:</span>
+                                        <div id="rastreoLineFiltersDesktop" class="filter-group"></div>
+                                    </div>
+                                </div>
+                                <div class="desktop-actions-group">
+                                    <div id="desktop-actions-wrapper" class="filter-group"></div>
+                                </div>
+                            </div>
                             <input type="text" id="rastreoFilterInput" placeholder="Buscar en la tabla por serial, status, etc..." style="margin-bottom: 16px;">
                             <div id="lineCountsContainer"></div>
                             <div class="table-wrapper">
@@ -639,13 +658,20 @@
             const modeRastreo = doc('modeRastreo');
             const modeEmpaque = doc('modeEmpaque');
             const rastreoFilterInput = doc('rastreoFilterInput');
-            const rastreoStatusFilters = doc('rastreoStatusFilters');
-            const rastreoLineFilters = doc('rastreoLineFilters');
-            const rastreoLineFiltersPlaceholder = doc('rastreoLineFiltersPlaceholder');
-            const exportViewButton = doc('exportViewButton');
-            const exportPdfButton = doc('exportPdfButton');
-            const exportStatusButton = doc('exportStatusButton');
-            const lineCountsContainer = doc('lineCountsContainer');
+            
+            // Control Containers
+            const mobileControls = {
+                status: doc('rastreoStatusFilters'),
+                line: doc('rastreoLineFilters'),
+                linePlaceholder: doc('rastreoLineFiltersPlaceholder'),
+                actions: doc('actionsCard').querySelector('.actions-container')
+            };
+            const desktopControls = {
+                status: doc('rastreoStatusFiltersDesktop'),
+                line: doc('rastreoLineFiltersDesktop'),
+                actions: doc('desktop-actions-wrapper')
+            };
+
             const placeholderText = doc('placeholderText');
             const empaqueFilterInput = doc('empaqueFilterInput');
             const sapFileDropArea = doc('sapFileDropArea');
@@ -679,9 +705,33 @@
             modeEmpaque.addEventListener('click', () => switchMode('empaque'));
             rastreoFilterInput.addEventListener('input', () => renderRastreoView(activeOrderKey));
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
-            exportViewButton.addEventListener('click', handleReprintExport);
-            exportPdfButton.addEventListener('click', handlePdfExport);
-            exportStatusButton.addEventListener('click', handleStatusReport);
+
+            const handleFilterClick = (e) => {
+                if (e.target.matches('.filter-btn')) {
+                    const group = e.target.closest('.filter-group');
+                    const filterType = group.id.includes('Status') ? 'status' : 'line';
+                    
+                    document.querySelectorAll(`#${group.id}`).forEach(g => {
+                         const active = g.querySelector('.active');
+                         if(active) active.classList.remove('active');
+                         const btnToActivate = g.querySelector(`[data-filter="${e.target.dataset.filter}"]`);
+                         if(btnToActivate) btnToActivate.classList.add('active');
+                    });
+
+                    if (filterType === 'status') {
+                        rastreoStatusFilter = e.target.dataset.filter;
+                    } else {
+                        rastreoLineFilter = e.target.dataset.filter;
+                    }
+                    renderRastreoView(activeOrderKey);
+                }
+            };
+            
+            mobileControls.status.addEventListener('click', handleFilterClick);
+            desktopControls.status.addEventListener('click', handleFilterClick);
+            mobileControls.line.addEventListener('click', handleFilterClick);
+            desktopControls.line.addEventListener('click', handleFilterClick);
+
             sapFileDropArea.addEventListener('click', () => sapFileInput.click());
             sapFileDropArea.addEventListener('dragover', (e) => { e.preventDefault(); sapFileDropArea.classList.add('dragover'); });
             sapFileDropArea.addEventListener('dragleave', () => sapFileDropArea.classList.remove('dragover'));
@@ -696,29 +746,6 @@
             });
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
-            rastreoStatusFilters.addEventListener('click', (e) => {
-                if (e.target.matches('.filter-btn')) {
-                    rastreoStatusFilters.querySelector('.active').classList.remove('active');
-                    e.target.classList.add('active');
-                    rastreoStatusFilter = e.target.dataset.filter;
-                    renderRastreoView(activeOrderKey);
-                }
-            });
-             rastreoLineFilters.addEventListener('click', (e) => {
-                if (e.target.matches('.filter-btn')) {
-                    if (rastreoLineFilters.querySelector('.active')) {
-                        rastreoLineFilters.querySelector('.active').classList.remove('active');
-                    }
-                    e.target.classList.add('active');
-                    rastreoLineFilter = e.target.dataset.filter;
-                    renderRastreoView(activeOrderKey);
-                }
-            });
-
-            // Collapsible card listeners
-            doc('filtersCard').querySelector('h3').addEventListener('click', () => doc('filtersCard').classList.toggle('expanded'));
-            doc('actionsCard').querySelector('h3').addEventListener('click', () => doc('actionsCard').classList.toggle('expanded'));
-
 
             // ===================================
             // === CORE APP CONTROL & UTILITIES ===
@@ -820,7 +847,6 @@
                         
                         Promise.all(updatePromises).then(() => {
                             showModal('Éxito', `${results.length} orden(es) cargada(s) y guardada(s).`, 'success');
-                            // The real-time listener will handle the UI update
                         });
                     })
                     .catch(err => {
@@ -975,7 +1001,6 @@
                     const isToday = dateString === todayString;
                     const groupDiv = document.createElement('div');
                     groupDiv.className = 'date-group';
-                    // if (isToday) groupDiv.classList.add('expanded'); // REMOVED to keep it collapsed by default
                     const headerBtn = document.createElement('button');
                     headerBtn.className = 'date-header';
                     headerBtn.innerHTML = `<span>📅 ${dateString}</span> ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''} <span class="collapse-icon">►</span>`;
@@ -1032,15 +1057,7 @@
             function render() {
                 if (mainMode === 'fwd') {
                     const hasOrders = loadedOrders.size > 0;
-                    placeholderText.style.display = hasOrders ? 'none' : 'block';
-                    exportViewButton.disabled = !hasOrders;
-                    exportPdfButton.disabled = !hasOrders;
-                    exportStatusButton.disabled = !hasOrders;
-                    if (!hasOrders) {
-                        doc('rastreoTable').innerHTML = '';
-                        doc('empaqueTableContainer').innerHTML = `<table id="empaqueTable"></table>`;
-                        doc('empaqueMobileContainer').innerHTML = '';
-                    }
+                    renderControls();
                     renderSummary();
                     updateGlobalDashboard();
                     if (currentMode === 'rastreo') {
@@ -1114,6 +1131,38 @@
                 completedOrdersStat.textContent = completedOrdersToday;
             }
             
+            function renderControls() {
+                 const hasOrders = loadedOrders.size > 0;
+                 const statusHTML = `
+                    <button class="filter-btn ${rastreoStatusFilter === 'all' ? 'active' : ''}" data-filter="all">Todos</button>
+                    <button class="filter-btn ${rastreoStatusFilter === 'today' ? 'active' : ''}" data-filter="today">En Movimiento</button>
+                    <button class="filter-btn ${rastreoStatusFilter === 'delayed' ? 'active' : ''}" data-filter="delayed">Sin Movimiento</button>
+                    <button class="filter-btn ${rastreoStatusFilter === 'scrap' ? 'active' : ''}" data-filter="scrap">Scrap</button>
+                `;
+                mobileControls.status.innerHTML = statusHTML;
+                desktopControls.status.innerHTML = statusHTML;
+
+                const actionsHTML = `
+                    <button class="btn" id="exportViewButton" ${!hasOrders ? 'disabled' : ''}>Exportar reimpresión</button>
+                    <button class="btn" id="exportPdfButton" ${!hasOrders ? 'disabled' : ''}>Exportar a PDF</button>
+                    <button class="btn" id="exportStatusButton" ${!hasOrders ? 'disabled' : ''}>Reporte de Estatus</button>
+                `;
+                 const desktopActionsHTML = `
+                    <button class="btn" id="exportViewButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Exportar reimpresión</button>
+                    <button class="btn" id="exportPdfButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Exportar a PDF</button>
+                    <button class="btn" id="exportStatusButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Reporte de Estatus</button>
+                `;
+                mobileControls.actions.innerHTML = actionsHTML;
+                desktopControls.actions.innerHTML = desktopActionsHTML;
+
+                doc('exportViewButton').addEventListener('click', handleReprintExport);
+                doc('exportViewButtonDesktop').addEventListener('click', handleReprintExport);
+                doc('exportPdfButton').addEventListener('click', handlePdfExport);
+                doc('exportPdfButtonDesktop').addEventListener('click', handlePdfExport);
+                doc('exportStatusButton').addEventListener('click', handleStatusReport);
+                doc('exportStatusButtonDesktop').addEventListener('click', handleStatusReport);
+            }
+
             function renderRastreoView(key) {
                 let dataToShow = []; let headers = [];
                 if (key === 'all') {
@@ -1123,7 +1172,9 @@
                     const order = loadedOrders.get(key);
                     dataToShow = order.rastreoData || []; headers = order.headers.rastreo || [];
                 }
+                
                 createRastreoLineFilters(dataToShow, headers);
+
                 let filteredData = dataToShow;
                 if (rastreoStatusFilter !== 'all') {
                     if (rastreoStatusFilter === 'delayed') {
@@ -1138,6 +1189,9 @@
                 const searchText = rastreoFilterInput.value.toLowerCase();
                 if (searchText) filteredData = filteredData.filter(row => Object.values(row).some(val => String(val).toLowerCase().includes(searchText)));
                 currentVisibleData = filteredData;
+                
+                placeholderText.style.display = (dataToShow.length > 0) ? 'none' : 'block';
+
                 updateRastreoTable(filteredData, headers);
                 updateLineCounts(filteredData, headers);
             }
@@ -1145,24 +1199,20 @@
             function createRastreoLineFilters(data, headers) {
                 if (!headers) headers = [];
                 const lineHeader = findHeader(headers, TRACKING_KEYS.LINE);
+                
+                let lineHTML = '';
                 if (!lineHeader || !data || data.length === 0) {
-                    rastreoLineFiltersPlaceholder.textContent = "No hay datos para filtrar.";
-                    rastreoLineFiltersPlaceholder.style.display = 'block';
-                    rastreoLineFilters.innerHTML = ''; return;
+                    lineHTML = `<p class="text-dark" style="font-size: 0.9rem; margin: 0;">N/A</p>`;
+                } else {
+                    const uniqueLines = [...new Set(data.map(row => row[lineHeader]).filter(Boolean))].sort();
+                    lineHTML += `<button class="filter-btn ${rastreoLineFilter === 'all' ? 'active' : ''}" data-filter="all">Todas</button>`;
+                    uniqueLines.forEach(line => {
+                        lineHTML += `<button class="filter-btn ${rastreoLineFilter === line ? 'active' : ''}" data-filter="${line}">${line}</button>`;
+                    });
                 }
-                const uniqueLines = [...new Set(data.map(row => row[lineHeader]).filter(Boolean))].sort();
-                rastreoLineFilters.innerHTML = '';
-                rastreoLineFiltersPlaceholder.style.display = 'none';
-                const allBtn = document.createElement('button');
-                allBtn.className = 'filter-btn'; allBtn.textContent = 'Todas';
-                allBtn.dataset.filter = 'all'; rastreoLineFilters.appendChild(allBtn);
-                uniqueLines.forEach(line => {
-                    const lineBtn = document.createElement('button');
-                    lineBtn.className = 'filter-btn'; lineBtn.textContent = line;
-                    lineBtn.dataset.filter = line; rastreoLineFilters.appendChild(lineBtn);
-                });
-                const activeBtn = rastreoLineFilters.querySelector(`[data-filter="${rastreoLineFilter}"]`) || rastreoLineFilters.querySelector('[data-filter="all"]');
-                if(activeBtn) activeBtn.classList.add('active');
+                
+                mobileControls.line.innerHTML = lineHTML;
+                desktopControls.line.innerHTML = lineHTML;
             }
             
             function updateRastreoTable(data, headers) {
@@ -1358,41 +1408,45 @@
             }
             
             async function handlePdfExport() {
-                if (!currentVisibleData || currentVisibleData.length === 0) {
+                 if (!currentVisibleData || currentVisibleData.length === 0) {
                     showModal('Exportar PDF', 'No hay datos en la vista actual para exportar.', 'warning');
                     return;
                 }
 
-                const originalButtonText = exportPdfButton.textContent;
-                exportPdfButton.textContent = 'Generando PDF...';
-                exportPdfButton.disabled = true;
+                const button = event.target.closest('button');
+                const originalButtonText = button.textContent;
+                button.textContent = 'Generando...';
+                button.disabled = true;
 
                 const cloneContainer = document.createElement('div');
                 cloneContainer.style.position = 'absolute';
                 cloneContainer.style.left = '-9999px';
                 cloneContainer.style.top = '0';
-                cloneContainer.style.width = '1200px';
-                cloneContainer.style.background = 'var(--bg-color)';
+                cloneContainer.style.width = '1200px'; 
+                cloneContainer.style.background = getComputedStyle(document.documentElement).getPropertyValue('--bg-color').trim();
                 cloneContainer.style.padding = '1px';
 
                 const tableToClone = doc('rastreoTable');
                 const clonedTable = tableToClone.cloneNode(true);
-                clonedTable.id = 'pdf-clone-table';
                 
                 const style = document.createElement('style');
                 style.innerHTML = `
-                    #pdf-clone-table { 
-                        color: var(--text-primary); 
-                        background-color: var(--surface-color);
-                        width: 100%;
-                    }
-                    #pdf-clone-table thead { display: table-header-group !important; }
-                    #pdf-clone-table tr { display: table-row !important; }
-                    #pdf-clone-table td, #pdf-clone-table th { 
-                        display: table-cell !important; 
-                        background-color: inherit !important;
-                    }
-                    #pdf-clone-table td::before { display: none !important; }
+                    :root { --surface-color: #1E293B; --border-color: #334155; --danger-color: #FB7185; --warning-color: #FBBF24; --orange-color: #F97316; --success-color: #34D399; --text-primary: #F8FAFC; --text-secondary: #94A3B8; }
+                    table { color: var(--text-primary); background-color: var(--surface-color); width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 14px; }
+                    th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+                    thead { display: table-header-group !important; background-color: var(--surface-color); }
+                    th { font-weight: 600; color: var(--text-secondary); font-size: 12px; }
+                    tr { display: table-row !important; }
+                    td { display: table-cell !important; background-color: inherit !important; }
+                    td::before { display: none !important; }
+                    tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
+                    tr.is-scrap td { color: var(--danger-color) !important; }
+                    tr.is-very_delayed { background-color: rgba(249, 115, 22, 0.1) !important; }
+                    tr.is-very_delayed td { color: var(--orange-color) !important; }
+                    tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
+                    tr.is-delayed td { color: var(--warning-color) !important; }
+                    tr.is-today { background-color: rgba(52, 211, 153, 0.1) !important; }
+                    tr.is-today td { color: var(--success-color) !important; }
                 `;
                 
                 cloneContainer.appendChild(style);
@@ -1430,8 +1484,8 @@
                     showModal('Error', 'Ocurrió un error al generar el archivo PDF.', 'error');
                 } finally {
                     document.body.removeChild(cloneContainer);
-                    exportPdfButton.textContent = originalButtonText;
-                    render();
+                    button.textContent = originalButtonText;
+                    button.disabled = false;
                 }
             }
 
@@ -1612,7 +1666,7 @@
                 sortedDates.forEach(dateString => {
                     const orders = groupedByDate.get(dateString);
                     const isToday = dateString === todayString;
-                    html += `<div class="date-group">`; // REMOVED expanded class
+                    html += `<div class="date-group">`;
                     html += `<button class="date-header" data-date="${dateString}">
                                  <span>📅 ${dateString}</span> 
                                  ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''}
@@ -1708,8 +1762,10 @@
                     if (trigger) {
                         trigger.classList.add('mobile-trigger');
                         if (!trigger.dataset.mobileListener) {
-                            trigger.addEventListener('click', () => {
-                                if(window.innerWidth <= 992) cardElement.classList.toggle('expanded');
+                            trigger.addEventListener('click', (e) => {
+                                if(window.innerWidth <= 992) {
+                                   e.currentTarget.closest('.card').classList.toggle('expanded');
+                                }
                             });
                             trigger.dataset.mobileListener = 'true';
                         }
