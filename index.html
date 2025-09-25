@@ -200,11 +200,30 @@
         
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
-        tbody tr.is-very_delayed { background-color: rgba(249, 115, 22, 0.1) !important; } /* Naranja */
+        tbody tr.is-very_delayed { 
+            background-color: rgba(249, 115, 22, 0.1) !important; 
+            animation: pulse-orange 1.5s infinite ease-in-out;
+        }
         tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
         tbody tr.is-delayed td { color: var(--warning-color) !important; }
-        tbody tr.is-today { background-color: rgba(52, 211, 153, 0.1) !important; }
+        tbody tr.is-today { 
+            background-color: rgba(52, 211, 153, 0.1) !important; 
+            position: relative;
+            overflow: hidden;
+        }
+        tbody tr.is-today::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%);
+            transform: translateX(-100%);
+            animation: shine-green 4s infinite linear;
+            animation-delay: 1.5s;
+        }
         tbody tr.is-today td { color: var(--success-color) !important; }
         tbody tr.is-complete-sap { background-color: rgba(52, 211, 153, 0.1) !important; }
         tbody tr.is-complete-sap td { color: var(--success-color) !important; }
@@ -258,19 +277,12 @@
         #modalBody .area-list li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color); gap: 10px;}
         #modalBody .area-list li input { flex-grow: 1; margin: 0; }
 
+        #fwdView, #sapView {
+            transition: opacity 0.3s ease-in-out;
+        }
+        body.mode-fwd #sapView { opacity: 0; display: none; }
+        body.mode-sap #fwdView { opacity: 0; display: none; }
 
-        body.mode-fwd #sapView, body.mode-sap #fwdView { 
-            visibility: hidden;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out, visibility 0.3s;
-            display: none;
-        }
-        body.mode-fwd #fwdView, body.mode-sap #sapView {
-             visibility: visible;
-             opacity: 1;
-             display: block;
-        }
-        
         body.mode-rastreo #empaqueView { display: none !important; }
         body.mode-empaque #rastreoView { display: none !important; }
         
@@ -297,16 +309,17 @@
         }
         
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-
+        @keyframes pulse-orange {
+            0%, 100% { background-color: rgba(249, 115, 22, 0.1); }
+            50% { background-color: rgba(249, 115, 22, 0.3); }
+        }
+        @keyframes shine-green {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
         .animated-startup {
             animation: fadeInUp 0.5s ease-out forwards;
             opacity: 0;
@@ -827,15 +840,27 @@
             // ===================================
             function switchMainMode(mode) {
                 if (mainMode === mode) return;
-                mainMode = mode;
-                localStorage.setItem('mainMode', mode);
 
-                document.body.classList.remove('mode-fwd', 'mode-sap');
-                document.body.classList.add(`mode-${mode}`);
-                
-                modeFwd.classList.toggle('active', mode === 'fwd');
-                modeSap.classList.toggle('active', mode === 'sap');
-                appTitle.textContent = mode === 'fwd' ? 'Centro de Rastreo de Órdenes' : 'Análisis de Órdenes SAP';
+                const oldView = mainMode === 'fwd' ? doc('fwdView') : doc('sapView');
+                const newView = mode === 'fwd' ? doc('sapView') : doc('fwdView');
+
+                oldView.style.opacity = 0;
+
+                setTimeout(() => {
+                    document.body.classList.remove('mode-fwd', 'mode-sap');
+                    document.body.classList.add(`mode-${mode}`);
+                    
+                    requestAnimationFrame(() => {
+                         newView.style.opacity = 1;
+                    });
+
+                    mainMode = mode;
+                    localStorage.setItem('mainMode', mode);
+                    modeFwd.classList.toggle('active', mode === 'fwd');
+                    modeSap.classList.toggle('active', mode === 'sap');
+                    appTitle.textContent = mode === 'fwd' ? 'Centro de Rastreo de Órdenes' : 'Análisis de Órdenes SAP';
+                    render();
+                }, 300);
             }
             
             function showModal(title, content, type = 'info', showCopyBtn = false) {
