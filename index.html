@@ -6,9 +6,6 @@
     <title>Centro de Control de Producción v2.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     
@@ -131,11 +128,7 @@
         thead { position: sticky; top: 0; background-color: var(--surface-color); z-index: 10; }
         th { font-weight: 600; color: var(--text-secondary); font-size: 0.75rem; }
         
-        .actions-container { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        @media (min-width: 600px) {
-            .actions-container { grid-template-columns: 1fr 1fr 1fr; }
-        }
-
+        .actions-container { display: flex; flex-direction: column; gap: 10px; }
         .filter-container { display: flex; flex-direction: column; gap: 16px; }
         .filter-group { display: flex; flex-wrap: wrap; gap: 10px; }
         .btn, .filter-btn {
@@ -165,7 +158,7 @@
         
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
-        tbody tr.is-very_delayed { background-color: rgba(249, 115, 22, 0.1) !important; }
+        tbody tr.is-very_delayed { background-color: rgba(249, 115, 22, 0.1) !important; } /* Naranja */
         tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
         tbody tr.is-delayed td { color: var(--warning-color) !important; }
@@ -429,7 +422,7 @@
                                 <div class="card-content">
                                      <div class="actions-container">
                                          <button id="exportViewButton" class="btn" disabled>Exportar reimpresión</button>
-                                         <button id="exportPdfButton" class="btn" disabled>Exportar PDF</button>
+                                         <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
                                      </div>
                                 </div>
                             </div>
@@ -478,7 +471,7 @@
                 <header class="global-header card">
                      <div class="global-dashboard-card">
                            <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
-                           <div class="stat-item"><h3>Órdenes Confirmadas (Día)</h3><p id="sapCompletedOrdersStat">0</p></div>
+                           <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
                     </div>
                 </header>
                 <main class="main-content">
@@ -527,11 +520,10 @@
             let activeOrderKey = 'all';
             let currentMode = 'rastreo';
             let mainMode = 'fwd';
-            let currentVisibleData = [];
+            let currentVisibleData = []; 
             let orderToUpdateKey = null;
             let rastreoStatusFilter = 'all';
             let rastreoLineFilter = 'all';
-            let isInitialLoad = true;
 
             // Key Maps
             const TRACKING_KEYS = { SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', DATE_REGISTERED: 'Date Registered', LINE: 'Line', STATION: 'Station' };
@@ -559,7 +551,6 @@
             const rastreoLineFilters = doc('rastreoLineFilters');
             const rastreoLineFiltersPlaceholder = doc('rastreoLineFiltersPlaceholder');
             const exportViewButton = doc('exportViewButton');
-            const exportPdfButton = doc('exportPdfButton');
             const exportStatusButton = doc('exportStatusButton');
             const lineCountsContainer = doc('lineCountsContainer');
             const placeholderText = doc('placeholderText');
@@ -596,8 +587,7 @@
             rastreoFilterInput.addEventListener('input', () => renderRastreoView(activeOrderKey));
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
             exportViewButton.addEventListener('click', handleReprintExport);
-            exportPdfButton.addEventListener('click', handlePdfExport);
-            exportStatusButton.addEventListener('click', () => { /* Logic for this button was removed as requested */ });
+            exportStatusButton.addEventListener('click', handleStatusReport);
             sapFileDropArea.addEventListener('click', () => sapFileInput.click());
             sapFileDropArea.addEventListener('dragover', (e) => { e.preventDefault(); sapFileDropArea.classList.add('dragover'); });
             sapFileDropArea.addEventListener('dragleave', () => sapFileDropArea.classList.remove('dragover'));
@@ -634,7 +624,7 @@
             // ===================================
             // === CORE APP CONTROL & UTILITIES ===
             // ===================================
-            function switchMainMode(mode, shouldRender = true) {
+            function switchMainMode(mode) {
                 mainMode = mode;
                 localStorage.setItem('mainMode', mode);
                 document.body.classList.toggle('mode-fwd', mode === 'fwd');
@@ -642,9 +632,7 @@
                 modeFwd.classList.toggle('active', mode === 'fwd');
                 modeSap.classList.toggle('active', mode === 'sap');
                 appTitle.textContent = mode === 'fwd' ? 'Centro de Rastreo de Órdenes' : 'Análisis de Órdenes SAP';
-                if (shouldRender) {
-                    render();
-                }
+                render();
             }
             
             function showModal(title, content, type = 'info', showCopyBtn = false) {
@@ -733,6 +721,7 @@
                         
                         Promise.all(updatePromises).then(() => {
                             showModal('Éxito', `${results.length} orden(es) cargada(s) y guardada(s).`, 'success');
+                            // The real-time listener will handle the UI update
                         });
                     })
                     .catch(err => {
@@ -924,6 +913,8 @@
                     deleteBtn.onclick = async () => {
                         if (confirm(`¿Estás seguro de que quieres eliminar la orden ${key}?`)) {
                             await deleteOrderFromFirebase(key);
+                            loadedOrders.delete(key);
+                            if (activeOrderKey === key) activeOrderKey = 'all';
                         }
                     };
                     item.appendChild(deleteBtn);
@@ -944,7 +935,7 @@
                     const hasOrders = loadedOrders.size > 0;
                     placeholderText.style.display = hasOrders ? 'none' : 'block';
                     exportViewButton.disabled = !hasOrders;
-                    exportPdfButton.disabled = !hasOrders;
+                    exportStatusButton.disabled = !hasOrders;
                     if (!hasOrders) {
                         doc('rastreoTable').innerHTML = '';
                         doc('empaqueTableContainer').innerHTML = `<table id="empaqueTable"></table>`;
@@ -1144,18 +1135,11 @@
                 }
 
                 const filterText = empaqueFilterInput.value.toLowerCase();
-                
-                const sortedEntries = Array.from(dataToShow.entries()).sort((a, b) => {
-                    const latestDateA = Math.max(...a[1].map(s => s[packedDateHeader] || 0));
-                    const latestDateB = Math.max(...b[1].map(s => s[packedDateHeader] || 0));
-                    return latestDateB - latestDateA;
-                });
-
                 let desktopHTML = `<thead><tr><th>BoxID</th><th>Cantidad</th><th>Último Empaque</th></tr></thead><tbody>`;
                 let mobileHTML = `<div class="mobile-packing-list">`;
                 let entriesFound = 0;
 
-                for (const [boxId, serials] of sortedEntries) {
+                for (const [boxId, serials] of dataToShow.entries()) {
                     if(!serials || serials.length === 0) continue;
                     
                     const serialsMatchFilter = serials.some(s => 
@@ -1163,7 +1147,7 @@
                         String(s[boxIdHeader]).toLowerCase().includes(filterText)
                     );
                     
-                    if (filterText && !serialsMatchFilter) continue;
+                    if (!serialsMatchFilter) continue;
                     
                     entriesFound++;
                     const latestDate = Math.max(...serials.map(s => s[packedDateHeader] || 0));
@@ -1255,42 +1239,39 @@
                     showModal('Error', 'Ocurrió un error al generar el archivo de reimpresión.', 'error');
                 }
             }
+            
+            function handleStatusReport() {
+                const incompleteOrders = Array.from(loadedOrders.entries())
+                    .filter(([key, order]) => (order.orderQty > order.packedQty))
+                    .map(([key, order]) => ({ key, ...order }));
 
-            function handlePdfExport() {
-                if (!currentVisibleData || currentVisibleData.length === 0) {
-                    showModal('Exportar PDF', 'No hay datos en la vista actual para exportar.', 'warning');
+                if (incompleteOrders.length === 0) {
+                    showModal('Reporte de Estatus', '✅ ¡Felicidades! Todas las órdenes han sido completadas.', 'success');
                     return;
                 }
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
 
-                const statusColors = {
-                    today: [52, 211, 153],
-                    delayed: [251, 191, 36],
-                    very_delayed: [249, 115, 22],
-                    scrap: [251, 113, 133],
-                };
+                let reportHTML = `<div class="status-report">`;
+                reportHTML += `<p><strong>Fecha del Reporte:</strong> ${new Date().toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'short' })}</p>`;
 
-                const headers = Object.keys(currentVisibleData[0]).filter(key => key !== 'status');
-                const body = currentVisibleData.map(row => headers.map(header => formatCell(row[header], header, header === TRACKING_KEYS.DATE_REGISTERED)));
+                incompleteOrders.forEach(order => {
+                    const data = order.rastreoData || [];
+                    const remaining = (order.orderQty || 0) - (order.packedQty || 0);
+                    const today = data.filter(r => r.status === 'today').length;
+                    const delayed = data.filter(r => r.status === 'delayed' || r.status === 'very_delayed').length;
+                    const scrap = data.filter(r => r.status === 'scrap').length;
 
-                doc.autoTable({
-                    head: [headers],
-                    body: body,
-                    willDrawCell: function (data) {
-                        const status = currentVisibleData[data.row.index]?.status;
-                        const color = statusColors[status];
-                        if (color) {
-                            doc.setFillColor(color[0], color[1], color[2]);
-                        }
-                    },
-                    styles: {
-                        fillColor: [30, 41, 59] 
-                    }
+                    reportHTML += `
+                        <h4>📦 Orden: ${order.key}</h4>
+                        <p><strong>📝 Catálogo:</strong> ${order.catalogNumber || 'N/A'}</p>
+                        <p><strong>📊 Progreso:</strong> ${order.packedQty || 0} / ${order.orderQty || 0} Unidades</p>
+                        <p><strong>📉 Restantes:</strong> ${remaining} Unidades</p>
+                        <p style="margin-top: 10px;"><strong>✅ En Movimiento (Hoy):</strong> ${today}</p>
+                        <p><strong>⚠️ Sin Movimiento (Retraso):</strong> ${delayed}</p>
+                        <p><strong>🗑️ En Scrap:</strong> ${scrap}</p>
+                    `;
                 });
-
-                const orderName = (activeOrderKey && activeOrderKey !== 'all') ? activeOrderKey : 'Multiples_Ordenes';
-                doc.save(`Reporte_Visual_${orderName}.pdf`);
+                reportHTML += `</div>`;
+                showModal(`Reporte de Órdenes Incompletas`, reportHTML, 'info', true);
             }
             
             // ========================
@@ -1305,7 +1286,24 @@
                     showModal('Error', 'No se pudieron guardar los datos de SAP en la nube.', 'error');
                 }
             }
-            
+
+            function setupSapListener() {
+                db.collection('sap_data').doc('current_data').onSnapshot(docRef => {
+                    if (docRef.exists) {
+                        const data = docRef.data();
+                        sapData = data.orders || [];
+                    } else {
+                        sapData = [];
+                    }
+                    syncFwdAndSapDates();
+                    updateOrderList();
+                    render();
+                }, err => {
+                    console.error("Error escuchando datos de SAP: ", err);
+                    showModal('Error de Conexión', 'No se pudo conectar a la base de datos de SAP en tiempo real.', 'error');
+                });
+            }
+
             async function handleSapFile(file) {
                 if (!file) return;
                 const reader = new FileReader();
@@ -1555,7 +1553,9 @@
                         ordersFromDB.set(doc.id, data);
                     });
                     loadedOrders = ordersFromDB;
-                    updateUI();
+                    syncFwdAndSapDates();
+                    updateOrderList();
+                    render();
                 }, err => {
                     console.error("Error escuchando datos de FWD: ", err);
                     showModal('Error de Conexión', 'No se pudo conectar a la base de datos de FWD en tiempo real.', 'error');
@@ -1570,25 +1570,18 @@
                     } else {
                         sapData = [];
                     }
-                    updateUI();
+                    syncFwdAndSapDates();
+                    updateOrderList();
+                    render();
                 }, err => {
                     console.error("Error escuchando datos de SAP: ", err);
                     showModal('Error de Conexión', 'No se pudo conectar a la base de datos de SAP en tiempo real.', 'error');
                 });
             }
-            
-            function updateUI() {
-                if (isInitialLoad) {
-                    mainMode = localStorage.getItem('mainMode') || 'fwd';
-                    switchMainMode(mainMode, false); 
-                    isInitialLoad = false;
-                }
-                syncFwdAndSapDates();
-                updateOrderList();
-                render();
-            }
 
             // === INITIALIZATION ===
+            mainMode = localStorage.getItem('mainMode') || 'fwd';
+            switchMainMode(mainMode);
             if (isMobile) setupMobileMode();
             setupFwdListener();
             setupSapListener();
