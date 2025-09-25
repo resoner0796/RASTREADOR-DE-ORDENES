@@ -675,30 +675,11 @@
             }
             function findHeader(headers, keyText) { return headers && headers.find(h => h && h.toLowerCase() === keyText.toLowerCase()); }
             
+            // ... (El resto de las funciones FWD se mantienen igual que en la versión anterior)
+
             // =========================
             // === FWD VIEW FUNCTIONS ===
             // =========================
-            async function loadOrdersFromFirebase() {
-                try {
-                    const snapshot = await db.collection('production_orders').get();
-                    const ordersFromDB = new Map();
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        if (data.orderDate && data.orderDate.toDate) { data.orderDate = data.orderDate.toDate(); }
-                        const empaqueDataMap = new Map();
-                        if (data.empaqueData && Array.isArray(data.empaqueData)) {
-                            data.empaqueData.forEach(item => { empaqueDataMap.set(item.boxId, item.serials); });
-                        }
-                        data.empaqueData = empaqueDataMap;
-                        ordersFromDB.set(doc.id, data);
-                    });
-                    loadedOrders = ordersFromDB;
-                } catch (e) {
-                    console.error("Error al cargar datos FWD desde Firebase: ", e);
-                    showModal('Error de Conexión', 'No se pudieron cargar los datos FWD desde la base de datos.', 'error');
-                }
-            }
-            
             async function saveOrderToFirebase(orderKey, orderData) {
                 try {
                     const empaqueDataForDB = Array.from(orderData.empaqueData.entries()).map(([boxId, serials]) => ({ boxId, serials }));
@@ -737,9 +718,6 @@
                         
                         Promise.all(updatePromises).then(() => {
                             showModal('Éxito', `${results.length} orden(es) cargada(s) y guardada(s).`, 'success');
-                            syncFwdAndSapDates();
-                            updateOrderList();
-                            setActiveOrder(isUpdate ? orderToUpdateKey : lastKey);
                         });
                     })
                     .catch(err => {
@@ -1295,17 +1273,21 @@
                 }
             }
 
-            async function loadSapDataFromFirebase() {
-                try {
-                    const docRef = await db.collection('sap_data').doc('current_data').get();
+            function setupSapListener() {
+                db.collection('sap_data').doc('current_data').onSnapshot(docRef => {
                     if (docRef.exists) {
                         const data = docRef.data();
                         sapData = data.orders || [];
+                    } else {
+                        sapData = [];
                     }
-                } catch (e) {
-                    console.error("Error al cargar datos SAP desde Firebase: ", e);
-                    showModal('Error', 'No se pudieron cargar los datos de SAP desde la nube.', 'error');
-                }
+                    syncFwdAndSapDates();
+                    updateOrderList();
+                    render();
+                }, err => {
+                    console.error("Error escuchando datos de SAP: ", err);
+                    showModal('Error de Conexión', 'No se pudo conectar a la base de datos de SAP en tiempo real.', 'error');
+                });
             }
 
             async function handleSapFile(file) {
@@ -1315,13 +1297,11 @@
                     try {
                         const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
                         const processed = processSapFile(workbook);
-                        sapData = processed;
-                        await saveSapDataToFirebase(sapData);
+                        // No se asigna a sapData aquí. El listener se encargará de eso cuando el guardado sea exitoso.
+                        await saveSapDataToFirebase(processed); 
                         sapDateFilter = 'default';
-                        syncFwdAndSapDates(); 
-                        updateOrderList();
-                        render();
-                        showModal('Éxito', 'Archivo SAP cargado, guardado y sincronizado.', 'success');
+                        // No es necesario llamar a render aquí, el listener lo hará.
+                        showModal('Éxito', 'Archivo SAP cargado y guardado correctamente. Los datos se actualizarán en todos los dispositivos.', 'success');
                     } catch (err) {
                         console.error("Error procesando archivo SAP:", err);
                         showModal('Error', `No se pudo procesar el archivo SAP. <br><small>${err.message}</small>`, 'error');
@@ -1496,9 +1476,7 @@
             
             function syncFwdAndSapDates() {
                 if (loadedOrders.size === 0 || sapData.length === 0) return;
-
                 const sapDateMap = new Map(sapData.map(order => [String(order.Orden), order.Finish]));
-                
                 loadedOrders.forEach((orderData, orderKey) => {
                     if (sapDateMap.has(orderKey)) {
                         const sapFinishDateSerial = sapDateMap.get(orderKey);
@@ -1547,22 +1525,35 @@
                 }
             });
 
-            async function initializeApp() {
-                mainMode = localStorage.getItem('mainMode') || 'fwd';
-                
-                await Promise.all([
-                    loadOrdersFromFirebase(),
-                    loadSapDataFromFirebase()
-                ]);
-
-                syncFwdAndSapDates();
-                updateOrderList();
-                switchMainMode(mainMode);
-                render();
-                if (isMobile) setupMobileMode();
+            function setupFwdListener() {
+                db.collection('production_orders').onSnapshot(snapshot => {
+                    const ordersFromDB = new Map();
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.orderDate && data.orderDate.toDate) { data.orderDate = data.orderDate.toDate(); }
+                        const empaqueDataMap = new Map();
+                        if (data.empaqueData && Array.isArray(data.empaqueData)) {
+                            data.empaqueData.forEach(item => { empaqueDataMap.set(item.boxId, item.serials); });
+                        }
+                        data.empaqueData = empaqueDataMap;
+                        ordersFromDB.set(doc.id, data);
+                    });
+                    loadedOrders = ordersFromDB;
+                    syncFwdAndSapDates();
+                    updateOrderList();
+                    render();
+                }, err => {
+                    console.error("Error escuchando datos de FWD: ", err);
+                    showModal('Error de Conexión', 'No se pudo conectar a la base de datos de FWD en tiempo real.', 'error');
+                });
             }
 
-            initializeApp();
+            // === INITIALIZATION ===
+            mainMode = localStorage.getItem('mainMode') || 'fwd';
+            switchMainMode(mainMode);
+            if (isMobile) setupMobileMode();
+            setupFwdListener();
+            setupSapListener();
         });
     </script>
 </body>
