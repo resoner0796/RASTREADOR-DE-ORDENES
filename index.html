@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Control de Producción v2.3</title>
+    <title>Centro de Control de Producción v2.4</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -246,6 +246,10 @@
         #modalBody .status-report h4 { font-size: 1.1rem; color: var(--primary-color); margin: 16px 0 8px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;}
         #modalBody .status-report p { margin: 4px 0; }
         #modalBody .status-report strong { color: var(--text-secondary); }
+        #modalBody input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); margin-top: 10px; box-sizing: border-box;}
+        #modalBody .area-list { list-style: none; padding: 0; margin-top: 16px; }
+        #modalBody .area-list li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color); }
+
 
         body.mode-fwd #sapView { display: none !important; }
         body.mode-sap #fwdView { display: none !important; }
@@ -285,6 +289,8 @@
             }
             .sidebar, .main-content, #rastreoView { display: contents !important; }
             .sidebar > h2 { display: none; }
+            #adminBtn { display: none; }
+            #areaSelectBtn { flex-grow: 1 !important; }
 
             .card-row { grid-template-columns: 1fr; }
             
@@ -295,9 +301,9 @@
             #uploadCard, #sap-uploadCard { order: 3; }
             #orderListCard, #sap-orderListCard { order: 4; }
             #mobile-controls-row { order: 5; }
-            #tableCard { order: 7; }
-            #empaqueView { order: 7; }
-            #sap-tableCard { order: 7; } /* SAP table order fix */
+            #tableCard { order: 6; }
+            #empaqueView { order: 6; }
+            #sap-tableCard { order: 7; }
             
             .global-dashboard-card { grid-template-columns: 1fr 1fr; }
             .summary-card { 
@@ -389,16 +395,22 @@
                 padding-bottom: 16px;
                 border-bottom: 1px solid var(--border-color);
             }
-            .desktop-filters-group, .desktop-actions-group {
+            .desktop-filters-group {
                 display: flex;
                 align-items: center;
-                gap: 16px;
                 flex-wrap: wrap;
+                gap: 16px;
+                flex-grow: 1;
+            }
+            .desktop-actions-group {
+                display: flex;
+                flex-shrink: 0;
             }
             .filter-group-inline {
                 display: flex;
                 align-items: center;
                 gap: 8px;
+                flex-shrink: 0;
             }
             .filter-label {
                 font-size: 0.8rem;
@@ -413,7 +425,8 @@
                 margin: 0;
             }
              #desktop-controls-container .btn {
-                padding: 5px 12px;
+                padding: 5px 10px;
+                font-size: 0.75rem;
              }
         }
         
@@ -576,7 +589,7 @@
                     <h2>Panel SAP</h2>
                     <div class="card" id="sap-uploadCard">
                         <h3>Panel de Control</h3>
-                         <div id="sapFileDropArea" class="file-drop-area">
+                         <div id="sapFileDropArea" class="file-drop-area disabled">
                             <p>Arrastra un archivo de SAP (.xlsx)</p>
                             <p><span>o haz clic para seleccionar</span></p>
                         </div>
@@ -750,12 +763,14 @@
             mobileControls.line.addEventListener('click', handleFilterClick);
             desktopControls.line.addEventListener('click', handleFilterClick);
 
-            sapFileDropArea.addEventListener('click', () => sapFileInput.click());
-            sapFileDropArea.addEventListener('dragover', (e) => { e.preventDefault(); sapFileDropArea.classList.add('dragover'); });
+            sapFileDropArea.addEventListener('click', () => { if (!sapFileDropArea.classList.contains('disabled')) sapFileInput.click(); });
+            sapFileDropArea.addEventListener('dragover', (e) => { if (!sapFileDropArea.classList.contains('disabled')) { e.preventDefault(); sapFileDropArea.classList.add('dragover'); }});
             sapFileDropArea.addEventListener('dragleave', () => sapFileDropArea.classList.remove('dragover'));
             sapFileDropArea.addEventListener('drop', (e) => {
-                e.preventDefault(); sapFileDropArea.classList.remove('dragover');
-                if (e.dataTransfer.files.length) handleSapFile(e.dataTransfer.files[0]);
+                if (!sapFileDropArea.classList.contains('disabled')) {
+                    e.preventDefault(); sapFileDropArea.classList.remove('dragover');
+                    if (e.dataTransfer.files.length) handleSapFile(e.dataTransfer.files[0]);
+                }
             });
             sapFileInput.addEventListener('change', (e) => { if (e.target.files.length) handleSapFile(e.target.files[0]); });
             sapResetFilterBtn.addEventListener('click', () => {
@@ -764,7 +779,13 @@
             });
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
-            adminBtn.addEventListener('click', showAdminLogin);
+            adminBtn.addEventListener('click', () => {
+                if (isAdminAuthenticated) {
+                    showAdminPanel();
+                } else {
+                    showAdminLogin();
+                }
+            });
             areaSelectBtn.addEventListener('click', showAreaSelector);
 
             // ===================================
@@ -1344,8 +1365,8 @@
 
                     let serialsDetailsHTML = `<div class="serial-details-container">`;
                     serialsDetailsHTML += `<div class="box-summary-info">
-                        <span class="detail-label">Último empaque por ${latestPacker}</span>
-                        <span class="detail-value">${formatDateTime(excelSerialToDate(latestDate))}</span>
+                        <span class="detail-label">Empacador: ${latestPacker}</span>
+                        <span class="detail-value">Fecha: ${formatDateTime(excelSerialToDate(latestDate))}</span>
                     </div>`;
 
                     serials.forEach(serial => {
@@ -1446,7 +1467,7 @@
                 cloneContainer.style.position = 'absolute';
                 cloneContainer.style.left = '-9999px';
                 cloneContainer.style.top = '0';
-                cloneContainer.style.width = '1200px'; 
+                cloneContainer.style.width = 'auto'; 
                 cloneContainer.style.background = getComputedStyle(document.documentElement).getPropertyValue('--bg-color').trim();
                 cloneContainer.style.padding = '1px';
 
@@ -1456,9 +1477,9 @@
                 const style = document.createElement('style');
                 style.innerHTML = `
                     :root { --surface-color: #1E293B; --border-color: #334155; --danger-color: #FB7185; --warning-color: #FBBF24; --orange-color: #F97316; --success-color: #34D399; --text-primary: #F8FAFC; --text-secondary: #94A3B8; }
-                    table { color: var(--text-primary); background-color: var(--surface-color); width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 14px; }
-                    th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
-                    thead { display: table-header-group !important; background-color: var(--surface-color); position: static !important; }
+                    table { color: var(--text-primary); background-color: var(--surface-color); border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 14px; table-layout: auto; width: auto; }
+                    th, td { padding: 10px 14px; text-align: center; border: 1px solid var(--border-color); white-space: nowrap; }
+                    thead { display: table-header-group !important; background-color: #1a2436; position: static !important; }
                     th { font-weight: 600; color: var(--text-secondary); font-size: 12px; }
                     tr { display: table-row !important; }
                     td { display: table-cell !important; background-color: inherit !important; }
@@ -1618,6 +1639,9 @@
             }
 
             function renderSapView() {
+                sapFileDropArea.classList.toggle('disabled', !isAdminAuthenticated);
+                sapFileDropArea.querySelector('p').textContent = isAdminAuthenticated ? 'Arrastra un archivo de SAP (.xlsx)' : 'Autentícate para cargar archivos';
+
                 sapPlaceholderText.style.display = sapData.length > 0 ? 'none' : 'block';
                 updateSapDashboard();
                 updateSapOrderList();
@@ -1758,7 +1782,7 @@
             function showAdminLogin() {
                 let content = `
                     <p>Introduce la contraseña de administrador para habilitar la carga y edición de archivos.</p>
-                    <input type="password" id="adminPasswordInput" placeholder="Contraseña" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); margin-top: 10px;">
+                    <input type="password" id="adminPasswordInput" placeholder="Contraseña">
                     <button id="adminLoginBtn" class="btn" style="margin-top: 16px;">Autenticar</button>
                 `;
                 showModal('Acceso de Administrador', content);
@@ -1774,27 +1798,88 @@
                     isAdminAuthenticated = true;
                     hideModal();
                     updateUIAfterAuth();
-                    showModal('Éxito', 'Acceso de administrador concedido.', 'success');
+                    showAdminPanel();
                 } else {
                     showModal('Error', 'Contraseña incorrecta. Inténtalo de nuevo.', 'error');
                 }
             }
             
             function updateUIAfterAuth() {
-                if (isAdminAuthenticated) {
-                    fileDropArea.classList.remove('disabled');
-                    fileDropArea.querySelector('p').textContent = 'Arrastra archivos (.xlsx) para cargar/actualizar';
-                } else {
-                    fileDropArea.classList.add('disabled');
-                    fileDropArea.querySelector('p').textContent = 'Autentícate para cargar archivos';
-                }
+                fileDropArea.classList.toggle('disabled', !isAdminAuthenticated);
+                fileDropArea.querySelector('p').textContent = isAdminAuthenticated ? 'Arrastra archivos (.xlsx) para cargar/actualizar' : 'Autentícate para cargar archivos';
+                
+                sapFileDropArea.classList.toggle('disabled', !isAdminAuthenticated);
+                sapFileDropArea.querySelector('p').textContent = isAdminAuthenticated ? 'Arrastra un archivo de SAP (.xlsx)' : 'Autentícate para cargar archivos';
+
                 updateOrderList();
             }
 
             async function showAreaSelector() {
-                // For now, this is a placeholder. In a real scenario, you'd fetch areas from DB.
-                showModal('Función en Desarrollo', 'La selección y creación de nuevas áreas estará disponible en futuras versiones.', 'info');
+                const areasSnapshot = await db.collection('areas').get();
+                let areas = [];
+                areasSnapshot.forEach(doc => areas.push({ id: doc.id, ...doc.data() }));
+
+                let content = '<h3>Selecciona un Área</h3><ul class="area-list">';
+                areas.forEach(area => {
+                    content += `<li><span>${area.name}</span> <button class="btn select-area-btn" data-area="${area.id}" style="width: auto; padding: 5px 10px;">Seleccionar</button></li>`;
+                });
+                content += '</ul>';
+                showModal('Selector de Área', content);
+
+                doc('modalBody').querySelectorAll('.select-area-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const newArea = e.target.dataset.area;
+                        if (newArea !== currentArea) {
+                            currentArea = newArea;
+                            localStorage.setItem('currentArea', currentArea);
+                            areaSelectBtn.textContent = `Área: ${currentArea}`;
+                            setupListenersForArea(currentArea);
+                        }
+                        hideModal();
+                    });
+                });
             }
+
+            async function showAdminPanel() {
+                const areasSnapshot = await db.collection('areas').get();
+                let areas = [];
+                areasSnapshot.forEach(doc => areas.push({ id: doc.id, ...doc.data() }));
+
+                let content = '<h3>Gestionar Áreas</h3><ul class="area-list">';
+                areas.forEach(area => {
+                    content += `<li><input type="text" class="area-name-input" data-id="${area.id}" value="${area.name}"> <button class="btn save-area-btn" data-id="${area.id}" style="width: auto; padding: 5px 10px;">Guardar</button></li>`;
+                });
+                content += `</ul>
+                    <h3 style="margin-top: 20px;">Crear Nueva Área</h3>
+                    <input type="text" id="newAreaInput" placeholder="Nombre de la nueva área">
+                    <button id="createAreaBtn" class="btn" style="margin-top: 10px;">Crear Área</button>`;
+
+                showModal('Panel de Administrador', content);
+
+                doc('createAreaBtn').addEventListener('click', async () => {
+                    const input = doc('newAreaInput');
+                    const newAreaName = input.value.trim().toUpperCase();
+                    if (newAreaName) {
+                        await db.collection('areas').doc(newAreaName).set({ name: newAreaName, createdAt: new Date() });
+                        input.value = '';
+                        showAdminPanel(); // Refresh panel
+                    }
+                });
+
+                doc('modalBody').querySelectorAll('.save-area-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const areaId = e.target.dataset.id;
+                        const newName = doc('modalBody').querySelector(`.area-name-input[data-id="${areaId}"]`).value.trim().toUpperCase();
+                        if (newName && newName !== areaId) {
+                            // This is complex: requires moving subcollections. For now, we only update the name field.
+                            await db.collection('areas').doc(areaId).update({ name: newName });
+                            showModal('Éxito', 'Nombre del área actualizado.', 'success');
+                            showAdminPanel(); // Refresh
+                        }
+                    });
+                });
+            }
+
 
             // ===================================
             // === INITIALIZATION & MIGRATION ===
@@ -1908,6 +1993,9 @@
 
             // === INITIALIZATION ===
             mainMode = localStorage.getItem('mainMode') || 'fwd';
+            currentArea = localStorage.getItem('currentArea') || 'MULTIPORT';
+            areaSelectBtn.textContent = `Área: ${currentArea}`;
+
             switchMainMode(mainMode);
             if (isMobile) setupMobileMode();
             
