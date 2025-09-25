@@ -53,7 +53,6 @@
             grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; 
             gap: 16px;
         }
-        /* SAP view uses a simplified layout */
         #sapView .main-container {
             grid-template-rows: auto 1fr;
             grid-template-areas: "sidebar global-header" "sidebar main";
@@ -219,6 +218,7 @@
             justify-content: space-between; align-items: center; text-align: left;
         }
         .date-header:hover { background-color: #334155; }
+        .date-header.active { background-color: #475569; color: var(--text-primary); }
         .date-header .status-indicator { font-weight: 400; font-size: 0.8rem; color: var(--success-color); }
         .date-header .collapse-icon { transition: transform 0.2s; }
         .date-group.expanded .date-header .collapse-icon { transform: rotate(90deg); }
@@ -466,7 +466,10 @@
                 </header>
                 <main class="main-content">
                      <div class="card" id="sap-tableCard">
-                        <h3>Detalle de Órdenes SAP</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <h3>Detalle de Órdenes SAP</h3>
+                            <button id="sapResetFilter" class="filter-btn" style="display: none;">Mostrar Hoy/Tarde</button>
+                        </div>
                         <div class="table-wrapper">
                             <table id="sapTable"></table>
                             <p id="sapPlaceholderText">Cargue un archivo para ver los datos de SAP.</p>
@@ -503,6 +506,7 @@
             // State variables
             let loadedOrders = new Map();
             let sapData = [];
+            let sapDateFilter = 'default'; // 'default' shows today/late, otherwise it's a date string
             let activeOrderKey = 'all';
             let currentMode = 'rastreo';
             let mainMode = 'fwd';
@@ -551,6 +555,7 @@
             const sapOrderList = doc('sapOrderList');
             const sapTotalOrdersStat = doc('sapTotalOrdersStat');
             const sapCompletedOrdersStat = doc('sapCompletedOrdersStat');
+            const sapResetFilterBtn = doc('sapResetFilter');
 
             // Main Mode Switcher
             const modeFwd = doc('modeFwd');
@@ -593,6 +598,10 @@
                 if (e.dataTransfer.files.length) handleSapFile(e.dataTransfer.files[0]);
             });
             sapFileInput.addEventListener('change', (e) => { if (e.target.files.length) handleSapFile(e.target.files[0]); });
+            sapResetFilterBtn.addEventListener('click', () => {
+                sapDateFilter = 'default';
+                renderSapView();
+            });
             
             // Shared Listeners
             modalClose.addEventListener('click', hideModal);
@@ -1290,6 +1299,7 @@
                     try {
                         const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
                         sapData = processSapFile(workbook);
+                        sapDateFilter = 'default';
                         renderSapView();
                         showModal('Éxito', 'Archivo SAP cargado y procesado correctamente.', 'success');
                     } catch (err) {
@@ -1306,59 +1316,55 @@
 
                 const getCellValue = (cellAddress) => (worksheet[cellAddress] ? worksheet[cellAddress].v : undefined);
                 
-                // Definir los nombres de cabecera esperados
-                const HEADERS = {
-                    ORDER: 'Orden',
-                    CATALOGO: 'Catalogo',
-                    STOCK1: 'Special Stock',
-                    STOCK2: 'Special Stock', // Se repite, lo manejaremos
-                    FINISH: 'Finish',
-                    TOTAL: 'Total',
-                    CONFIRMADO: 'Confirmado'
+                const SAP_FILE_HEADERS = {
+                    ORDER: 'Order', CATALOGO: 'Material', STOCK: 'Special Stock',
+                    FINISH: 'Sched. finish', TOTAL: 'Target qty', CONFIRMADO: 'Del. qty'
                 };
 
-                // Verificar que las cabeceras existan en las celdas especificadas
-                if (getCellValue('A1') !== HEADERS.ORDER) throw new Error("Cabecera 'Orden' no encontrada en la celda A1.");
-                if (getCellValue('D1') !== HEADERS.CATALOGO) throw new Error("Cabecera 'Catalogo' no encontrada en la celda D1.");
-                if (getCellValue('G1') !== HEADERS.FINISH) throw new Error("Cabecera 'Finish' no encontrada en la celda G1.");
-                if (getCellValue('I1') !== HEADERS.TOTAL) throw new Error("Cabecera 'Total' no encontrada en la celda I1.");
-                if (getCellValue('J1') !== HEADERS.CONFIRMADO) throw new Error("Cabecera 'Confirmado' no encontrada en la celda J1.");
+                if (getCellValue('A1') !== SAP_FILE_HEADERS.ORDER) throw new Error("Cabecera 'Order' no encontrada en la celda A1.");
+                if (getCellValue('D1') !== SAP_FILE_HEADERS.CATALOGO) throw new Error("Cabecera 'Material' no encontrada en la celda D1.");
+                if (getCellValue('G1') !== SAP_FILE_HEADERS.FINISH) throw new Error("Cabecera 'Sched. finish' no encontrada en la celda G1.");
+                if (getCellValue('I1') !== SAP_FILE_HEADERS.TOTAL) throw new Error("Cabecera 'Target qty' no encontrada en la celda I1.");
+                if (getCellValue('J1') !== SAP_FILE_HEADERS.CONFIRMADO) throw new Error("Cabecera 'Del. qty' no encontrada en la celda J1.");
 
                 const processedData = [];
                 const range = XLSX.utils.decode_range(worksheet['!ref']);
                 const reynosaTodayString = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Matamoros' });
+                const reynosaTodayDateString = new Date().toLocaleDateString('es-ES', { timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' });
 
                 for (let i = range.s.r + 1; i <= range.e.r; i++) {
-                    const orderId = getCellValue('A' + (i + 1));
+                    const rowNum = i + 1;
+                    const orderId = getCellValue('A' + rowNum);
                     if (!orderId) continue;
 
-                    const total = parseFloat(getCellValue('I' + (i + 1))) || 0;
-                    const confirmed = parseFloat(getCellValue('J' + (i + 1))) || 0;
+                    const total = parseFloat(getCellValue('I' + rowNum)) || 0;
+                    const confirmed = parseFloat(getCellValue('J' + rowNum)) || 0;
                     const faltante = total - confirmed;
                     
-                    const stock1 = getCellValue('B' + (i + 1)) || '';
-                    const stock2 = getCellValue('L' + (i + 1)) || '';
+                    const stock1 = getCellValue('B' + rowNum) || '';
+                    const stock2 = getCellValue('L' + rowNum) || '';
 
                     let status = 'incomplete';
-                    const finishDateSerial = getCellValue('G' + (i + 1));
+                    const finishDateSerial = getCellValue('G' + rowNum);
                     const finishDate = excelSerialToDate(finishDateSerial);
-                    const finishDateString = finishDate ? finishDate.toISOString().slice(0, 10) : '';
-
+                    const finishDateStringCA = finishDate ? finishDate.toISOString().slice(0, 10) : '';
+                    
                     if (faltante <= 0) {
                         status = 'complete';
-                    } else if (finishDateString && finishDateString < reynosaTodayString) {
+                    } else if (finishDateStringCA && finishDateStringCA < reynosaTodayString) {
                         status = 'late';
                     }
 
                     processedData.push({
                         'Orden': orderId,
-                        'Catalogo': getCellValue('D' + (i + 1)),
+                        'Catalogo': getCellValue('D' + rowNum),
                         'Special Stock': [stock1, stock2].filter(Boolean).join(' / '),
                         'Finish': finishDateSerial,
                         'Total orden': total,
                         'Total confirmado': confirmed,
                         'Faltante': faltante,
-                        'status': status
+                        'status': status,
+                        'isToday': finishDate && formatDate(finishDate) === reynosaTodayDateString
                     });
                 }
                 return processedData;
@@ -1369,6 +1375,7 @@
                 updateSapDashboard();
                 updateSapOrderList();
                 updateSapTable();
+                sapResetFilterBtn.style.display = (sapDateFilter !== 'default' && sapData.length > 0) ? 'inline-block' : 'none';
             }
 
             function updateSapDashboard() {
@@ -1377,15 +1384,7 @@
                     sapCompletedOrdersStat.textContent = '0';
                     return;
                 }
-                const todayString = new Date().toLocaleDateString('es-ES', { 
-                    timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' 
-                });
-
-                const ordersToday = sapData.filter(row => {
-                    const finishDate = excelSerialToDate(row['Finish']);
-                    return finishDate && formatDate(finishDate) === todayString;
-                }).length;
-
+                const ordersToday = sapData.filter(row => row.isToday).length;
                 const ordersCompleted = sapData.filter(row => row.status === 'complete').length;
 
                 sapTotalOrdersStat.textContent = ordersToday;
@@ -1421,7 +1420,7 @@
                     const orders = groupedByDate.get(dateString);
                     const isToday = dateString === todayString;
                     html += `<div class="date-group ${isToday ? 'expanded' : ''}">`;
-                    html += `<button class="date-header">
+                    html += `<button class="date-header" data-date="${dateString}">
                                 <span>📅 ${dateString}</span> 
                                 ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''}
                                 <span class="collapse-icon">►</span>
@@ -1438,6 +1437,10 @@
                 sapOrderList.querySelectorAll('.date-header').forEach(header => {
                     header.addEventListener('click', () => {
                         header.parentElement.classList.toggle('expanded');
+                        sapDateFilter = header.dataset.date;
+                        renderSapView();
+                        sapOrderList.querySelectorAll('.date-header').forEach(h => h.classList.remove('active'));
+                        header.classList.add('active');
                     });
                 });
             }
@@ -1449,11 +1452,23 @@
                     return;
                 }
 
+                let dataToDisplay = sapData;
+                if (sapDateFilter === 'default') {
+                    dataToDisplay = sapData.filter(row => row.status === 'late' || row.isToday);
+                } else if (sapDateFilter) {
+                    dataToDisplay = sapData.filter(row => formatDate(excelSerialToDate(row['Finish'])) === sapDateFilter);
+                }
+
+                if (dataToDisplay.length === 0) {
+                    table.innerHTML = `<thead><tr><th>No hay órdenes para la selección actual.</th></tr></thead>`;
+                    return;
+                }
+
                 const headers = ['Orden', 'Catalogo', 'Special Stock', 'Finish', 'Total orden', 'Total confirmado', 'Faltante'];
                 table.innerHTML = `
                     <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
                     <tbody>
-                        ${sapData.map(row => `
+                        ${dataToDisplay.map(row => `
                             <tr class="is-${row.status}-sap">
                                 <td data-label="Orden">${row['Orden']}</td>
                                 <td data-label="Catalogo">${row['Catalogo']}</td>
