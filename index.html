@@ -25,7 +25,7 @@
             --bg-gradient: linear-gradient(145deg, #1a1c20, #0a0a0a);
             --surface-color: rgba(30, 31, 34, 0.6);
             --surface-hover-color: rgba(55, 56, 61, 0.7);
-            --border-color: rgba(255, 255, 255, 0.1);
+            --border-color: rgba(255, 255, 255, 0.18);
             --primary-color: #E5E7EB; /* Light grey accent */
             --primary-text-color: #0A0A0A; /* Text on primary button */
             --danger-color: #FB7185; 
@@ -42,7 +42,7 @@
             --bg-gradient: linear-gradient(145deg, #f9fafb, #e5e7eb);
             --surface-color: rgba(255, 255, 255, 0.5);
             --surface-hover-color: rgba(243, 244, 246, 0.7);
-            --border-color: rgba(0, 0, 0, 0.08);
+            --border-color: rgba(0, 0, 0, 0.1);
             --primary-color: #1F2937; /* Dark grey accent */
             --primary-text-color: #FFFFFF; /* Text on primary button */
             --danger-color: #EF4444; 
@@ -93,11 +93,11 @@
         #sapView .main-container { grid-template-columns: 260px 1fr; grid-template-rows: auto 1fr; grid-template-areas: "sidebar global-header" "sidebar main"; }
         
         /* Barra Lateral */
-        .sidebar { grid-area: sidebar; background-color: transparent; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 184px; height: calc(100vh - 200px); align-self: start; }
+        .sidebar { grid-area: sidebar; background-color: transparent; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 192px; height: calc(100vh - 208px); align-self: start; }
         .sidebar > h2 { text-align: center; }
         .sidebar .card h3 { text-align: center; }
         #sapView .sidebar > h2 { text-align: center; }
-        #sapView .sidebar { height: calc(100vh - 200px); }
+        #sapView .sidebar { height: calc(100vh - 208px); }
         #orderListCard, #sap-orderListCard { display: flex; flex-direction: column; overflow: hidden; }
         #orderList, #sapOrderList { flex-grow: 1; overflow-y: auto; }
         
@@ -109,12 +109,14 @@
         /* Estilo Glass para Cards y Modales */
         .card, .modal-content {
             background-color: var(--surface-color);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.0) 100%);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
             border: 1px solid var(--border-color);
             border-radius: 16px;
             padding: 20px;
             transition: all 0.3s ease-in-out;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
         }
 
         .card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -266,7 +268,8 @@
             body { padding: 8px; }
             .main-container { display: flex; flex-direction: column; gap: 12px; }
             .sidebar { position: static; height: auto; }
-            .sidebar, .main-content, #rastreoView { display: contents !important; }
+            .sidebar, .main-content { display: contents !important; }
+            #sapView .sidebar { display: none; }
             .sidebar > h2 { display: none; }
             #adminBtn { display: none; }
             #areaSelectBtn { flex-grow: 1 !important; }
@@ -307,7 +310,8 @@
         }
         
         @media (min-width: 993px) {
-            .app-header, #mainModeSwitcher { width: calc(100% - 276px); margin-left: 276px; }
+            .app-header { text-align: center; }
+            #mainModeSwitcher { margin-left: auto; margin-right: auto; }
             #mobile-controls-row { display: none; }
             #desktop-controls-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
             .desktop-filters-group { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; flex-grow: 1; }
