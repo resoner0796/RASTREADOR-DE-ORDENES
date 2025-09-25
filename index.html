@@ -131,6 +131,7 @@
         .line-badge { background-color: #334155; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem; font-weight: 500; color: var(--text-dark); }
         .line-badge span { font-weight: 700; color: var(--text-secondary); }
 
+        /* === ESTILOS TABLA EMPAQUE (ESCRITORIO) === */
         .box-row { cursor: pointer; }
         .box-row:hover { background-color: #334155; }
         .box-row td:first-child::before {
@@ -267,7 +268,8 @@
                 text-align: left; margin-right: 1rem; color: var(--text-secondary);
             }
 
-            #empaqueTableContainer { display: none; }
+            /* === ESTILOS PARA VISTA MÓVIL DE EMPAQUE (<details>) === */
+            #empaqueTableContainer { display: none; } /* Ocultar tabla en móvil */
             .mobile-packing-list details {
                 background-color: var(--bg-color);
                 border: 1px solid var(--border-color);
@@ -277,9 +279,9 @@
             .mobile-packing-list summary {
                 padding: 1rem;
                 cursor: pointer;
-                list-style: none;
+                list-style: none; /* Ocultar flecha por defecto */
             }
-            .mobile-packing-list summary::-webkit-details-marker { display: none; }
+            .mobile-packing-list summary::-webkit-details-marker { display: none; } /* Ocultar flecha en Chrome/Safari */
 
             .summary-content {
                 display: grid;
@@ -302,7 +304,7 @@
             }
         }
         @media (min-width: 993px) {
-            #empaqueMobileContainer { display: none; }
+            #empaqueMobileContainer { display: none; } /* Ocultar vista móvil en escritorio */
         }
     </style>
 </head>
@@ -389,7 +391,7 @@
                         <h3>Acciones</h3>
                         <div class="card-content">
                              <div class="actions-container">
-                                 <button id="exportViewButton" class="btn" disabled>Exportar reimpresión</button>
+                                 <button id="exportViewButton" class="btn" disabled>Exportar Vista a Excel</button>
                                  <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
                              </div>
                         </div>
@@ -406,10 +408,14 @@
                 <div id="empaqueView">
                     <div class="card" style="height:100%;">
                         <input type="text" id="empaqueFilterInput" placeholder="Buscar por Serial o BoxID..." style="margin-bottom:16px">
+                        
                         <div id="empaqueTableContainer" class="table-wrapper">
                              <table id="empaqueTable"></table>
                         </div>
-                        <div id="empaqueMobileContainer"></div>
+                        
+                        <div id="empaqueMobileContainer">
+                            </div>
+
                     </div>
                 </div>
             </main>
@@ -514,7 +520,7 @@
 
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
             
-            exportViewButton.addEventListener('click', handleReprintExport);
+            exportViewButton.addEventListener('click', handleExportView);
             exportStatusButton.addEventListener('click', handleStatusReport);
 
             modalClose.addEventListener('click', hideModal);
@@ -524,7 +530,6 @@
                  modalOverlay.querySelector('.modal-content').className = `modal-content ${type}`;
                  modalTitle.textContent = title;
                  modalBody.innerHTML = content;
-                 copyReportBtn.textContent = 'Copiar al Portapapeles';
                  copyReportBtn.style.display = showCopyBtn ? 'block' : 'none';
                  if (showCopyBtn) {
                     copyReportBtn.onclick = () => {
@@ -646,10 +651,9 @@
                             const orderNumber = String(worksheet['B3']?.v || `Archivo_${file.name.slice(0,10)}`);
                             const keyToUse = isUpdate ? orderToUpdateKey : orderNumber;
                             const TRACKING_COLS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
-                            const PACKING_COLS_MAP = { AE: 'Serial Number', AF: 'Employee ID', AK: 'Finish Packed Date', AO: 'BoxID' };
+                            const PACKING_COLS = { SERIAL: 'AE', EMPLOYEE_ID: 'AF', PACKED_DATE: 'AK', BOX_ID: 'AO' };
                             const rastreoRawData = extractTableData(worksheet, TRACKING_COLS, 20);
-                            const packingRawData = extractTableData(worksheet, Object.keys(PACKING_COLS_MAP), 20);
-                            
+                            const packingRawData = extractTableData(worksheet, Object.values(PACKING_COLS), 20, true);
                             const orderData = {
                                 orderQty: parseInt(worksheet['O3']?.v || 0),
                                 packedQty: parseInt(worksheet['U3']?.v || 0),
@@ -669,39 +673,44 @@
                 });
             }
 
-            function extractTableData(worksheet, cols, startRow) {
-                const headers = {};
-                cols.forEach(col => {
-                    const cell = worksheet[col + startRow];
-                    if(cell && cell.v) headers[col] = cell.v.toString().trim();
-                });
-
-                if (Object.keys(headers).length === 0) return [];
-                
-                const jsonData = [];
-                const range = XLSX.utils.decode_range(worksheet['!ref']);
-                for (let rowNum = startRow + 1; rowNum <= range.e.r; ++rowNum) {
-                    const row = {};
-                    let hasData = false;
-                    for(const col in headers) {
-                        const headerName = headers[col];
-                        const cellAddress = col + rowNum;
-                        const cell = worksheet[cellAddress];
-                        if(cell && cell.v !== undefined) {
-                            row[headerName] = cell.v;
-                            hasData = true;
-                        } else {
-                            row[headerName] = '';
-                        }
-                    }
-                    if (hasData) jsonData.push(row);
-                }
-                return jsonData;
+            function extractTableData(worksheet, targetCols, startRow, isPacking = false) {
+                 const headers = {};
+                 const colsToUse = isPacking ? Object.keys(PACKING_KEYS) : targetCols;
+                 colsToUse.forEach(key => {
+                     const col = isPacking ? PACKING_KEYS[key] : key;
+                     const cell = worksheet[col + startRow];
+                     if(cell && cell.v) headers[col] = cell.v.toString().trim();
+                 });
+                 if (Object.keys(headers).length === 0) return [];
+                 const jsonData = [];
+                 const range = XLSX.utils.decode_range(worksheet['!ref']);
+                 for (let rowNum = startRow; rowNum <= range.e.r; ++rowNum) {
+                     const row = {};
+                     let hasData = false;
+                     colsToUse.forEach(key => {
+                         const col = isPacking ? PACKING_KEYS[key] : key;
+                         const headerName = headers[col];
+                         if (headerName) {
+                             const cellAddress = col + (rowNum + 1);
+                             const cell = worksheet[cellAddress];
+                             if(cell && cell.v !== undefined) {
+                                 row[headerName] = cell.v;
+                                 hasData = true;
+                             } else {
+                                 row[headerName] = '';
+                             }
+                         }
+                     });
+                     if (hasData) jsonData.push(row);
+                 }
+                 return jsonData;
             }
             
             function processRastreoData(data) {
                 if (!data || data.length === 0) return [];
-                const reynosaTodayString = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Matamoros' });
+                const reynosaTodayString = new Date().toLocaleDateString('en-CA', {
+                    timeZone: 'America/Matamoros'
+                });
                 const headers = Object.keys(data[0] || {});
                 const scrapHeader = findHeader(headers, TRACKING_KEYS.IS_SCRAP);
                 const dateHeader = findHeader(headers, TRACKING_KEYS.DATE_REGISTERED);
@@ -718,8 +727,11 @@
                             const decodedDate = XLSX.SSF.parse_date_code(dateSerial);
                             if (decodedDate) {
                                 const serialDateString = `${decodedDate.y}-${String(decodedDate.m).padStart(2, '0')}-${String(decodedDate.d).padStart(2, '0')}`;
-                                if (serialDateString === reynosaTodayString) status = 'today';
-                                else if (serialDateString < reynosaTodayString) status = 'delayed';
+                                if (serialDateString === reynosaTodayString) {
+                                    status = 'today';
+                                } else if (serialDateString < reynosaTodayString) {
+                                    status = 'delayed';
+                                }
                             }
                         }
                     }
@@ -729,15 +741,13 @@
 
             function groupEmpaqueData(data) {
                 if (!data || data.length === 0) return new Map();
-                const boxIdHeader = findHeader(Object.keys(data[0]), PACKING_KEYS.BOX_ID);
-                if (!boxIdHeader) return new Map();
-
+                const headers = Object.keys(data[0]);
+                const boxIdHeader = findHeader(headers, PACKING_KEYS.BOX_ID);
                 return data.reduce((acc, row) => {
                     const boxId = row[boxIdHeader];
-                    if (boxId && String(boxId).trim() !== '') {
-                        const groupKey = String(boxId).slice(-1);
-                        if (!acc.has(groupKey)) acc.set(groupKey, []);
-                        acc.get(groupKey).push(row);
+                    if (boxId) {
+                        if (!acc.has(boxId)) acc.set(boxId, []);
+                        acc.get(boxId).push(row);
                     }
                     return acc;
                 }, new Map());
@@ -984,13 +994,16 @@
                 ).join('');
             }
             
+            // =========================================================================
+            // === INICIO: RENDERIZADO DE EMPAQUE (ESCRITORIO Y MÓVIL) - RECONSTRUIDO ===
+            // =========================================================================
             function renderEmpaqueView(key) {
                 let dataToShow = new Map(); let headers = [];
                 if (key === 'all') {
                     loadedOrders.forEach(order => {
-                        if(order.empaqueData) order.empaqueData.forEach((serials, groupKey) => {
-                            if (!dataToShow.has(groupKey)) dataToShow.set(groupKey, []);
-                            if(serials && serials.length > 0) dataToShow.get(groupKey).push(...serials);
+                        if(order.empaqueData) order.empaqueData.forEach((serials, boxId) => {
+                            if (!dataToShow.has(boxId)) dataToShow.set(boxId, []);
+                            if(serials && serials.length > 0) dataToShow.get(boxId).push(...serials);
                         });
                     });
                     if (loadedOrders.size > 0) {
@@ -1004,10 +1017,11 @@
 
                 const desktopContainer = document.getElementById('empaqueTableContainer');
                 const mobileContainer = document.getElementById('empaqueMobileContainer');
-                const noDataMsg = `<p class="text-dark" style="padding: 20px; text-align: center;">No hay datos de empaque disponibles.</p>`;
+
                 if (!dataToShow || dataToShow.size === 0 || !headers || headers.length === 0) {
-                    desktopContainer.innerHTML = `<table id="empaqueTable"><thead><tr><th>No hay datos de empaque disponibles.</th></tr></thead></table>`;
-                    mobileContainer.innerHTML = noDataMsg;
+                    const noDataMsg = `<thead><tr><th>No hay datos de empaque disponibles.</th></tr></thead>`;
+                    desktopContainer.innerHTML = `<table id="empaqueTable">${noDataMsg}</table>`;
+                    mobileContainer.innerHTML = `<p class="text-dark">${noDataMsg}</p>`;
                     return;
                 }
 
@@ -1015,65 +1029,59 @@
                 const serialHeader = findHeader(headers, PACKING_KEYS.SERIAL);
                 const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
                 const employeeIdHeader = findHeader(headers, PACKING_KEYS.EMPLOYEE_ID);
-                
+
                 if (!boxIdHeader || !serialHeader || !packedDateHeader || !employeeIdHeader) {
-                    const errorMsg = `Error: Columnas de empaque no encontradas. Verifique el archivo de Excel.`;
-                    desktopContainer.innerHTML = `<table id="empaqueTable"><thead><tr><th style="color: var(--warning-color);">${errorMsg}</th></tr></thead></table>`;
-                    mobileContainer.innerHTML = `<p class="text-dark" style="color: var(--warning-color); padding: 20px; text-align: center;">${errorMsg}</p>`;
+                    const errorMsg = `<thead><tr><th style="color: var(--warning-color);">Error: Columnas de empaque no encontradas en el archivo. Verifique que existan 'BoxID', 'Serial Number', 'Finish Packed Date' y 'Employee ID'.</th></tr></thead>`;
+                    desktopContainer.innerHTML = `<table id="empaqueTable">${errorMsg}</table>`;
+                    mobileContainer.innerHTML = `<p class="text-dark" style="color: var(--warning-color);">${errorMsg}</p>`;
                     return;
                 }
 
                 const filterText = empaqueFilterInput.value.toLowerCase();
-                let desktopHTML = `<thead><tr><th>Grupo de Cajas</th><th>Cantidad de Seriales</th><th>Último Empaque</th></tr></thead><tbody>`;
+                let desktopHTML = `<thead><tr><th>${boxIdHeader}</th><th>Cantidad</th><th>Último Empaque</th></tr></thead><tbody>`;
                 let mobileHTML = `<div class="mobile-packing-list">`;
-                let entriesFound = 0;
 
-                for (const [groupKey, serials] of dataToShow.entries()) {
+                for (const [boxId, serials] of dataToShow.entries()) {
                     if(!serials || serials.length === 0) continue;
-                    
-                    const serialsMatchFilter = serials.some(s => 
-                        String(s[serialHeader]).toLowerCase().includes(filterText) || 
-                        String(s[boxIdHeader]).toLowerCase().includes(filterText)
-                    );
-                    const groupTitle = `Grupo de Cajas terminadas en '${groupKey}'`;
-                    const groupTitleMatchesFilter = groupTitle.toLowerCase().includes(filterText);
-
-                    if (!groupTitleMatchesFilter && !serialsMatchFilter) continue;
-                    
-                    entriesFound++;
                     const latestDate = Math.max(...serials.map(s => s[packedDateHeader] || 0));
+                    const serialsMatchFilter = serials.some(s => String(s[serialHeader]).toLowerCase().includes(filterText));
+                    if (!String(boxId).toLowerCase().includes(filterText) && !serialsMatchFilter) continue;
                     
                     let serialsDetailsHTML = '<div class="serial-details-container">';
                     serials.forEach(serial => {
                         serialsDetailsHTML += `
                             <div class="serial-detail-item">
                                 <div class="serial-info">
-                                    <span class="detail-label">BoxID: ${serial[boxIdHeader]}</span>
+                                    <span class="detail-label">Serial:</span>
                                     <span class="detail-value">${serial[serialHeader]}</span>
                                 </div>
                                 <div class="packing-info">
-                                    <span class="detail-label">Empacador: ${serial[employeeIdHeader] || 'N/A'}</span>
+                                    <span class="detail-label">Empacador:</span>
+                                    <span class="detail-value">${serial[employeeIdHeader] || 'N/A'}</span>
+                                    <span class="detail-label" style="margin-top: 5px;">Fecha:</span>
                                     <span class="detail-value">${formatDateTime(excelSerialToDate(serial[packedDateHeader]))}</span>
                                 </div>
                             </div>`;
                     });
                     serialsDetailsHTML += '</div>';
 
+                    // HTML para la tabla de escritorio
                     desktopHTML += `
-                        <tr class="box-row" data-boxid="${groupKey}">
-                            <td>${groupTitle}</td>
-                            <td>${serials.length}</td>
-                            <td>${formatDateTime(excelSerialToDate(latestDate))}</td>
+                        <tr class="box-row" data-boxid="${boxId}">
+                            <td data-label="Box ID">${boxId}</td>
+                            <td data-label="Cantidad">${serials.length}</td>
+                            <td data-label="Último Empaque">${formatDateTime(excelSerialToDate(latestDate))}</td>
                         </tr>
-                        <tr class="serial-row" data-parentbox="${groupKey}"><td colspan="3">${serialsDetailsHTML}</td></tr>`;
+                        <tr class="serial-row" data-parentbox="${boxId}"><td colspan="3">${serialsDetailsHTML}</td></tr>`;
                     
+                    // HTML para las tarjetas de móvil
                     mobileHTML += `
                         <details>
                             <summary>
                                 <div class="summary-content">
-                                    <div><span class="box-id-title">${groupTitle}</span></div>
+                                    <div><span class="box-id-title">${boxId}</span></div>
                                     <div class="box-details-summary">
-                                        <span class="detail-label">Seriales: ${serials.length}</span><br>
+                                        <span class="detail-label">Cantidad: ${serials.length}</span><br>
                                         <span class="detail-value">${formatDateTime(excelSerialToDate(latestDate))}</span>
                                     </div>
                                 </div>
@@ -1081,15 +1089,9 @@
                             ${serialsDetailsHTML}
                         </details>`;
                 }
-
-                if (entriesFound === 0) {
-                    desktopContainer.innerHTML = `<table id="empaqueTable"><thead><tr><th>No se encontraron resultados para "${filterText}".</th></tr></thead></table>`;
-                    mobileContainer.innerHTML = `<p class="text-dark" style="padding: 20px; text-align: center;">No se encontraron resultados.</p>`;
-                    return;
-                }
-
                 desktopHTML += `</tbody>`;
                 mobileHTML += `</div>`;
+
                 desktopContainer.innerHTML = `<table id="empaqueTable">${desktopHTML}</table>`;
                 mobileContainer.innerHTML = mobileHTML;
 
@@ -1098,37 +1100,36 @@
                 });
             }
 
-            function handleReprintExport() {
+            function handleExportView() {
                 if (!currentVisibleData || currentVisibleData.length === 0) {
-                    showModal('Exportar Reimpresión', 'No hay datos en la vista actual para exportar.', 'warning');
+                    showModal('Exportar Vista', 'No hay datos en la vista actual para exportar.', 'warning');
                     return;
                 }
                 try {
-                    const lineHeader = findHeader(Object.keys(currentVisibleData[0]), TRACKING_KEYS.LINE);
-                    const lineInfo = lineHeader ? `Línea: ${currentVisibleData[0][lineHeader]}` : 'Línea no especificada';
-
+                    // Limpiar y formatear los datos antes de exportar
                     const dataToExport = currentVisibleData.map(row => {
-                        const serial = row[TRACKING_KEYS.SERIAL] || '';
-                        return {
-                            [TRACKING_KEYS.SERIAL]: serial.startsWith('S#') ? serial.substring(2) : serial,
-                            [TRACKING_KEYS.STATION]: row[TRACKING_KEYS.STATION],
-                            'Status': row.status,
-                            [TRACKING_KEYS.DATE_REGISTERED]: formatDateTime(excelSerialToDate(row[TRACKING_KEYS.DATE_REGISTERED]))
-                        };
+                        const cleanRow = {};
+                        // Iterar sobre las llaves de TRACKING_KEYS para asegurar el orden y el formato
+                        Object.values(TRACKING_KEYS).forEach(header => {
+                            if (row.hasOwnProperty(header)) {
+                                if (header === TRACKING_KEYS.DATE_REGISTERED) {
+                                    cleanRow[header] = formatDateTime(excelSerialToDate(row[header]));
+                                } else {
+                                    cleanRow[header] = row[header];
+                                }
+                            }
+                        });
+                        return cleanRow;
                     });
 
-                    const worksheet = XLSX.utils.json_to_sheet(dataToExport, { skipHeader: true });
-                    XLSX.utils.sheet_add_aoa(worksheet, [[lineInfo]], { origin: 'A1' });
-                    XLSX.utils.sheet_add_aoa(worksheet, [['Product Serial Number', 'Station', 'Status', 'Date Registered']], { origin: 'A2' });
-                    
+                    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
                     const workbook = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(workbook, worksheet, 'Reimpresión');
-                    
+                    XLSX.utils.book_append_sheet(workbook, worksheet, 'Vista Actual');
                     const orderName = (activeOrderKey && activeOrderKey !== 'all') ? activeOrderKey : 'Multiples_Ordenes';
-                    XLSX.writeFile(workbook, `Reimpresion_${orderName}_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}.xlsx`);
+                    XLSX.writeFile(workbook, `Reporte_Vista_${orderName}_${new Date().toLocaleDateString('es-ES').replace(/\//g, '-')}.xlsx`);
                 } catch(e) {
-                    console.error("Error al exportar para reimpresión:", e);
-                    showModal('Error', 'Ocurrió un error al generar el archivo de reimpresión.', 'error');
+                    console.error("Error al exportar a Excel:", e);
+                    showModal('Error', 'Ocurrió un error al generar el archivo de Excel.', 'error');
                 }
             }
             
@@ -1138,12 +1139,12 @@
                     .map(([key, order]) => ({ key, ...order }));
 
                 if (incompleteOrders.length === 0) {
-                    showModal('Reporte de Estatus', '✅ ¡Felicidades! Todas las órdenes han sido completadas.', 'success');
+                    showModal('Reporte de Estatus', '¡Felicidades! Todas las órdenes han sido completadas.', 'success');
                     return;
                 }
 
                 let reportHTML = `<div class="status-report">`;
-                reportHTML += `<p><strong>Fecha del Reporte:</strong> ${new Date().toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'short' })}</p>`;
+                reportHTML += `<p><strong>Fecha del Reporte:</strong> ${new Date().toLocaleString('es-ES')}</p>`;
 
                 incompleteOrders.forEach(order => {
                     const data = order.rastreoData || [];
@@ -1157,7 +1158,8 @@
                         <p><strong>📝 Catálogo:</strong> ${order.catalogNumber || 'N/A'}</p>
                         <p><strong>📊 Progreso:</strong> ${order.packedQty || 0} / ${order.orderQty || 0} Unidades</p>
                         <p><strong>📉 Restantes:</strong> ${remaining} Unidades</p>
-                        <p style="margin-top: 10px;"><strong>✅ En Movimiento (Hoy):</strong> ${today}</p>
+                        <p>------------------</p>
+                        <p><strong>✅ En Movimiento (Hoy):</strong> ${today}</p>
                         <p><strong>⚠️ Sin Movimiento (Retraso):</strong> ${delayed}</p>
                         <p><strong>🗑️ En Scrap:</strong> ${scrap}</p>
                     `;
