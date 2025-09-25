@@ -89,8 +89,14 @@
         .app-header { text-align: center; margin-bottom: 16px; position: relative; }
         .app-branding { font-family: 'Tinos', 'Times New Roman', serif; font-weight: 400; font-size: 2.2rem; color: var(--text-primary); letter-spacing: 2px; margin: 0; }
         .app-title { font-size: 1.25rem; font-weight: 600; color: var(--text-secondary); margin: 4px 0 0 0; }
-        .main-container { width: 100%; display: grid; grid-template-columns: 260px 1fr; grid-template-rows: auto auto 1fr; grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; gap: 16px; }
-        #sapView .main-container { grid-template-rows: auto 1fr; grid-template-areas: "sidebar global-header" "sidebar main"; }
+        
+        #fwdView > .global-header, #sapView > .global-header {
+            max-width: 900px;
+            margin: 0 auto 16px auto;
+        }
+
+        .main-container { width: 100%; display: grid; grid-template-columns: 260px 1fr; grid-template-rows: auto 1fr; grid-template-areas: "sidebar header" "sidebar main"; gap: 16px; }
+        #sapView .main-container { grid-template-rows: 1fr; grid-template-areas: "sidebar main"; }
         
         /* Barra Lateral */
         .sidebar { grid-area: sidebar; background-color: transparent; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 16px; height: calc(100vh - 32px); align-self: start; }
@@ -333,6 +339,12 @@
         </div>
 
         <div id="fwdView">
+            <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
+                <div class="global-dashboard-card">
+                       <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
+                       <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
+                </div>
+            </header>
             <div class="main-container">
                 <aside class="sidebar animated-startup" style="animation-delay: 0.2s;">
                     <h2>Panel de Control</h2>
@@ -361,13 +373,6 @@
                         </div>
                     </div>
                 </aside>
-        
-                <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
-                    <div class="global-dashboard-card">
-                           <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
-                           <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
-                    </div>
-                </header>
         
                 <section class="header card animated-startup" style="animation-delay: 0.4s;">
                        <div class="mode-switcher">
@@ -472,6 +477,12 @@
         </div>
 
         <div id="sapView">
+            <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
+                 <div class="global-dashboard-card">
+                       <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
+                       <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
+                </div>
+            </header>
             <div class="main-container">
                 <aside class="sidebar animated-startup" style="animation-delay: 0.2s;">
                     <h2>Panel SAP</h2>
@@ -492,10 +503,10 @@
                 </aside>
                 <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
                      <div class="global-dashboard-card">
-                           <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
-                           <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
+                            <p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>
+                        </div>
                     </div>
-                </header>
+                </aside>
                 <main class="main-content animated-startup" style="animation-delay: 0.4s;">
                      <div class="card" id="sap-tableCard">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
@@ -1984,6 +1995,7 @@
             currentArea = localStorage.getItem('currentArea') || 'MULTIPORT';
             areaSelectBtn.textContent = `Área: ${currentArea}`;
             applyTheme(currentTheme);
+            document.body.classList.add('mode-rastreo');
 
             // Set initial view display property
             doc('fwdView').style.display = mainMode === 'fwd' ? 'block' : 'none';
