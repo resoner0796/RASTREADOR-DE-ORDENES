@@ -165,7 +165,7 @@
         
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
-        tbody tr.is-very_delayed { background-color: rgba(249, 115, 22, 0.1) !important; } /* Naranja */
+        tbody tr.is-very_delayed { background-color: rgba(249, 115, 22, 0.1) !important; }
         tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
         tbody tr.is-delayed td { color: var(--warning-color) !important; }
@@ -430,7 +430,6 @@
                                      <div class="actions-container">
                                          <button id="exportViewButton" class="btn" disabled>Exportar reimpresión</button>
                                          <button id="exportPdfButton" class="btn" disabled>Exportar PDF</button>
-                                         <button id="exportStatusButton" class="btn" disabled>Generar Reporte de Estatus</button>
                                      </div>
                                 </div>
                             </div>
@@ -528,7 +527,7 @@
             let activeOrderKey = 'all';
             let currentMode = 'rastreo';
             let mainMode = 'fwd';
-            let currentVisibleData = []; 
+            let currentVisibleData = [];
             let orderToUpdateKey = null;
             let rastreoStatusFilter = 'all';
             let rastreoLineFilter = 'all';
@@ -598,7 +597,7 @@
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
             exportViewButton.addEventListener('click', handleReprintExport);
             exportPdfButton.addEventListener('click', handlePdfExport);
-            exportStatusButton.addEventListener('click', handleStatusReport);
+            exportStatusButton.addEventListener('click', () => { /* Logic for this button was removed as requested */ });
             sapFileDropArea.addEventListener('click', () => sapFileInput.click());
             sapFileDropArea.addEventListener('dragover', (e) => { e.preventDefault(); sapFileDropArea.classList.add('dragover'); });
             sapFileDropArea.addEventListener('dragleave', () => sapFileDropArea.classList.remove('dragover'));
@@ -946,7 +945,6 @@
                     placeholderText.style.display = hasOrders ? 'none' : 'block';
                     exportViewButton.disabled = !hasOrders;
                     exportPdfButton.disabled = !hasOrders;
-                    exportStatusButton.disabled = !hasOrders;
                     if (!hasOrders) {
                         doc('rastreoTable').innerHTML = '';
                         doc('empaqueTableContainer').innerHTML = `<table id="empaqueTable"></table>`;
@@ -1580,13 +1578,13 @@
             }
             
             function updateUI() {
-                syncFwdAndSapDates();
-                updateOrderList();
                 if (isInitialLoad) {
                     mainMode = localStorage.getItem('mainMode') || 'fwd';
-                    switchMainMode(mainMode, false);
+                    switchMainMode(mainMode, false); 
                     isInitialLoad = false;
                 }
+                syncFwdAndSapDates();
+                updateOrderList();
                 render();
             }
 
