@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Control de Producción v2.2</title>
+    <title>Centro de Control de Producción v2.3</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -102,6 +102,14 @@
             border: 2px dashed var(--border-color); border-radius: 8px; padding: 24px 20px;
             text-align: center; cursor: pointer; transition: all 0.2s ease;
         }
+        .file-drop-area.disabled {
+            cursor: not-allowed;
+            background-color: rgba(0,0,0,0.2);
+            border-color: #475569;
+        }
+        .file-drop-area.disabled p, .file-drop-area.disabled span {
+            color: var(--text-dark);
+        }
         .file-drop-area.dragover { background-color: #334155; border-color: var(--primary-color); }
         .file-drop-area p { margin: 0; color: var(--text-dark); }
         .file-drop-area span { color: var(--primary-color); font-weight: 500; }
@@ -181,6 +189,7 @@
         .serial-row { display: none; }
         .box-row.expanded + .serial-row { display: table-row; }
         .serial-row td { background-color: var(--bg-color); padding: 12px 20px 12px 40px; border-color: #2a3a5e; }
+        .box-summary-info { padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); }
         
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
@@ -288,6 +297,7 @@
             #mobile-controls-row { order: 5; }
             #tableCard { order: 7; }
             #empaqueView { order: 7; }
+            #sap-tableCard { order: 7; } /* SAP table order fix */
             
             .global-dashboard-card { grid-template-columns: 1fr 1fr; }
             .summary-card { 
@@ -305,6 +315,9 @@
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+            }
+            .card.mobile-collapsible:not(.expanded) h3.mobile-trigger {
+                 border-bottom: 1px solid var(--border-color);
             }
             .card.mobile-collapsible h3.mobile-trigger::after {
                 content: '►'; display: inline-block; font-size: 0.7rem;
@@ -371,7 +384,7 @@
                 justify-content: space-between;
                 align-items: center;
                 flex-wrap: wrap;
-                gap: 20px;
+                gap: 16px;
                 margin-bottom: 16px;
                 padding-bottom: 16px;
                 border-bottom: 1px solid var(--border-color);
@@ -379,7 +392,7 @@
             .desktop-filters-group, .desktop-actions-group {
                 display: flex;
                 align-items: center;
-                gap: 20px;
+                gap: 16px;
                 flex-wrap: wrap;
             }
             .filter-group-inline {
@@ -388,16 +401,20 @@
                 gap: 8px;
             }
             .filter-label {
-                font-size: 0.9rem;
+                font-size: 0.8rem;
                 font-weight: 600;
                 color: var(--text-secondary);
                 white-space: nowrap;
             }
             #desktop-controls-container .btn, #desktop-controls-container .filter-btn {
                 width: auto;
-                padding: 6px 12px;
-                font-size: 0.85rem;
+                padding: 4px 10px;
+                font-size: 0.8rem;
+                margin: 0;
             }
+             #desktop-controls-container .btn {
+                padding: 5px 12px;
+             }
         }
         
         @media (min-width: 993px) {
@@ -424,7 +441,11 @@
                     <div class="card" id="uploadCard">
                         <h3>Panel de Control</h3>
                         <div class="card-content">
-                            <div id="fileDropArea" class="file-drop-area">
+                             <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                                <button id="areaSelectBtn" class="btn" style="flex: 1;">Área: MULTIPORT</button>
+                                <button id="adminBtn" class="btn" style="flex: 0 0 40px; padding: 0;">⚙️</button>
+                            </div>
+                            <div id="fileDropArea" class="file-drop-area disabled">
                                 <p>Arrastra archivos (.xlsx) para cargar/actualizar</p>
                                 <p><span>o haz clic para seleccionar</span></p>
                             </div>
@@ -490,36 +511,25 @@
                 <main class="main-content">
                     <div id="rastreoView">
                         <div class="card-row" id="mobile-controls-row">
-                            <div class="card" id="filtersCard">
-                                <h3>Filtros</h3>
+                            <div class="card mobile-collapsible" id="filtersCard">
+                                <h3 class="mobile-trigger">Filtros</h3>
                                 <div class="card-content">
                                     <div class="filter-container">
                                         <div>
                                             <h3>Filtrar por Estado</h3>
-                                            <div id="rastreoStatusFilters" class="filter-group">
-                                                <button class="filter-btn active" data-filter="all">Todos</button>
-                                                <button class="filter-btn" data-filter="today">En Movimiento</button>
-                                                <button class="filter-btn" data-filter="delayed">Sin Movimiento</button>
-                                                <button class="filter-btn" data-filter="scrap">Scrap</button>
-                                            </div>
+                                            <div id="rastreoStatusFilters" class="filter-group"></div>
                                         </div>
                                         <div>
                                             <h3>Filtrar por Línea</h3>
-                                            <div id="rastreoLineFilters" class="filter-group">
-                                                <p id="rastreoLineFiltersPlaceholder" class="text-dark" style="font-size: 0.9rem;">Cargue un archivo para ver los filtros.</p>
-                                            </div>
+                                            <div id="rastreoLineFilters" class="filter-group"></div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="card" id="actionsCard">
-                                <h3>Acciones</h3>
+                            <div class="card mobile-collapsible" id="actionsCard">
+                                <h3 class="mobile-trigger">Acciones</h3>
                                 <div class="card-content">
-                                     <div class="actions-container">
-                                          <button id="exportViewButton" class="btn" disabled>Exportar reimpresión</button>
-                                          <button id="exportPdfButton" class="btn" disabled>Exportar a PDF</button>
-                                          <button id="exportStatusButton" class="btn" disabled>Reporte de Estatus</button>
-                                     </div>
+                                     <div class="actions-container"></div>
                                 </div>
                             </div>
                         </div>
@@ -635,6 +645,11 @@
             let orderToUpdateKey = null;
             let rastreoStatusFilter = 'all';
             let rastreoLineFilter = 'all';
+            let isAdminAuthenticated = false;
+            let currentArea = 'MULTIPORT';
+            let fwdListener = null;
+            let sapListener = null;
+
 
             // Key Maps
             const TRACKING_KEYS = { SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', DATE_REGISTERED: 'Date Registered', LINE: 'Line', STATION: 'Station' };
@@ -658,12 +673,13 @@
             const modeRastreo = doc('modeRastreo');
             const modeEmpaque = doc('modeEmpaque');
             const rastreoFilterInput = doc('rastreoFilterInput');
+            const areaSelectBtn = doc('areaSelectBtn');
+            const adminBtn = doc('adminBtn');
             
             // Control Containers
             const mobileControls = {
                 status: doc('rastreoStatusFilters'),
                 line: doc('rastreoLineFilters'),
-                linePlaceholder: doc('rastreoLineFiltersPlaceholder'),
                 actions: doc('actionsCard').querySelector('.actions-container')
             };
             const desktopControls = {
@@ -692,12 +708,14 @@
             // === EVENT LISTENERS ===
             modeFwd.addEventListener('click', () => switchMainMode('fwd'));
             modeSap.addEventListener('click', () => switchMainMode('sap'));
-            fileDropArea.addEventListener('click', () => fileInput.click());
-            fileDropArea.addEventListener('dragover', (e) => { e.preventDefault(); fileDropArea.classList.add('dragover'); });
+            fileDropArea.addEventListener('click', () => { if(!fileDropArea.classList.contains('disabled')) fileInput.click(); });
+            fileDropArea.addEventListener('dragover', (e) => { if(!fileDropArea.classList.contains('disabled')) { e.preventDefault(); fileDropArea.classList.add('dragover'); }});
             fileDropArea.addEventListener('dragleave', () => fileDropArea.classList.remove('dragover'));
             fileDropArea.addEventListener('drop', (e) => {
-                e.preventDefault(); fileDropArea.classList.remove('dragover');
-                if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+                if(!fileDropArea.classList.contains('disabled')) {
+                    e.preventDefault(); fileDropArea.classList.remove('dragover');
+                    if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+                }
             });
             fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFiles(e.target.files); });
             updateFileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFiles(e.target.files, true); });
@@ -746,6 +764,8 @@
             });
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
+            adminBtn.addEventListener('click', showAdminLogin);
+            areaSelectBtn.addEventListener('click', showAreaSelector);
 
             // ===================================
             // === CORE APP CONTROL & UTILITIES ===
@@ -813,7 +833,7 @@
                 try {
                     const empaqueDataForDB = Array.from(orderData.empaqueData.entries()).map(([boxId, serials]) => ({ boxId, serials }));
                     const dataToSave = { ...orderData, empaqueData: empaqueDataForDB, lastUpdated: new Date() };
-                    await db.collection('production_orders').doc(orderKey).set(dataToSave, { merge: true });
+                    await db.collection('areas').doc(currentArea).collection('orders').doc(orderKey).set(dataToSave, { merge: true });
                 } catch (e) {
                     console.error("Error al guardar en Firebase: ", e);
                     showModal('Error al Guardar', `No se pudo guardar la orden ${orderKey}.`, 'error');
@@ -822,7 +842,7 @@
 
             async function deleteOrderFromFirebase(orderKey) {
                 try {
-                    await db.collection('production_orders').doc(orderKey).delete();
+                    await db.collection('areas').doc(currentArea).collection('orders').doc(orderKey).delete();
                 } catch (e) {
                      console.error("Error al eliminar en Firebase: ", e);
                     showModal('Error al Eliminar', `No se pudo eliminar la orden ${orderKey}.`, 'error');
@@ -1025,7 +1045,7 @@
                     btn.classList.add('is-complete');
                 }
                 item.appendChild(btn);
-                if (key !== 'all') {
+                if (key !== 'all' && isAdminAuthenticated) {
                     const updateBtn = document.createElement('button');
                     updateBtn.className = 'icon-btn'; updateBtn.title = 'Actualizar orden';
                     updateBtn.innerHTML = `✏️`;
@@ -1056,7 +1076,6 @@
 
             function render() {
                 if (mainMode === 'fwd') {
-                    const hasOrders = loadedOrders.size > 0;
                     renderControls();
                     renderSummary();
                     updateGlobalDashboard();
@@ -1143,23 +1162,23 @@
                 desktopControls.status.innerHTML = statusHTML;
 
                 const actionsHTML = `
-                    <button class="btn" id="exportViewButton" ${!hasOrders ? 'disabled' : ''}>Exportar reimpresión</button>
-                    <button class="btn" id="exportPdfButton" ${!hasOrders ? 'disabled' : ''}>Exportar a PDF</button>
-                    <button class="btn" id="exportStatusButton" ${!hasOrders ? 'disabled' : ''}>Reporte de Estatus</button>
+                    <button class="btn" id="exportViewButtonMobile" ${!hasOrders ? 'disabled' : ''}>Exportar reimpresión</button>
+                    <button class="btn" id="exportImageButtonMobile" ${!hasOrders ? 'disabled' : ''}>Exportar Captura</button>
+                    <button class="btn" id="exportStatusButtonMobile" ${!hasOrders ? 'disabled' : ''}>Reporte de Estatus</button>
                 `;
                  const desktopActionsHTML = `
                     <button class="btn" id="exportViewButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Exportar reimpresión</button>
-                    <button class="btn" id="exportPdfButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Exportar a PDF</button>
+                    <button class="btn" id="exportImageButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Exportar Captura</button>
                     <button class="btn" id="exportStatusButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Reporte de Estatus</button>
                 `;
                 mobileControls.actions.innerHTML = actionsHTML;
                 desktopControls.actions.innerHTML = desktopActionsHTML;
 
-                doc('exportViewButton').addEventListener('click', handleReprintExport);
+                doc('exportViewButtonMobile').addEventListener('click', handleReprintExport);
                 doc('exportViewButtonDesktop').addEventListener('click', handleReprintExport);
-                doc('exportPdfButton').addEventListener('click', handlePdfExport);
-                doc('exportPdfButtonDesktop').addEventListener('click', handlePdfExport);
-                doc('exportStatusButton').addEventListener('click', handleStatusReport);
+                doc('exportImageButtonMobile').addEventListener('click', handleImageExport);
+                doc('exportImageButtonDesktop').addEventListener('click', handleImageExport);
+                doc('exportStatusButtonMobile').addEventListener('click', handleStatusReport);
                 doc('exportStatusButtonDesktop').addEventListener('click', handleStatusReport);
             }
 
@@ -1317,19 +1336,24 @@
                     if (!serialsMatchFilter) continue;
                     
                     entriesFound++;
-                    const latestDate = Math.max(...serials.map(s => s[packedDateHeader] || 0));
-                    
-                    let serialsDetailsHTML = '<div class="serial-details-container">';
+                    const latestSerial = serials.reduce((latest, current) => {
+                        return (current[packedDateHeader] > latest[packedDateHeader]) ? current : latest;
+                    }, serials[0]);
+                    const latestDate = latestSerial[packedDateHeader];
+                    const latestPacker = latestSerial[employeeIdHeader];
+
+                    let serialsDetailsHTML = `<div class="serial-details-container">`;
+                    serialsDetailsHTML += `<div class="box-summary-info">
+                        <span class="detail-label">Último empaque por ${latestPacker}</span>
+                        <span class="detail-value">${formatDateTime(excelSerialToDate(latestDate))}</span>
+                    </div>`;
+
                     serials.forEach(serial => {
                         serialsDetailsHTML += `
                             <div class="serial-detail-item">
                                 <div class="serial-info">
                                     <span class="detail-label">Serial Number</span>
                                     <span class="detail-value">${serial[serialHeader]}</span>
-                                </div>
-                                <div class="packing-info">
-                                    <span class="detail-label">Empacador: ${serial[employeeIdHeader] || 'N/A'}</span>
-                                    <span class="detail-value">${formatDateTime(excelSerialToDate(serial[packedDateHeader]))}</span>
                                 </div>
                             </div>`;
                     });
@@ -1407,9 +1431,9 @@
                 }
             }
             
-            async function handlePdfExport() {
+            async function handleImageExport(event) {
                  if (!currentVisibleData || currentVisibleData.length === 0) {
-                    showModal('Exportar PDF', 'No hay datos en la vista actual para exportar.', 'warning');
+                    showModal('Exportar Captura', 'No hay datos en la vista actual para exportar.', 'warning');
                     return;
                 }
 
@@ -1434,7 +1458,7 @@
                     :root { --surface-color: #1E293B; --border-color: #334155; --danger-color: #FB7185; --warning-color: #FBBF24; --orange-color: #F97316; --success-color: #34D399; --text-primary: #F8FAFC; --text-secondary: #94A3B8; }
                     table { color: var(--text-primary); background-color: var(--surface-color); width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 14px; }
                     th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
-                    thead { display: table-header-group !important; background-color: var(--surface-color); }
+                    thead { display: table-header-group !important; background-color: var(--surface-color); position: static !important; }
                     th { font-weight: 600; color: var(--text-secondary); font-size: 12px; }
                     tr { display: table-row !important; }
                     td { display: table-cell !important; background-color: inherit !important; }
@@ -1459,29 +1483,22 @@
                     const canvas = await html2canvas(clonedTable, {
                         scale: 2,
                         useCORS: true,
-                        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--surface-color').trim()
+                        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--surface-color').trim(),
+                        scrollY: -window.scrollY
                     });
 
-                    const { jsPDF } = window.jspdf;
-                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                    const canvasWidth = canvas.width;
-                    const canvasHeight = canvas.height;
-                    
-                    const pdf = new jsPDF({
-                        orientation: canvasWidth > canvasHeight ? 'landscape' : 'portrait',
-                        unit: 'px',
-                        format: [canvasWidth, canvasHeight]
-                    });
-                    
-                    pdf.addImage(imgData, 'JPEG', 0, 0, canvasWidth, canvasHeight);
-                    
+                    const a = document.createElement('a');
+                    a.href = canvas.toDataURL('image/jpeg', 0.95);
                     const orderName = (activeOrderKey && activeOrderKey !== 'all') ? activeOrderKey : 'Multiples_Ordenes';
                     const dateStamp = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
-                    pdf.save(`Reporte_Rastreo_${orderName}_${dateStamp}.pdf`);
+                    a.download = `Captura_Rastreo_${orderName}_${dateStamp}.jpg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
 
                 } catch (e) {
-                    console.error("Error al generar el PDF:", e);
-                    showModal('Error', 'Ocurrió un error al generar el archivo PDF.', 'error');
+                    console.error("Error al generar la imagen:", e);
+                    showModal('Error', 'Ocurrió un error al generar el archivo de imagen.', 'error');
                 } finally {
                     document.body.removeChild(cloneContainer);
                     button.textContent = originalButtonText;
@@ -1529,28 +1546,11 @@
             async function saveSapDataToFirebase(data) {
                 try {
                     const dataToSave = { orders: data, lastUpdated: new Date() };
-                    await db.collection('sap_data').doc('current_data').set(dataToSave);
+                    await db.collection('areas').doc(currentArea).collection('sap_data').doc('current_data').set(dataToSave);
                 } catch (e) {
                     console.error("Error al guardar datos SAP en Firebase: ", e);
                     showModal('Error', 'No se pudieron guardar los datos de SAP en la nube.', 'error');
                 }
-            }
-
-            function setupSapListener() {
-                db.collection('sap_data').doc('current_data').onSnapshot(docRef => {
-                    if (docRef.exists) {
-                        const data = docRef.data();
-                        sapData = data.orders || [];
-                    } else {
-                        sapData = [];
-                    }
-                    syncFwdAndSapDates();
-                    updateOrderList();
-                    render();
-                }, err => {
-                    console.error("Error escuchando datos de SAP: ", err);
-                    showModal('Error de Conexión', 'No se pudo conectar a la base de datos de SAP en tiempo real.', 'error');
-                });
             }
 
             async function handleSapFile(file) {
@@ -1751,6 +1751,96 @@
                 });
             }
 
+            // ===================================
+            // === AUTH & AREA FUNCTIONS ===
+            // ===================================
+
+            function showAdminLogin() {
+                let content = `
+                    <p>Introduce la contraseña de administrador para habilitar la carga y edición de archivos.</p>
+                    <input type="password" id="adminPasswordInput" placeholder="Contraseña" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); margin-top: 10px;">
+                    <button id="adminLoginBtn" class="btn" style="margin-top: 16px;">Autenticar</button>
+                `;
+                showModal('Acceso de Administrador', content);
+                doc('adminLoginBtn').addEventListener('click', checkAdminPassword);
+                doc('adminPasswordInput').addEventListener('keyup', (e) => {
+                    if (e.key === 'Enter') checkAdminPassword();
+                });
+            }
+
+            function checkAdminPassword() {
+                const input = doc('adminPasswordInput');
+                if (input.value === 'CORNING25') {
+                    isAdminAuthenticated = true;
+                    hideModal();
+                    updateUIAfterAuth();
+                    showModal('Éxito', 'Acceso de administrador concedido.', 'success');
+                } else {
+                    showModal('Error', 'Contraseña incorrecta. Inténtalo de nuevo.', 'error');
+                }
+            }
+            
+            function updateUIAfterAuth() {
+                if (isAdminAuthenticated) {
+                    fileDropArea.classList.remove('disabled');
+                    fileDropArea.querySelector('p').textContent = 'Arrastra archivos (.xlsx) para cargar/actualizar';
+                } else {
+                    fileDropArea.classList.add('disabled');
+                    fileDropArea.querySelector('p').textContent = 'Autentícate para cargar archivos';
+                }
+                updateOrderList();
+            }
+
+            async function showAreaSelector() {
+                // For now, this is a placeholder. In a real scenario, you'd fetch areas from DB.
+                showModal('Función en Desarrollo', 'La selección y creación de nuevas áreas estará disponible en futuras versiones.', 'info');
+            }
+
+            // ===================================
+            // === INITIALIZATION & MIGRATION ===
+            // ===================================
+
+            function setupListenersForArea(area) {
+                if (fwdListener) fwdListener(); 
+                if (sapListener) sapListener(); 
+
+                fwdListener = db.collection('areas').doc(area).collection('orders').onSnapshot(snapshot => {
+                    const ordersFromDB = new Map();
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.orderDate && data.orderDate.toDate) { data.orderDate = data.orderDate.toDate(); }
+                        const empaqueDataMap = new Map();
+                        if (data.empaqueData && Array.isArray(data.empaqueData)) {
+                            data.empaqueData.forEach(item => { empaqueDataMap.set(item.boxId, item.serials); });
+                        }
+                        data.empaqueData = empaqueDataMap;
+                        ordersFromDB.set(doc.id, data);
+                    });
+                    loadedOrders = ordersFromDB;
+                    syncFwdAndSapDates();
+                    updateOrderList();
+                    render();
+                }, err => {
+                    console.error("Error escuchando datos de FWD: ", err);
+                    showModal('Error de Conexión', 'No se pudo conectar a la base de datos de FWD en tiempo real.', 'error');
+                });
+
+                sapListener = db.collection('areas').doc(area).collection('sap_data').doc('current_data').onSnapshot(docRef => {
+                    if (docRef.exists) {
+                        const data = docRef.data();
+                        sapData = data.orders || [];
+                    } else {
+                        sapData = [];
+                    }
+                    syncFwdAndSapDates();
+                    updateOrderList();
+                    render();
+                }, err => {
+                    console.error("Error escuchando datos de SAP: ", err);
+                    showModal('Error de Conexión', 'No se pudo conectar a la base de datos de SAP en tiempo real.', 'error');
+                });
+            }
+
             let isMobile = window.innerWidth <= 992;
             const mobileCollapsibleCardIds = ['uploadCard', 'orderListCard', 'filtersCard', 'actionsCard', 'sap-uploadCard', 'sap-orderListCard'];
             function setupMobileMode() {
@@ -1790,52 +1880,44 @@
                 }
             });
 
-            function setupFwdListener() {
-                db.collection('production_orders').onSnapshot(snapshot => {
-                    const ordersFromDB = new Map();
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        if (data.orderDate && data.orderDate.toDate) { data.orderDate = data.orderDate.toDate(); }
-                        const empaqueDataMap = new Map();
-                        if (data.empaqueData && Array.isArray(data.empaqueData)) {
-                            data.empaqueData.forEach(item => { empaqueDataMap.set(item.boxId, item.serials); });
-                        }
-                        data.empaqueData = empaqueDataMap;
-                        ordersFromDB.set(doc.id, data);
+            async function migrateOldData() {
+                const oldOrders = await db.collection('production_orders').get();
+                if (!oldOrders.empty) {
+                    const batch = db.batch();
+                    const areaRef = db.collection('areas').doc('MULTIPORT');
+                    batch.set(areaRef, { name: 'MULTIPORT', createdAt: new Date() });
+
+                    oldOrders.forEach(doc => {
+                        const newDocRef = areaRef.collection('orders').doc(doc.id);
+                        batch.set(newDocRef, doc.data());
+                        batch.delete(doc.ref);
                     });
-                    loadedOrders = ordersFromDB;
-                    syncFwdAndSapDates();
-                    updateOrderList();
-                    render();
-                }, err => {
-                    console.error("Error escuchando datos de FWD: ", err);
-                    showModal('Error de Conexión', 'No se pudo conectar a la base de datos de FWD en tiempo real.', 'error');
-                });
+                    
+                    const oldSap = await db.collection('sap_data').doc('current_data').get();
+                    if(oldSap.exists){
+                         const newSapRef = areaRef.collection('sap_data').doc('current_data');
+                         batch.set(newSapRef, oldSap.data());
+                         batch.delete(oldSap.ref);
+                    }
+
+                    await batch.commit();
+                    console.log("Migración completada.");
+                }
             }
 
-            function setupSapListener() {
-                db.collection('sap_data').doc('current_data').onSnapshot(docRef => {
-                    if (docRef.exists) {
-                        const data = docRef.data();
-                        sapData = data.orders || [];
-                    } else {
-                        sapData = [];
-                    }
-                    syncFwdAndSapDates();
-                    updateOrderList();
-                    render();
-                }, err => {
-                    console.error("Error escuchando datos de SAP: ", err);
-                    showModal('Error de Conexión', 'No se pudo conectar a la base de datos de SAP en tiempo real.', 'error');
-                });
-            }
 
             // === INITIALIZATION ===
             mainMode = localStorage.getItem('mainMode') || 'fwd';
             switchMainMode(mainMode);
             if (isMobile) setupMobileMode();
-            setupFwdListener();
-            setupSapListener();
+            
+            migrateOldData().then(() => {
+                setupListenersForArea(currentArea);
+            }).catch(err => {
+                console.error("Error en la migración, cargando datos normalmente.", err);
+                setupListenersForArea(currentArea);
+            });
+            updateUIAfterAuth();
         });
     </script>
 </body>
