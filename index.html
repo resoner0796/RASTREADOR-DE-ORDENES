@@ -90,7 +90,7 @@
         .app-branding { font-family: 'Tinos', 'Times New Roman', serif; font-weight: 400; font-size: 2.2rem; color: var(--text-primary); letter-spacing: 2px; margin: 0; }
         .app-title { font-size: 1.25rem; font-weight: 600; color: var(--text-secondary); margin: 4px 0 0 0; }
         .main-container { width: 100%; display: grid; grid-template-columns: 260px 1fr; grid-template-rows: auto auto 1fr; grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; gap: 16px; }
-        #sapView .main-container { grid-template-rows: auto 1fr; grid-template-areas: "sidebar main"; }
+        #sapView .main-container { grid-template-columns: 260px 1fr; grid-template-rows: auto 1fr; grid-template-areas: "sidebar global-header" "sidebar main"; }
         
         /* Barra Lateral */
         .sidebar { grid-area: sidebar; background-color: transparent; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 16px; height: calc(100vh - 32px); align-self: start; }
@@ -149,7 +149,7 @@
 
         /* Lista de Órdenes */
         .order-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .order-item .order-btn { flex-grow: 1; text-align: left; padding: 10px; }
+        .order-item .order-btn { flex-grow: 1; text-align: center; padding: 10px; white-space: nowrap; }
         .order-item .order-btn.active { background-color: var(--primary-color); color: var(--primary-text-color); }
         .order-item .order-btn.is-complete {
             background-color: rgba(52, 211, 153, 0.1);
@@ -181,6 +181,7 @@
         .mode-switcher button { padding: 8px; border: none; background-color: transparent; color: var(--text-secondary); font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
         .mode-switcher button.active { background-color: var(--surface-color); color: var(--text-primary); box-shadow: 0 2px 10px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
         .light-theme .mode-switcher button.active { color: var(--primary-color); }
+        .header > .mode-switcher { margin-bottom: 20px; }
         
         /* Stats */
         .summary-card, .global-dashboard-card { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; text-align: center; }
@@ -307,7 +308,7 @@
         }
         
         @media (min-width: 993px) {
-            .app-header, #mainModeSwitcher { width: calc(100% - 276px); margin-left: 276px; }
+            .app-header { width: calc(100% - 276px); margin-left: 276px; }
             #mobile-controls-row { display: none; }
             #desktop-controls-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
             .desktop-filters-group { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; flex-grow: 1; }
@@ -333,25 +334,25 @@
         </div>
 
         <div id="fwdView">
-            <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
-                <div class="global-dashboard-card">
-                       <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
-                       <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
-                </div>
-            </header>
             <div class="main-container">
+                <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
+                    <div class="global-dashboard-card">
+                            <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
+                            <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
+                    </div>
+                </header>
                 <aside class="sidebar animated-startup" style="animation-delay: 0.2s;">
                     <h2>Panel de Control</h2>
                     <div class="card" id="uploadCard">
                         <h3>Panel de Control</h3>
                         <div class="card-content">
                              <div style="display: flex; gap: 10px; margin-bottom: 16px;">
-                                <button id="areaSelectBtn" class="btn" style="flex: 1; align-self: stretch;">Área: MULTIPORT</button>
-                                <div style="display: flex; flex-direction: column; gap: 8px;">
-                                    <button id="adminBtn" class="btn" style="padding: 6px 12px; line-height: 1;">⚙️</button>
-                                    <button id="themeToggleBtn" class="btn" style="padding: 6px 12px; font-size: 1.2rem; line-height: 1;">☀️</button>
-                                </div>
-                            </div>
+                                 <button id="areaSelectBtn" class="btn" style="flex: 1; align-self: stretch;">Área: MULTIPORT</button>
+                                 <div style="display: flex; flex-direction: column; gap: 8px;">
+                                     <button id="adminBtn" class="btn" style="padding: 6px 12px; line-height: 1;">⚙️</button>
+                                     <button id="themeToggleBtn" class="btn" style="padding: 6px 12px; font-size: 1.2rem; line-height: 1;">☀️</button>
+                                 </div>
+                             </div>
                             <div id="fileDropArea" class="file-drop-area disabled">
                                 <p>Arrastra archivos (.xlsx) para cargar/actualizar</p>
                                 <p><span>o haz clic para seleccionar</span></p>
@@ -369,7 +370,7 @@
                 </aside>
         
                 <section class="header card animated-startup" style="animation-delay: 0.4s;">
-                       <div class="mode-switcher">
+                        <div class="mode-switcher">
                             <button id="modeRastreo" class="active">Rastreo</button>
                             <button id="modeEmpaque">Empaque</button>
                         </div>
@@ -429,7 +430,7 @@
                             <div class="card mobile-collapsible" id="actionsCard">
                                 <h3 class="mobile-trigger">Acciones</h3>
                                 <div class="card-content">
-                                     <div class="actions-container"></div>
+                                    <div class="actions-container"></div>
                                 </div>
                             </div>
                         </div>
@@ -452,8 +453,8 @@
                             <input type="text" id="rastreoFilterInput" placeholder="Buscar en la tabla por serial, status, etc..." style="margin-bottom: 16px;">
                             <div id="lineCountsContainer"></div>
                             <div class="table-wrapper">
-                                 <table id="rastreoTable"></table>
-                                 <p id="placeholderText">Cargando datos...</p>
+                                <table id="rastreoTable"></table>
+                                <p id="placeholderText">Cargando datos...</p>
                             </div>
                         </div>
                     </div>
@@ -461,7 +462,7 @@
                         <div class="card" style="height:100%;">
                             <input type="text" id="empaqueFilterInput" placeholder="Buscar por Serial o BoxID..." style="margin-bottom:16px">
                             <div id="empaqueTableContainer" class="table-wrapper">
-                                 <table id="empaqueTable"></table>
+                                <table id="empaqueTable"></table>
                             </div>
                             <div id="empaqueMobileContainer"></div>
                         </div>
@@ -477,9 +478,9 @@
                     <div class="card" id="sap-uploadCard">
                         <h3>Panel de Control</h3>
                          <div id="sapFileDropArea" class="file-drop-area disabled">
-                            <p>Arrastra un archivo de SAP (.xlsx)</p>
-                            <p><span>o haz clic para seleccionar</span></p>
-                        </div>
+                             <p>Arrastra un archivo de SAP (.xlsx)</p>
+                             <p><span>o haz clic para seleccionar</span></p>
+                         </div>
                         <input type="file" id="sapFileInput" accept=".xlsx, .xls" style="display: none;">
                     </div>
                     <div class="card" style="flex-grow: 1;" id="sap-orderListCard">
@@ -491,21 +492,21 @@
                 </aside>
                 <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
                      <div class="global-dashboard-card">
-                           <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
-                           <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
-                    </div>
+                            <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
+                            <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
+                     </div>
                 </header>
                 <main class="main-content animated-startup" style="animation-delay: 0.4s;">
                      <div class="card" id="sap-tableCard">
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
-                            <h3>Detalle de Órdenes SAP</h3>
-                            <button id="sapResetFilter" class="filter-btn" style="display: none;">Mostrar Hoy/Tarde</button>
-                        </div>
-                        <div class="table-wrapper">
-                            <table id="sapTable"></table>
-                            <p id="sapPlaceholderText">Cargue un archivo para ver los datos de SAP.</p>
-                        </div>
-                    </div>
+                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
+                             <h3>Detalle de Órdenes SAP</h3>
+                             <button id="sapResetFilter" class="filter-btn" style="display: none;">Mostrar Hoy/Tarde</button>
+                         </div>
+                         <div class="table-wrapper">
+                             <table id="sapTable"></table>
+                             <p id="sapPlaceholderText">Cargue un archivo para ver los datos de SAP.</p>
+                         </div>
+                     </div>
                 </main>
             </div>
         </div>
@@ -631,10 +632,10 @@
                     const filterType = group.id.includes('Status') ? 'status' : 'line';
                     
                     document.querySelectorAll(`#${group.id}`).forEach(g => {
-                         const active = g.querySelector('.active');
-                         if(active) active.classList.remove('active');
-                         const btnToActivate = g.querySelector(`[data-filter="${e.target.dataset.filter}"]`);
-                         if(btnToActivate) btnToActivate.classList.add('active');
+                        const active = g.querySelector('.active');
+                        if(active) active.classList.remove('active');
+                        const btnToActivate = g.querySelector(`[data-filter="${e.target.dataset.filter}"]`);
+                        if(btnToActivate) btnToActivate.classList.add('active');
                     });
 
                     if (filterType === 'status') {
@@ -695,7 +696,7 @@
                     document.body.classList.add(`mode-${mode}`);
                     
                     requestAnimationFrame(() => {
-                         newView.style.opacity = 1;
+                        newView.style.opacity = 1;
                     });
 
                     mainMode = mode;
@@ -720,7 +721,7 @@
                              copyReportBtn.textContent = '¡Copiado!';
                              setTimeout(() => copyReportBtn.textContent = 'Copiar al Portapapeles', 2000);
                          }, () => {
-                            showModal('Error', 'No se pudo copiar el reporte.', 'error');
+                           showModal('Error', 'No se pudo copiar el reporte.', 'error');
                          });
                      };
                  }
@@ -762,10 +763,10 @@
             function formatDateTime(date) {
                 if (!(date instanceof Date) || isNaN(date)) return '';
                  const day = String(date.getUTCDate()).padStart(2, '0');
-                const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-                const year = date.getUTCFullYear();
-                const hours = String(date.getUTCHours()).padStart(2, '0');
-                const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+                 const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                 const year = date.getUTCFullYear();
+                 const hours = String(date.getUTCHours()).padStart(2, '0');
+                 const minutes = String(date.getUTCMinutes()).padStart(2, '0');
                 return `${day}/${month}/${year} ${hours}:${minutes}`;
             }
             function findHeader(headers, keyText) { return headers && headers.find(h => h && h.toLowerCase() === keyText.toLowerCase()); }
@@ -1000,7 +1001,7 @@
                     deleteBtn.className = 'icon-btn'; deleteBtn.title = 'Eliminar orden';
                     deleteBtn.innerHTML = `🗑️`;
                     deleteBtn.onclick = () => {
-                         showConfirmationModal(`¿Estás seguro de que quieres eliminar la orden ${key}?`, async () => {
+                        showConfirmationModal(`¿Estás seguro de que quieres eliminar la orden ${key}?`, async () => {
                             await deleteOrderFromFirebase(key);
                             loadedOrders.delete(key);
                             if (activeOrderKey === key) activeOrderKey = 'all';
@@ -1968,9 +1969,9 @@
                     
                     const oldSap = await db.collection('sap_data').doc('current_data').get();
                     if(oldSap.exists){
-                         const newSapRef = areaRef.collection('sap_data').doc('current_data');
-                         batch.set(newSapRef, oldSap.data());
-                         batch.delete(oldSap.ref);
+                        const newSapRef = areaRef.collection('sap_data').doc('current_data');
+                        batch.set(newSapRef, oldSap.data());
+                        batch.delete(oldSap.ref);
                     }
 
                     await batch.commit();
