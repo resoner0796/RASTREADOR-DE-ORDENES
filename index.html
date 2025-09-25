@@ -53,6 +53,11 @@
             grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; 
             gap: 16px;
         }
+        /* SAP view uses a simplified layout */
+        #sapView .main-container {
+            grid-template-rows: auto 1fr;
+            grid-template-areas: "sidebar global-header" "sidebar main";
+        }
         .sidebar {
             grid-area: sidebar; background-color: var(--surface-color); border-radius: 12px;
             padding: 20px; display: flex; flex-direction: column; gap: 16px;
@@ -110,8 +115,8 @@
         .stat-item p { margin: 0; font-size: 1.75rem; font-weight: 700; }
         #statOrderNumber, #statCatalogNumber { color: var(--primary-color); }
         #statCatalogNumber { font-size: 1rem; color: var(--text-primary); font-weight: 500; margin-top: 4px; height: 1.2em; }
-        #statPackedQty { color: var(--success-color); }
-        #statRemainingQty { color: var(--warning-color); } #statScrapQty { color: var(--danger-color); }
+        #statPackedQty, #sapCompletedOrdersStat { color: var(--success-color); }
+        #statRemainingQty, #sapTotalOrdersStat { color: var(--warning-color); } #statScrapQty { color: var(--danger-color); }
 
         .table-wrapper { overflow: auto; flex-grow: 1; }
         table { width: 100%; border-collapse: collapse; }
@@ -153,6 +158,10 @@
         tbody tr.is-delayed td { color: var(--warning-color) !important; }
         tbody tr.is-today { background-color: rgba(52, 211, 153, 0.1) !important; }
         tbody tr.is-today td { color: var(--success-color) !important; }
+        tbody tr.is-complete-sap { background-color: rgba(52, 211, 153, 0.1) !important; }
+        tbody tr.is-complete-sap td { color: var(--success-color) !important; }
+        tbody tr.is-incomplete-sap { background-color: rgba(251, 191, 36, 0.1) !important; }
+        tbody tr.is-incomplete-sap td { color: var(--warning-color) !important; }
         
         .serial-details-container, .mobile-packing-list {
             display: flex; flex-direction: column;
@@ -223,20 +232,19 @@
 
         @media (max-width: 992px) {
             body { padding: 8px; }
-            .main-container, #sapView {
+            .main-container {
                 display: flex; flex-direction: column; gap: 12px;
             }
-            #sapView { grid-template-columns: 1fr; }
             .sidebar, .main-content, #rastreoView { display: contents !important; }
             .sidebar > h2 { display: none; }
             
             .global-header { order: 1; }
             .header { order: 2; }
-            #uploadCard { order: 3; }
-            #orderListCard { order: 4; }
+            #uploadCard, #sap-uploadCard { order: 3; }
+            #orderListCard, #sap-orderListCard { order: 4; }
             #filtersCard { order: 5; }
             #actionsCard { order: 6; }
-            #tableCard { order: 7; }
+            #tableCard, #sap-tableCard { order: 7; }
             #empaqueView { order: 7; }
             
             .global-dashboard-card { grid-template-columns: 1fr 1fr; }
@@ -318,7 +326,7 @@
     <div class="app-container">
         <header class="app-header">
             <h1 class="app-branding">CORNING</h1>
-            <h2 class="app-title">Centro de Rastreo de Órdenes</h2>
+            <h2 id="app-title" class="app-title">Centro de Rastreo de Órdenes</h2>
         </header>
 
         <div id="mainModeSwitcher" class="mode-switcher card">
@@ -432,25 +440,39 @@
         </div>
 
         <div id="sapView">
-            <div class="card">
-                <h3>Cargar Archivo SAP</h3>
-                <div id="sapFileDropArea" class="file-drop-area">
-                    <p>Arrastra un archivo de SAP (.xlsx) aquí</p>
-                    <p><span>o haz clic para seleccionar</span></p>
-                </div>
-                <input type="file" id="sapFileInput" accept=".xlsx, .xls" style="display: none;">
-            </div>
-            <div class="card">
-                <h3>Resumen SAP</h3>
-                <div id="sapSummaryCard" class="summary-card">
+            <div class="main-container">
+                <aside class="sidebar">
+                    <h2>Panel SAP</h2>
+                    <div class="card" id="sap-uploadCard">
+                        <h3>Panel de Control</h3>
+                         <div id="sapFileDropArea" class="file-drop-area">
+                            <p>Arrastra un archivo de SAP (.xlsx)</p>
+                            <p><span>o haz clic para seleccionar</span></p>
+                        </div>
+                        <input type="file" id="sapFileInput" accept=".xlsx, .xls" style="display: none;">
                     </div>
-            </div>
-             <div class="card">
-                <h3>Órdenes SAP</h3>
-                <div class="table-wrapper">
-                    <table id="sapTable"></table>
-                    <p id="sapPlaceholderText">Cargue un archivo para ver los datos de SAP.</p>
-                </div>
+                    <div class="card" style="flex-grow: 1;" id="sap-orderListCard">
+                        <h3>Órdenes Cargadas</h3>
+                        <div id="sapOrderList" class="card-content" style="overflow-y: auto;">
+                           <p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>
+                        </div>
+                    </div>
+                </aside>
+                <header class="global-header card">
+                     <div class="global-dashboard-card">
+                           <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
+                           <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
+                    </div>
+                </header>
+                <main class="main-content">
+                     <div class="card" id="sap-tableCard">
+                        <h3>Detalle de Órdenes SAP</h3>
+                        <div class="table-wrapper">
+                            <table id="sapTable"></table>
+                            <p id="sapPlaceholderText">Cargue un archivo para ver los datos de SAP.</p>
+                        </div>
+                    </div>
+                </main>
             </div>
         </div>
 
@@ -492,8 +514,7 @@
             // Key Maps
             const TRACKING_KEYS = { SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', DATE_REGISTERED: 'Date Registered', LINE: 'Line', STATION: 'Station' };
             const PACKING_KEYS = { SERIAL: 'Serial Number', EMPLOYEE_ID: 'Employee ID', PACKED_DATE: 'Finish Packed Date', BOX_ID: 'BoxID' };
-            const SAP_KEYS = ['Order', 'Sched. finish', 'Target qty', 'Del, qty'];
-
+            
             // Element cache
             const doc = (id) => document.getElementById(id);
             const appTitle = doc('app-title');
@@ -527,6 +548,9 @@
             const sapFileDropArea = doc('sapFileDropArea');
             const sapFileInput = doc('sapFileInput');
             const sapPlaceholderText = doc('sapPlaceholderText');
+            const sapOrderList = doc('sapOrderList');
+            const sapTotalOrdersStat = doc('sapTotalOrdersStat');
+            const sapCompletedOrdersStat = doc('sapCompletedOrdersStat');
 
             // Main Mode Switcher
             const modeFwd = doc('modeFwd');
@@ -574,7 +598,6 @@
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
             
-            // ... (Filter listeners are a bit more complex, keeping them separate)
             rastreoStatusFilters.addEventListener('click', (e) => {
                 if (e.target.matches('.filter-btn')) {
                     rastreoStatusFilters.querySelector('.active').classList.remove('active');
@@ -604,8 +627,6 @@
                 appTitle.textContent = mode === 'fwd' ? 'Centro de Rastreo de Órdenes' : 'Análisis de Órdenes SAP';
             }
             
-            // ... (rest of the functions, unchanged ones first)
-
             function showModal(title, content, type = 'info', showCopyBtn = false) {
                  modalOverlay.querySelector('.modal-content').className = `modal-content ${type}`;
                  modalTitle.textContent = title;
@@ -651,6 +672,9 @@
             }
             function findHeader(headers, keyText) { return headers && headers.find(h => h && h.toLowerCase() === keyText.toLowerCase()); }
             
+            // =========================
+            // === FWD VIEW FUNCTIONS ===
+            // =========================
             async function loadOrdersFromFirebase() {
                 try {
                     const snapshot = await db.collection('production_orders').get();
@@ -766,7 +790,7 @@
                 
                 const jsonData = [];
                 const range = XLSX.utils.decode_range(worksheet['!ref']);
-                for (let rowNum = startRow + 1; rowNum <= range.e.r; ++rowNum) {
+                for (let rowNum = startRow + 1; rowNum <= range.e.r + 1; ++rowNum) {
                     const row = {};
                     let hasData = false;
                     for(const col in headers) {
@@ -1256,7 +1280,9 @@
                 showModal(`Reporte de Órdenes Incompletas`, reportHTML, 'info', true);
             }
             
+            // ========================
             // === SAP VIEW FUNCTIONS ===
+            // ========================
             function handleSapFile(file) {
                 if (!file) return;
                 const reader = new FileReader();
@@ -1268,7 +1294,7 @@
                         showModal('Éxito', 'Archivo SAP cargado y procesado correctamente.', 'success');
                     } catch (err) {
                         console.error("Error procesando archivo SAP:", err);
-                        showModal('Error', 'No se pudo procesar el archivo SAP.', 'error');
+                        showModal('Error', `No se pudo procesar el archivo SAP. <br><small>${err.message}</small>`, 'error');
                     }
                 };
                 reader.readAsArrayBuffer(file);
@@ -1276,65 +1302,104 @@
 
             function processSapFile(workbook) {
                 const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                let headerRowIndex = -1;
-                let headers = [];
+                if (!worksheet) throw new Error("No se encontró una hoja de cálculo en el archivo.");
 
-                for(let i = 0; i < jsonData.length; i++) {
-                    const row = jsonData[i];
-                    if (SAP_KEYS.every(key => row.includes(key))) {
-                        headerRowIndex = i;
-                        headers = row;
-                        break;
-                    }
-                }
-                if (headerRowIndex === -1) throw new Error("Cabeceras SAP no encontradas.");
+                const getCellValue = (cellAddress) => (worksheet[cellAddress] ? worksheet[cellAddress].v : undefined);
                 
-                const dataRows = jsonData.slice(headerRowIndex + 1);
-                return dataRows.map(row => {
-                    const rowData = {};
-                    headers.forEach((header, index) => {
-                        rowData[header] = row[index];
+                const headerMap = {
+                    Order: getCellValue('A1'),
+                    Finish: getCellValue('G1'),
+                    TotalOrden: getCellValue('I1'),
+                    TotalConfirmado: getCellValue('J1'),
+                };
+
+                if(!headerMap.Order || !headerMap.Finish || !headerMap.TotalOrden || !headerMap.TotalConfirmado) {
+                    throw new Error("No se encontraron las cabeceras esperadas en las celdas A1, G1, I1, J1.");
+                }
+
+                const processedData = [];
+                const range = XLSX.utils.decode_range(worksheet['!ref']);
+                for (let i = range.s.r + 1; i <= range.e.r; i++) {
+                    const orderId = worksheet['A' + (i + 1)]?.v;
+                    if (!orderId) continue; // Skip empty rows
+
+                    const total = parseFloat(worksheet['I' + (i + 1)]?.v) || 0;
+                    const confirmed = parseFloat(worksheet['J' + (i + 1)]?.v) || 0;
+                    const faltante = total - confirmed;
+
+                    processedData.push({
+                        'Orden': orderId,
+                        'Finish': worksheet['G' + (i + 1)]?.v,
+                        'Total orden': total,
+                        'Total confirmado': confirmed,
+                        'Faltante': faltante,
+                        'status': faltante <= 0 ? 'complete' : 'incomplete'
                     });
-                    const target = parseFloat(rowData['Target qty']) || 0;
-                    const delivered = parseFloat(rowData['Del, qty']) || 0;
-                    rowData['Restante'] = target - delivered;
-                    return rowData;
-                }).filter(row => row['Order']); // Filtrar filas vacías
+                }
+                return processedData;
             }
 
             function renderSapView() {
-                const table = doc('sapTable');
-                const summaryContainer = doc('sapSummaryCard');
                 sapPlaceholderText.style.display = sapData.length > 0 ? 'none' : 'block';
+                updateSapDashboard();
+                updateSapOrderList();
+                updateSapTable();
+            }
 
+            function updateSapDashboard() {
+                if(sapData.length === 0) {
+                    sapTotalOrdersStat.textContent = '0';
+                    sapCompletedOrdersStat.textContent = '0';
+                    return;
+                }
+                const todayString = new Date().toLocaleDateString('es-ES', { 
+                    timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' 
+                });
+
+                const ordersToday = sapData.filter(row => {
+                    const finishDate = excelSerialToDate(row['Finish']);
+                    return finishDate && formatDate(finishDate) === todayString;
+                }).length;
+
+                const ordersCompleted = sapData.filter(row => row.status === 'complete').length;
+
+                sapTotalOrdersStat.textContent = ordersToday;
+                sapCompletedOrdersStat.textContent = ordersCompleted;
+            }
+
+            function updateSapOrderList() {
+                if(sapData.length === 0) {
+                    sapOrderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>`;
+                    return;
+                }
+                sapOrderList.innerHTML = sapData.map(order => {
+                    const itemClass = order.status === 'complete' ? 'is-complete' : '';
+                    return `<div class="order-item"><button class="order-btn ${itemClass}">${order['Orden']}</button></div>`
+                }).join('');
+            }
+            
+            function updateSapTable() {
+                const table = doc('sapTable');
                 if (sapData.length === 0) {
                     table.innerHTML = '';
-                    summaryContainer.innerHTML = '';
                     return;
                 }
 
-                const headers = [...SAP_KEYS, 'Restante'];
+                const headers = ['Orden', 'Finish', 'Total orden', 'Total confirmado', 'Faltante'];
                 table.innerHTML = `
                     <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
                     <tbody>
                         ${sapData.map(row => `
-                            <tr>
-                                ${headers.map(h => `<td data-label="${h}">${row[h] !== undefined ? row[h] : ''}</td>`).join('')}
+                            <tr class="is-${row.status}-sap">
+                                <td data-label="Orden">${row['Orden']}</td>
+                                <td data-label="Finish">${formatDate(excelSerialToDate(row['Finish']))}</td>
+                                <td data-label="Total orden">${row['Total orden']}</td>
+                                <td data-label="Total confirmado">${row['Total confirmado']}</td>
+                                <td data-label="Faltante">${row['Faltante']}</td>
                             </tr>
                         `).join('')}
                     </tbody>`;
-
-                const totalTarget = sapData.reduce((sum, row) => sum + (parseFloat(row['Target qty']) || 0), 0);
-                const totalDelivered = sapData.reduce((sum, row) => sum + (parseFloat(row['Del, qty']) || 0), 0);
-                summaryContainer.innerHTML = `
-                    <div class="stat-item"><h3>Órdenes Totales</h3><p>${sapData.length}</p></div>
-                    <div class="stat-item"><h3>Cant. Requerida</h3><p>${totalTarget.toLocaleString()}</p></div>
-                    <div class="stat-item"><h3>Cant. Entregada</h3><p id="statPackedQty">${totalDelivered.toLocaleString()}</p></div>
-                    <div class="stat-item"><h3>Cant. Restante</h3><p id="statRemainingQty">${(totalTarget - totalDelivered).toLocaleString()}</p></div>
-                `;
             }
-
 
             function formatCell(value, header, isDateTime = false) {
                  if (isDateTime) return formatDateTime(excelSerialToDate(value));
@@ -1343,7 +1408,7 @@
             }
             
             let isMobile = window.innerWidth <= 992;
-            const cardIds = ['uploadCard', 'orderListCard', 'filtersCard', 'actionsCard'];
+            const cardIds = ['uploadCard', 'orderListCard', 'filtersCard', 'actionsCard', 'sap-uploadCard', 'sap-orderListCard'];
             function setupMobileMode() {
                 cardIds.forEach(id => {
                     const cardElement = doc(id);
