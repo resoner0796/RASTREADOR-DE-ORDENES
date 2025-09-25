@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Control de Producción v2.0</title>
+    <title>Centro de Control de Producción v2.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -62,7 +62,25 @@
         .sidebar {
             grid-area: sidebar; background-color: var(--surface-color); border-radius: 12px;
             padding: 20px; display: flex; flex-direction: column; gap: 16px;
+            /* Sticky styles */
+            position: sticky;
+            top: 16px;
+            height: calc(100vh - 32px);
+            align-self: start;
         }
+        #sapView .sidebar {
+            height: calc(100vh - 32px);
+        }
+        #orderListCard, #sap-orderListCard {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #orderList, #sapOrderList {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
         .global-header { grid-area: global-header; }
         .header { grid-area: header; }
         .main-content { grid-area: main; display: flex; flex-direction: column; gap: 16px; }
@@ -80,6 +98,42 @@
             font-weight: 600; font-size: 1rem;
         }
         h3 { font-size: 0.9rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;}
+        
+        /* Collapsible Card Styles */
+        .card.collapsible .card-content {
+            display: none;
+            padding-top: 16px;
+        }
+        .card.collapsible.expanded .card-content {
+            display: block;
+        }
+        .card.collapsible h3 {
+            margin-bottom: 0;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card.collapsible.expanded h3 {
+            margin-bottom: 0;
+        }
+        .card.collapsible:not(.expanded) h3 {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .card.collapsible h3::after {
+            content: '►';
+            display: inline-block;
+            font-size: 0.7rem;
+            transition: transform 0.2s;
+            color: var(--text-secondary);
+        }
+        .card.collapsible.expanded h3::after {
+            transform: rotate(90deg);
+        }
+
         .file-drop-area {
             border: 2px dashed var(--border-color); border-radius: 8px; padding: 24px 20px;
             text-align: center; cursor: pointer; transition: all 0.2s ease;
@@ -116,11 +170,16 @@
             display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 16px; text-align: center;
         }
-        .stat-item { display: flex; flex-direction: column; justify-content: center; }
-        .stat-item h3 { margin: 0 0 8px 0; font-size: 0.9rem; font-weight: 500; }
+        .stat-item { 
+            display: flex; flex-direction: column; justify-content: flex-start; 
+        }
+        .stat-item h3 { margin-bottom: 8px; font-size: 0.9rem; font-weight: 500; }
+        .stat-item .stat-value-wrapper {
+            margin-top: auto; /* Pushes value to the bottom */
+        }
         .stat-item p { margin: 0; font-size: 1.75rem; font-weight: 700; }
-        #statOrderNumber, #statCatalogNumber { color: var(--primary-color); }
-        #statCatalogNumber { font-size: 1rem; color: var(--text-primary); font-weight: 500; margin-top: 4px; height: 1.2em; }
+        #statOrderNumber { color: var(--primary-color); }
+        #statCatalogNumber { font-size: 1rem; color: var(--text-primary); font-weight: 500; margin-top: 4px; height: auto; }
         #statPackedQty, #sapCompletedOrdersStat { color: var(--success-color); }
         #statRemainingQty, #sapTotalOrdersStat { color: var(--warning-color); } #statScrapQty { color: var(--danger-color); }
 
@@ -246,6 +305,10 @@
             .main-container {
                 display: flex; flex-direction: column; gap: 12px;
             }
+            .sidebar {
+                position: static; /* Disable sticky on mobile */
+                height: auto;
+            }
             .sidebar, .main-content, #rastreoView { display: contents !important; }
             .sidebar > h2 { display: none; }
 
@@ -262,15 +325,19 @@
             .global-dashboard-card { grid-template-columns: 1fr 1fr; }
             .summary-card { 
                 grid-template-columns: 1fr 1fr; 
-                & > .stat-item:has(#statOrderNumber) { grid-column: 1 / -1; }
+                & > .stat-item:has(.stat-value-wrapper > #statOrderNumber) { grid-column: 1 / -1; }
             }
             .stat-item p { font-size: 1.5rem; }
             
             .card.mobile-collapsible .card-content { display: none; padding-top: 16px; }
             .card.mobile-collapsible.expanded .card-content { display: block; }
             .card.mobile-collapsible h3.mobile-trigger {
-                margin-bottom: 0; cursor: pointer; user-select: none;
-                display: flex; justify-content: space-between; align-items: center;
+                margin-bottom: 0;
+                cursor: pointer;
+                user-select: none;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
             }
             .card.mobile-collapsible h3.mobile-trigger::after {
                 content: '►'; display: inline-block; font-size: 0.7rem;
@@ -363,7 +430,7 @@
                     </div>
                     <div class="card" style="flex-grow: 1;" id="orderListCard">
                         <h3>Órdenes Cargadas</h3>
-                        <div id="orderList" class="card-content" style="overflow-y: auto;">
+                        <div id="orderList" class="card-content">
                             <p class="text-dark" style="font-size:0.9rem;">Cargando órdenes desde la base de datos...</p>
                         </div>
                     </div>
@@ -384,20 +451,42 @@
                     <div id="summaryCard" class="summary-card">
                            <div class="stat-item">
                                 <h3>Orden</h3>
-                                <p id="statOrderNumber">N/A</p>
-                                <p id="statCatalogNumber"></p>
+                                <div class="stat-value-wrapper">
+                                    <p id="statOrderNumber">N/A</p>
+                                    <p id="statCatalogNumber"></p>
+                                </div>
                            </div>
-                           <div class="stat-item"><h3>Cant. Orden</h3><p id="statOrderQty">0</p></div>
-                           <div class="stat-item"><h3>Cant. Empacada</h3><p id="statPackedQty">0</p></div>
-                           <div class="stat-item"><h3>Restante</h3><p id="statRemainingQty">0</p></div>
-                           <div class="stat-item"><h3>Cant. en Scrap</h3><p id="statScrapQty">0</p></div>
+                           <div class="stat-item">
+                               <h3>Cant. Orden</h3>
+                               <div class="stat-value-wrapper">
+                                   <p id="statOrderQty">0</p>
+                               </div>
+                           </div>
+                           <div class="stat-item">
+                               <h3>Cant. Empacada</h3>
+                               <div class="stat-value-wrapper">
+                                   <p id="statPackedQty">0</p>
+                               </div>
+                            </div>
+                           <div class="stat-item">
+                               <h3>Restante</h3>
+                               <div class="stat-value-wrapper">
+                                   <p id="statRemainingQty">0</p>
+                               </div>
+                            </div>
+                           <div class="stat-item">
+                               <h3>Cant. en Scrap</h3>
+                               <div class="stat-value-wrapper">
+                                   <p id="statScrapQty">0</p>
+                               </div>
+                           </div>
                     </div>
                 </section>
         
                 <main class="main-content">
                     <div id="rastreoView">
                         <div class="card-row">
-                            <div class="card" id="filtersCard">
+                            <div class="card collapsible" id="filtersCard">
                                 <h3>Filtros</h3>
                                 <div class="card-content">
                                     <div class="filter-container">
@@ -419,7 +508,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="card" id="actionsCard">
+                            <div class="card collapsible" id="actionsCard">
                                 <h3>Acciones</h3>
                                 <div class="card-content">
                                      <div class="actions-container">
@@ -466,7 +555,7 @@
                     </div>
                     <div class="card" style="flex-grow: 1;" id="sap-orderListCard">
                         <h3>Órdenes Cargadas</h3>
-                        <div id="sapOrderList" class="card-content" style="overflow-y: auto;">
+                        <div id="sapOrderList" class="card-content">
                            <p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>
                         </div>
                     </div>
@@ -554,7 +643,7 @@
             const rastreoLineFilters = doc('rastreoLineFilters');
             const rastreoLineFiltersPlaceholder = doc('rastreoLineFiltersPlaceholder');
             const exportViewButton = doc('exportViewButton');
-            const exportPdfButton = doc('exportPdfButton'); // CACHE PARA BOTÓN PDF
+            const exportPdfButton = doc('exportPdfButton');
             const exportStatusButton = doc('exportStatusButton');
             const lineCountsContainer = doc('lineCountsContainer');
             const placeholderText = doc('placeholderText');
@@ -591,7 +680,7 @@
             rastreoFilterInput.addEventListener('input', () => renderRastreoView(activeOrderKey));
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
             exportViewButton.addEventListener('click', handleReprintExport);
-            exportPdfButton.addEventListener('click', handlePdfExport); // LISTENER PARA BOTÓN PDF
+            exportPdfButton.addEventListener('click', handlePdfExport);
             exportStatusButton.addEventListener('click', handleStatusReport);
             sapFileDropArea.addEventListener('click', () => sapFileInput.click());
             sapFileDropArea.addEventListener('dragover', (e) => { e.preventDefault(); sapFileDropArea.classList.add('dragover'); });
@@ -625,6 +714,11 @@
                     renderRastreoView(activeOrderKey);
                 }
             });
+
+            // Collapsible card listeners
+            doc('filtersCard').querySelector('h3').addEventListener('click', () => doc('filtersCard').classList.toggle('expanded'));
+            doc('actionsCard').querySelector('h3').addEventListener('click', () => doc('actionsCard').classList.toggle('expanded'));
+
 
             // ===================================
             // === CORE APP CONTROL & UTILITIES ===
@@ -881,7 +975,7 @@
                     const isToday = dateString === todayString;
                     const groupDiv = document.createElement('div');
                     groupDiv.className = 'date-group';
-                    if (isToday) groupDiv.classList.add('expanded');
+                    // if (isToday) groupDiv.classList.add('expanded'); // REMOVED to keep it collapsed by default
                     const headerBtn = document.createElement('button');
                     headerBtn.className = 'date-header';
                     headerBtn.innerHTML = `<span>📅 ${dateString}</span> ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''} <span class="collapse-icon">►</span>`;
@@ -940,7 +1034,7 @@
                     const hasOrders = loadedOrders.size > 0;
                     placeholderText.style.display = hasOrders ? 'none' : 'block';
                     exportViewButton.disabled = !hasOrders;
-                    exportPdfButton.disabled = !hasOrders; // HABILITAR/DESHABILITAR BOTÓN PDF
+                    exportPdfButton.disabled = !hasOrders;
                     exportStatusButton.disabled = !hasOrders;
                     if (!hasOrders) {
                         doc('rastreoTable').innerHTML = '';
@@ -961,21 +1055,35 @@
 
             function renderSummary() {
                 let orderQty = 0, packedQty = 0, scrapCount = 0; let ordersToProcess = [];
+                
                 if (activeOrderKey === 'all') {
-                    ordersToProcess = Array.from(loadedOrders.values());
-                    statOrderNumber.textContent = loadedOrders.size > 0 ? 'Múltiples' : 'N/A';
-                    statCatalogNumber.textContent = loadedOrders.size > 0 ? '...' : '';
+                    const todayString = new Date().toLocaleDateString('es-ES', { 
+                        timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' 
+                    });
+                    ordersToProcess = Array.from(loadedOrders.values()).filter(order => formatDate(order.orderDate) === todayString);
+                    
+                    if (ordersToProcess.length > 0) {
+                        statOrderNumber.textContent = 'Órdenes del Día';
+                        const firstCatalog = ordersToProcess[0].catalogNumber;
+                        const allSameCatalog = ordersToProcess.every(o => o.catalogNumber === firstCatalog);
+                        statCatalogNumber.textContent = allSameCatalog ? firstCatalog : 'Múltiples Catálogos';
+                    } else {
+                        statOrderNumber.textContent = 'N/A';
+                        statCatalogNumber.textContent = 'No hay órdenes para hoy';
+                    }
+                
                 } else if (loadedOrders.has(activeOrderKey)) {
                     ordersToProcess = [loadedOrders.get(activeOrderKey)];
                     statOrderNumber.textContent = activeOrderKey;
                     statCatalogNumber.textContent = ordersToProcess[0].catalogNumber;
                 } else if (loadedOrders.size > 0) {
-                    activeOrderKey = 'all';
-                    ordersToProcess = Array.from(loadedOrders.values());
-                    statOrderNumber.textContent = 'Múltiples';
-                    statCatalogNumber.textContent = '...';
                     setActiveOrder('all');
+                    return; 
+                } else {
+                    statOrderNumber.textContent = 'N/A';
+                    statCatalogNumber.textContent = '';
                 }
+                
                 ordersToProcess.forEach(order => {
                     orderQty += order.orderQty || 0;
                     packedQty += order.packedQty || 0;
@@ -983,6 +1091,7 @@
                        scrapCount += order.rastreoData.filter(row => row.status === 'scrap').length;
                     }
                 });
+
                 statOrderQty.textContent = orderQty;
                 statPackedQty.textContent = packedQty;
                 statRemainingQty.textContent = orderQty - packedQty;
@@ -1145,7 +1254,6 @@
                 let mobileHTML = `<div class="mobile-packing-list">`;
                 let entriesFound = 0;
 
-                // *** AJUSTE: Convertir el Map a un array y revertirlo para mostrar el último BoxID primero ***
                 const reversedEntries = Array.from(dataToShow.entries()).reverse();
 
                 for (const [boxId, serials] of reversedEntries) {
@@ -1249,69 +1357,82 @@
                 }
             }
             
-            // *** NUEVA FUNCIÓN PARA EXPORTAR A PDF ***
-            function handlePdfExport() {
+            async function handlePdfExport() {
                 if (!currentVisibleData || currentVisibleData.length === 0) {
                     showModal('Exportar PDF', 'No hay datos en la vista actual para exportar.', 'warning');
                     return;
                 }
 
-                const tableToExport = doc('rastreoTable');
-                if (!tableToExport || tableToExport.rows.length === 0) {
-                    showModal('Exportar PDF', 'La tabla está vacía o no se pudo encontrar.', 'error');
-                    return;
-                }
-                
                 const originalButtonText = exportPdfButton.textContent;
                 exportPdfButton.textContent = 'Generando PDF...';
                 exportPdfButton.disabled = true;
 
-                html2canvas(tableToExport, {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#1E293B'
-                }).then(canvas => {
-                    try {
-                        const { jsPDF } = window.jspdf;
-                        const imgData = canvas.toDataURL('image/jpeg', 0.9);
-                        const imgWidth = canvas.width;
-                        const imgHeight = canvas.height;
-                        
-                        const pdfWidth = 297; // A4 landscape width in mm
-                        const pdfHeight = 210; // A4 landscape height in mm
-                        const margin = 10;
+                const cloneContainer = document.createElement('div');
+                cloneContainer.style.position = 'absolute';
+                cloneContainer.style.left = '-9999px';
+                cloneContainer.style.top = '0';
+                cloneContainer.style.width = '1200px';
+                cloneContainer.style.background = 'var(--bg-color)';
+                cloneContainer.style.padding = '1px';
 
-                        const ratio = imgWidth / imgHeight;
-                        let finalImgWidth = pdfWidth - (margin * 2);
-                        let finalImgHeight = finalImgWidth / ratio;
-                        
-                        if (finalImgHeight > pdfHeight - (margin * 2)) {
-                            finalImgHeight = pdfHeight - (margin * 2);
-                            finalImgWidth = finalImgHeight * ratio;
-                        }
-                        
-                        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-                        const x = (pdfWidth - finalImgWidth) / 2;
-                        const y = (pdfHeight - finalImgHeight) / 2;
-
-                        pdf.addImage(imgData, 'JPEG', x, y, finalImgWidth, finalImgHeight);
-                        
-                        const orderName = (activeOrderKey && activeOrderKey !== 'all') ? activeOrderKey : 'Multiples_Ordenes';
-                        const dateStamp = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
-                        pdf.save(`Reporte_Rastreo_${orderName}_${dateStamp}.pdf`);
-                    } catch (e) {
-                        console.error("Error al generar el PDF:", e);
-                        showModal('Error', 'Ocurrió un error al generar el archivo PDF.', 'error');
-                    } finally {
-                        exportPdfButton.textContent = originalButtonText;
-                        render(); // Re-enable based on state
+                const tableToClone = doc('rastreoTable');
+                const clonedTable = tableToClone.cloneNode(true);
+                clonedTable.id = 'pdf-clone-table';
+                
+                const style = document.createElement('style');
+                style.innerHTML = `
+                    #pdf-clone-table { 
+                        color: var(--text-primary); 
+                        background-color: var(--surface-color);
+                        width: 100%;
                     }
-                }).catch(err => {
-                    console.error("Error en html2canvas:", err);
-                    showModal('Error', 'Ocurrió un error al capturar la tabla para el PDF.', 'error');
+                    #pdf-clone-table thead { display: table-header-group !important; }
+                    #pdf-clone-table tr { display: table-row !important; }
+                    #pdf-clone-table td, #pdf-clone-table th { 
+                        display: table-cell !important; 
+                        background-color: inherit !important;
+                    }
+                    #pdf-clone-table td::before { display: none !important; }
+                `;
+                
+                cloneContainer.appendChild(style);
+                cloneContainer.appendChild(clonedTable);
+                document.body.appendChild(cloneContainer);
+
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                try {
+                    const canvas = await html2canvas(clonedTable, {
+                        scale: 2,
+                        useCORS: true,
+                        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--surface-color').trim()
+                    });
+
+                    const { jsPDF } = window.jspdf;
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    const canvasWidth = canvas.width;
+                    const canvasHeight = canvas.height;
+                    
+                    const pdf = new jsPDF({
+                        orientation: canvasWidth > canvasHeight ? 'landscape' : 'portrait',
+                        unit: 'px',
+                        format: [canvasWidth, canvasHeight]
+                    });
+                    
+                    pdf.addImage(imgData, 'JPEG', 0, 0, canvasWidth, canvasHeight);
+                    
+                    const orderName = (activeOrderKey && activeOrderKey !== 'all') ? activeOrderKey : 'Multiples_Ordenes';
+                    const dateStamp = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
+                    pdf.save(`Reporte_Rastreo_${orderName}_${dateStamp}.pdf`);
+
+                } catch (e) {
+                    console.error("Error al generar el PDF:", e);
+                    showModal('Error', 'Ocurrió un error al generar el archivo PDF.', 'error');
+                } finally {
+                    document.body.removeChild(cloneContainer);
                     exportPdfButton.textContent = originalButtonText;
-                    render(); // Re-enable based on state
-                });
+                    render();
+                }
             }
 
             function handleStatusReport() {
@@ -1491,7 +1612,7 @@
                 sortedDates.forEach(dateString => {
                     const orders = groupedByDate.get(dateString);
                     const isToday = dateString === todayString;
-                    html += `<div class="date-group ${isToday ? 'expanded' : ''}">`;
+                    html += `<div class="date-group">`; // REMOVED expanded class
                     html += `<button class="date-header" data-date="${dateString}">
                                  <span>📅 ${dateString}</span> 
                                  ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''}
@@ -1577,9 +1698,9 @@
             }
 
             let isMobile = window.innerWidth <= 992;
-            const cardIds = ['uploadCard', 'orderListCard', 'filtersCard', 'actionsCard', 'sap-uploadCard', 'sap-orderListCard'];
+            const mobileCollapsibleCardIds = ['uploadCard', 'orderListCard', 'filtersCard', 'actionsCard', 'sap-uploadCard', 'sap-orderListCard'];
             function setupMobileMode() {
-                cardIds.forEach(id => {
+                mobileCollapsibleCardIds.forEach(id => {
                     const cardElement = doc(id);
                     if (!cardElement) return;
                     cardElement.classList.add('mobile-collapsible');
@@ -1596,7 +1717,7 @@
                 });
             }
             function teardownMobileMode() {
-                 cardIds.forEach(id => {
+                 mobileCollapsibleCardIds.forEach(id => {
                     const cardElement = doc(id);
                     if (!cardElement) return;
                     cardElement.classList.remove('mobile-collapsible', 'expanded');
