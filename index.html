@@ -192,7 +192,8 @@
         #statOrderNumber { color: var(--text-secondary); }
         #statCatalogNumber { font-size: 1rem; color: var(--text-primary); font-weight: 500; margin-top: 4px; height: auto; }
         #statPackedQty, #sapCompletedOrdersStat, #completedOrdersStat { color: var(--success-color); }
-        #statRemainingQty, #sapTotalOrdersStat { color: var(--warning-color); } #statScrapQty { color: var(--danger-color); }
+        #statRemainingQty, #sapTotalOrdersStat, #totalOrdersStat { color: var(--warning-color); } 
+        #statScrapQty { color: var(--danger-color); }
 
         /* Tabla y Contenido de Empaque */
         .table-wrapper { overflow: auto; flex-grow: 1; transition: opacity 0.3s ease-in-out; }
@@ -220,11 +221,9 @@
         tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
         tbody tr.is-delayed td { color: var(--warning-color) !important; }
-        tbody tr.is-today { background-color: rgba(52, 211, 153, 0.1) !important; position: relative; overflow: hidden; }
-        tbody tr.is-today::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); transform: translateX(-100%); animation: shine-green 4s infinite linear; animation-delay: 1.5s; }
-        tbody tr.is-today td { color: var(--success-color) !important; }
-        tbody tr.is-complete-sap { background-color: rgba(52, 211, 153, 0.1) !important; }
-        tbody tr.is-complete-sap td { color: var(--success-color) !important; }
+        tbody tr.is-today, tbody tr.is-complete-sap { background-color: rgba(52, 211, 153, 0.1) !important; position: relative; overflow: hidden; }
+        tbody tr.is-today::after, tbody tr.is-complete-sap::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); transform: translateX(-100%); animation: shine-green 4s infinite linear; animation-delay: 1.5s; }
+        tbody tr.is-today td, tbody tr.is-complete-sap td { color: var(--success-color) !important; }
         tbody tr.is-incomplete-sap { background-color: rgba(251, 191, 36, 0.1) !important; }
         tbody tr.is-incomplete-sap td { color: var(--warning-color) !important; }
         tbody tr.is-late-sap { background-color: rgba(251, 113, 133, 0.1) !important; }
@@ -308,7 +307,6 @@
         }
         
         @media (min-width: 993px) {
-            .app-header { width: calc(100% - 276px); margin-left: 276px; }
             #mobile-controls-row { display: none; }
             #desktop-controls-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
             .desktop-filters-group { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; flex-grow: 1; }
