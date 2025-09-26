@@ -238,7 +238,6 @@
         body.light-theme #sap-uploadCard h3,
         body.light-theme #sap-orderListCard h3,
         body.light-theme #sap-tableCard h3,
-        body.light-theme .modal-title,
         body.light-theme .mode-switcher button {
             color: var(--branding-color);
         }
@@ -294,14 +293,12 @@
         #modalBody .area-list li { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);}
         #modalBody .area-list li input { flex-grow: 1; margin: 0; }
 
-        .packing-modal-header { text-align: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
-        .packer-info { font-size: 1.1rem; color: var(--text-secondary); }
-        .packer-info strong { color: var(--text-primary); font-weight: 600; }
         #modalBody .packing-details-list { list-style: none; padding: 0; margin: 0; }
-        #modalBody .packing-details-list li { display: flex; justify-content: space-between; padding: 10px 8px; border-radius: 6px; transition: background-color 0.2s; }
+        #modalBody .packing-details-list li { display: flex; justify-content: space-between; padding: 8px; border-radius: 6px; transition: background-color 0.2s; }
         #modalBody .packing-details-list li:nth-child(odd) { background-color: rgba(255,255,255,0.03); }
-        #modalBody .packing-details-list li span:first-child { font-weight: 600; color: var(--text-primary); }
-        #modalBody .packing-details-list li span:last-child { color: var(--text-secondary); }
+        #modalBody .packing-details-list li span:first-child { color: var(--text-secondary); }
+        #modalBody .packing-details-list li span:last-child { font-weight: 600; color: var(--text-primary); }
+
 
         /* Transiciones de Vista */
         #fwdView, #sapView { transition: opacity 0.3s ease-in-out; }
@@ -629,7 +626,7 @@
             const mobileControls = {
                 status: doc('rastreoStatusFilters'),
                 line: doc('rastreoLineFilters'),
-                actions: doc('actionsCard')?.querySelector('.actions-container')
+                actions: doc('actionsCard').querySelector('.actions-container')
             };
             const desktopControls = {
                 status: doc('rastreoStatusFiltersDesktop'),
@@ -694,10 +691,10 @@
                 }
             };
             
-            mobileControls.status?.addEventListener('click', handleFilterClick);
-            desktopControls.status?.addEventListener('click', handleFilterClick);
-            mobileControls.line?.addEventListener('click', handleFilterClick);
-            desktopControls.line?.addEventListener('click', handleFilterClick);
+            mobileControls.status.addEventListener('click', handleFilterClick);
+            desktopControls.status.addEventListener('click', handleFilterClick);
+            mobileControls.line.addEventListener('click', handleFilterClick);
+            desktopControls.line.addEventListener('click', handleFilterClick);
 
             sapFileDropArea.addEventListener('click', () => { if (!sapFileDropArea.classList.contains('disabled')) sapFileInput.click(); });
             sapFileDropArea.addEventListener('dragover', (e) => { if (!sapFileDropArea.classList.contains('disabled')) { e.preventDefault(); sapFileDropArea.classList.add('dragover'); }});
@@ -1149,8 +1146,8 @@
                     <button class="filter-btn ${rastreoStatusFilter === 'delayed' ? 'active' : ''}" data-filter="delayed">Sin Movimiento</button>
                     <button class="filter-btn ${rastreoStatusFilter === 'scrap' ? 'active' : ''}" data-filter="scrap">Scrap</button>
                 `;
-                mobileControls.status?.innerHTML = statusHTML;
-                desktopControls.status?.innerHTML = statusHTML;
+                mobileControls.status.innerHTML = statusHTML;
+                desktopControls.status.innerHTML = statusHTML;
 
                 const actionsHTML = `
                     <button class="btn" id="exportViewButtonMobile" ${!hasOrders ? 'disabled' : ''}>Exportar reimpresión</button>
@@ -1162,15 +1159,15 @@
                     <button class="btn" id="exportImageButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Captura</button>
                     <button class="btn" id="exportStatusButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Reporte</button>
                 `;
-                if (mobileControls.actions) mobileControls.actions.innerHTML = actionsHTML;
-                if (desktopControls.actions) desktopControls.actions.innerHTML = desktopActionsHTML;
+                mobileControls.actions.innerHTML = actionsHTML;
+                desktopControls.actions.innerHTML = desktopActionsHTML;
 
-                doc('exportViewButtonMobile')?.addEventListener('click', handleReprintExport);
-                doc('exportViewButtonDesktop')?.addEventListener('click', handleReprintExport);
-                doc('exportImageButtonMobile')?.addEventListener('click', handleImageExport);
-                doc('exportImageButtonDesktop')?.addEventListener('click', handleImageExport);
-                doc('exportStatusButtonMobile')?.addEventListener('click', handleStatusReport);
-                doc('exportStatusButtonDesktop')?.addEventListener('click', handleStatusReport);
+                doc('exportViewButtonMobile').addEventListener('click', handleReprintExport);
+                doc('exportViewButtonDesktop').addEventListener('click', handleReprintExport);
+                doc('exportImageButtonMobile').addEventListener('click', handleImageExport);
+                doc('exportImageButtonDesktop').addEventListener('click', handleImageExport);
+                doc('exportStatusButtonMobile').addEventListener('click', handleStatusReport);
+                doc('exportStatusButtonDesktop').addEventListener('click', handleStatusReport);
             }
 
             async function renderRastreoView(key) {
@@ -1236,8 +1233,8 @@
                     });
                 }
                 
-                if(mobileControls.line) mobileControls.line.innerHTML = lineHTML;
-                if(desktopControls.line) desktopControls.line.innerHTML = lineHTML;
+                mobileControls.line.innerHTML = lineHTML;
+                desktopControls.line.innerHTML = lineHTML;
             }
             
             function updateRastreoTable(data, headers) {
@@ -1286,21 +1283,13 @@
                 ).join('');
             }
             
+            // === INICIO: CORRECCIÓN VISTA DE EMPAQUE ===
             function showPackingDetailsModal(boxId, serials, headers) {
                 const serialHeader = findHeader(headers, PACKING_KEYS.SERIAL);
                 const employeeIdHeader = findHeader(headers, PACKING_KEYS.EMPLOYEE_ID);
                 const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
                 
-                let packerInfo = '';
-                if (serials && serials.length > 0) {
-                    const latestSerial = serials.reduce((latest, current) => (current[packedDateHeader] > latest[packedDateHeader]) ? current : latest, serials[0]);
-                    const packerId = latestSerial[employeeIdHeader];
-                    packerInfo = `<div class="packing-modal-header">
-                                    <span class="packer-info">EMPACADOR: <strong>${packerId || 'N/A'}</strong></span>
-                                  </div>`;
-                }
-                
-                let content = `${packerInfo}<ul class="packing-details-list">`;
+                let content = '<ul class="packing-details-list">';
                 if (serials && serials.length > 0) {
                     serials.forEach(serial => {
                         content += `<li>
@@ -1313,7 +1302,7 @@
                 }
                 content += '</ul>';
 
-                showModal(`Caja: ${boxId}`, content);
+                showModal(`Detalles de Caja: ${boxId}`, content);
             }
 
             async function renderEmpaqueView(key) {
@@ -1386,6 +1375,7 @@
                 });
                 tableWrapper.style.opacity = '1';
             }
+            // === FIN: CORRECCIÓN VISTA DE EMPAQUE ===
 
             function handleReprintExport() {
                 if (!currentVisibleData || currentVisibleData.length === 0) {
