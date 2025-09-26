@@ -238,6 +238,7 @@
         body.light-theme #sap-uploadCard h3,
         body.light-theme #sap-orderListCard h3,
         body.light-theme #sap-tableCard h3,
+        body.light-theme .modal-title,
         body.light-theme .mode-switcher button {
             color: var(--branding-color);
         }
@@ -293,12 +294,15 @@
         #modalBody .area-list li { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);}
         #modalBody .area-list li input { flex-grow: 1; margin: 0; }
 
+        /* Estilos para el modal de empaque */
+        .packing-modal-header { text-align: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+        .packer-info { font-size: 1.1rem; color: var(--text-secondary); }
+        .packer-info strong { color: var(--text-primary); font-weight: 600; }
         #modalBody .packing-details-list { list-style: none; padding: 0; margin: 0; }
-        #modalBody .packing-details-list li { display: flex; justify-content: space-between; padding: 8px; border-radius: 6px; transition: background-color 0.2s; }
+        #modalBody .packing-details-list li { display: flex; justify-content: space-between; padding: 10px 8px; border-radius: 6px; transition: background-color 0.2s; }
         #modalBody .packing-details-list li:nth-child(odd) { background-color: rgba(255,255,255,0.03); }
-        #modalBody .packing-details-list li span:first-child { color: var(--text-secondary); }
-        #modalBody .packing-details-list li span:last-child { font-weight: 600; color: var(--text-primary); }
-
+        #modalBody .packing-details-list li span:first-child { font-weight: 600; color: var(--text-primary); }
+        #modalBody .packing-details-list li span:last-child { color: var(--text-secondary); }
 
         /* Transiciones de Vista */
         #fwdView, #sapView { transition: opacity 0.3s ease-in-out; }
