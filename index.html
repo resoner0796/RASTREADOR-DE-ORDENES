@@ -1797,8 +1797,11 @@
                 sapFileDropArea.classList.toggle('disabled', !isAuthenticated);
                 sapFileDropArea.querySelector('p').textContent = isAuthenticated ? 'Arrastra un archivo de SAP (.xlsx)' : 'Autentícate para cargar archivos';
                 
-                adminBtn.style.display = session.isMaster ? 'block' : 'none';
-                
+                // === INICIO DE LA CORRECCIÓN ===
+                // El botón ahora se oculta solo si hay una sesión activa que NO sea maestra.
+                adminBtn.style.display = (session.area && !session.isMaster) ? 'none' : 'block';
+                // === FIN DE LA CORRECCIÓN ===
+
                 if (isAuthenticated) {
                     areaSelectBtn.textContent = `Área: ${session.area}`;
                     setupListenersForArea(session.area);
