@@ -87,21 +87,16 @@
         /* Contenedores Principales */
         .app-container { width: 100%; max-width: 1800px; }
         
-        /* === INICIO: AJUSTE DE ANCHO 1.1 === */
         .top-header-container {
-            /* Ancho nuevo de sidebar (320px) + gap (16px) */
-            padding-left: 336px; 
+            padding-left: 336px; /* Ancho de sidebar (320px) + gap (16px) */
         }
-        /* === FIN: AJUSTE DE ANCHO 1.1 === */
         
         .app-header { text-align: center; margin-bottom: 16px; position: relative; }
         .app-branding { font-family: 'Tinos', 'Times New Roman', serif; font-weight: 400; font-size: 2.2rem; color: var(--text-primary); letter-spacing: 2px; margin: 0; }
         .app-title { font-size: 1.25rem; font-weight: 600; color: var(--text-secondary); margin: 4px 0 0 0; }
 
-        /* === INICIO: AJUSTE DE ANCHO 1.2 === */
         .main-container { width: 100%; display: grid; grid-template-columns: 320px 1fr; grid-template-rows: auto auto 1fr; grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; gap: 16px; }
         #sapView .main-container { grid-template-columns: 320px 1fr; grid-template-rows: auto 1fr; grid-template-areas: "sidebar global-header" "sidebar main"; }
-        /* === FIN: AJUSTE DE ANCHO 1.2 === */
         
         /* Barra Lateral */
         .sidebar {
@@ -175,17 +170,15 @@
         /* Lista de Órdenes */
         .order-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
         
-        /* === INICIO: CORRECCIÓN DE ESTILO PARA BOTÓN DE ORDEN 2.0 === */
         .order-item .order-btn {
-            flex-grow: 1; /* Permite que el botón crezca para ocupar el espacio */
-            min-width: 0; /* Permite que el botón se encoja si es necesario sin desbordarse */
+            flex-grow: 1;
+            min-width: 0;
             text-align: center;
             padding: 10px 8px;
             white-space: nowrap;
-            overflow: hidden; /* Oculta el texto que no cabe */
-            text-overflow: ellipsis; /* Añade "..." al texto que no cabe */
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        /* === FIN: CORRECCIÓN DE ESTILO 2.0 === */
 
         .order-item .order-btn.active { background-color: var(--primary-color); color: var(--primary-text-color); }
         .order-item .order-btn.is-complete {
@@ -493,7 +486,7 @@
                             <div id="lineCountsContainer"></div>
                             <div class="table-wrapper">
                                 <table id="rastreoTable"></table>
-                                <p id="placeholderText">Cargando datos...</p>
+                                <p id="placeholderText">Selecciona una orden de la lista para ver sus detalles.</p>
                             </div>
                         </div>
                     </div>
@@ -578,7 +571,9 @@
             let loadedOrders = new Map();
             let sapData = [];
             let sapDateFilter = 'default';
-            let activeOrderKey = 'all';
+            // === INICIO: CAMBIO DE LÓGICA DE VISTA INICIAL 1.1 ===
+            let activeOrderKey = null; // La app inicia sin ninguna orden seleccionada.
+            // === FIN: CAMBIO DE LÓGICA DE VISTA INICIAL 1.1 ===
             let currentMode = 'rastreo';
             let mainMode = 'fwd';
             let currentVisibleData = []; 
@@ -1025,7 +1020,6 @@
                 }
                 item.appendChild(btn);
                 
-                // Un usuario puede editar/borrar si: está logueado Y (su área es la que se ve O es el admin maestro)
                 const canManageThisArea = session.area && (session.area === currentArea || session.isMaster);
 
                 if (key !== 'all' && canManageThisArea) {
@@ -1076,7 +1070,10 @@
             function renderSummary() {
                 let orderQty = 0, packedQty = 0, scrapCount = 0; let ordersToProcess = [];
                 
-                if (activeOrderKey === 'all') {
+                // === INICIO: CAMBIO DE LÓGICA DE VISTA INICIAL 1.2 ===
+                // El resumen ahora muestra "Órdenes del Día" si no hay ninguna orden específica seleccionada.
+                if (activeOrderKey === 'all' || activeOrderKey === null) {
+                // === FIN: CAMBIO DE LÓGICA DE VISTA INICIAL 1.2 ===
                     const todayString = new Date().toLocaleDateString('es-ES', { 
                         timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' 
                     });
@@ -1171,6 +1168,18 @@
                 tableWrapper.style.opacity = '0';
                 await new Promise(res => setTimeout(res, 150));
                 
+                // === INICIO: CAMBIO DE LÓGICA DE VISTA INICIAL 1.3 ===
+                // Si no hay ninguna orden seleccionada (key es null), limpia la tabla y muestra un mensaje.
+                if (!key) {
+                    updateRastreoTable([], []);
+                    updateLineCounts([], []);
+                    placeholderText.textContent = 'Selecciona una orden de la lista para ver sus detalles.';
+                    placeholderText.style.display = 'block';
+                    tableWrapper.style.opacity = '1';
+                    return;
+                }
+                // === FIN: CAMBIO DE LÓGICA DE VISTA INICIAL 1.3 ===
+                
                 let dataToShow = []; let headers = [];
                 if (key === 'all') {
                     loadedOrders.forEach(order => { if(order.rastreoData) dataToShow.push(...order.rastreoData) });
@@ -1241,7 +1250,8 @@
                 }
 
                 if (!data || data.length === 0 || !headersToRender || headersToRender.length === 0) {
-                    table.innerHTML = `<thead><tr><th>No se encontraron resultados.</th></tr></thead>`; return;
+                    table.innerHTML = `<thead><tr><th></th></tr></thead>`; // Tabla vacía para que no muestre "No se encontraron" al inicio
+                    return;
                 }
                 table.innerHTML = `
                     <thead><tr>${headersToRender.map(h => `<th>${h}</th>`).join('')}</tr></thead>
@@ -1275,7 +1285,7 @@
                 await new Promise(res => setTimeout(res, 150));
                 
                 let dataToShow = new Map(); let headers = [];
-                if (key === 'all') {
+                if (key === 'all' || key === null) { // Modificado para manejar el estado inicial nulo
                     loadedOrders.forEach(order => {
                         if(order.empaqueData) order.empaqueData.forEach((serials, boxId) => {
                             if (!dataToShow.has(boxId)) dataToShow.set(boxId, []);
