@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centro de Control de Producción v3.0</title>
+
+    <meta name="theme-color" content="#22252a">
+
+    <link rel="manifest" href="manifest.json">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Control CCP">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
@@ -524,10 +533,10 @@
                     <h2>Panel SAP</h2>
                     <div class="card" id="sap-uploadCard">
                         <h3>Panel de Control</h3>
-                         <div id="sapFileDropArea" class="file-drop-area disabled">
+                       <div id="sapFileDropArea" class="file-drop-area disabled">
                              <p>Autentícate para cargar archivos</p>
                              <p><span>o haz clic en ⚙️</span></p>
-                         </div>
+                       </div>
                         <input type="file" id="sapFileInput" accept=".xlsx, .xls" style="display: none;">
                     </div>
                     <div class="card" style="flex-grow: 1;" id="sap-orderListCard">
@@ -538,22 +547,22 @@
                     </div>
                 </aside>
                 <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
-                     <div class="global-dashboard-card">
-                             <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
-                             <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
-                     </div>
+                       <div class="global-dashboard-card">
+                               <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
+                               <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
+                       </div>
                 </header>
                 <main class="main-content animated-startup" style="animation-delay: 0.4s;">
-                     <div class="card" id="sap-tableCard">
-                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
-                             <h3>WorkShop</h3>
-                             <button id="sapResetFilter" class="filter-btn" style="display: none;">Mostrar Hoy/Tarde</button>
-                         </div>
-                         <div class="table-wrapper">
-                             <table id="sapTable"></table>
-                             <p id="sapPlaceholderText">Cargue un archivo para ver los datos de SAP.</p>
-                         </div>
-                     </div>
+                       <div class="card" id="sap-tableCard">
+                           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
+                               <h3>WorkShop</h3>
+                               <button id="sapResetFilter" class="filter-btn" style="display: none;">Mostrar Hoy/Tarde</button>
+                           </div>
+                           <div class="table-wrapper">
+                               <table id="sapTable"></table>
+                               <p id="sapPlaceholderText">Cargue un archivo para ver los datos de SAP.</p>
+                           </div>
+                       </div>
                 </main>
             </div>
         </div>
@@ -1517,14 +1526,14 @@
                     const scrap = data.filter(r => r.status === 'scrap').length;
 
                     reportHTML += `
-                        <h4>📦 Orden: ${order.key}</h4>
-                        <p><strong>📝 Catálogo:</strong> ${order.catalogNumber || 'N/A'}</p>
-                        <p><strong>📊 Progreso:</strong> ${order.packedQty || 0} / ${order.orderQty || 0} Unidades</p>
-                        <p><strong>📉 Restantes:</strong> ${remaining} Unidades</p>
-                        <p style="margin-top: 10px;"><strong>✅ En Movimiento (Hoy):</strong> ${today}</p>
-                        <p><strong>⚠️ Sin Movimiento (Retraso):</strong> ${delayed}</p>
-                        <p><strong>🗑️ En Scrap:</strong> ${scrap}</p>
-                    `;
+                            <h4>📦 Orden: ${order.key}</h4>
+                            <p><strong>📝 Catálogo:</strong> ${order.catalogNumber || 'N/A'}</p>
+                            <p><strong>📊 Progreso:</strong> ${order.packedQty || 0} / ${order.orderQty || 0} Unidades</p>
+                            <p><strong>📉 Restantes:</strong> ${remaining} Unidades</p>
+                            <p style="margin-top: 10px;"><strong>✅ En Movimiento (Hoy):</strong> ${today}</p>
+                            <p><strong>⚠️ Sin Movimiento (Retraso):</strong> ${delayed}</p>
+                            <p><strong>🗑️ En Scrap:</strong> ${scrap}</p>
+                        `;
                 });
                 reportHTML += `</div>`;
                 showModal(`Reporte de Órdenes Incompletas`, reportHTML, 'info', true);
@@ -1634,8 +1643,8 @@
 
             function updateSapOrderList() {
                  if (sapData.length === 0) {
-                     sapOrderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>`;
-                     return;
+                      sapOrderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>`;
+                      return;
                  }
                 
                 const groupedByDate = new Map();
@@ -1662,10 +1671,10 @@
                     const isToday = dateString === todayString;
                     html += `<div class="date-group">`;
                     html += `<button class="date-header" data-date="${dateString}">
-                                 <span>📅 ${dateString}</span> 
-                                 ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''}
-                                 <span class="collapse-icon">►</span>
-                               </button>`;
+                                  <span>📅 ${dateString}</span> 
+                                  ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''}
+                                  <span class="collapse-icon">►</span>
+                                </button>`;
                     html += `<div class="orders-for-date">`;
                     orders.forEach(order => {
                         const itemClass = order.status === 'complete' ? 'is-complete' : '';
@@ -2060,6 +2069,23 @@
             // === INICIO DE LA APP ===
             initializeApp();
         });
+    </script>
+    
+    <script>
+      // Verificamos si el navegador soporta Service Workers para evitar errores
+      if ('serviceWorker' in navigator) {
+        // Esperamos a que la página cargue completamente para no interferir con la carga inicial
+        window.addEventListener('load', () => {
+          // Registramos el archivo 'sw.js' que está en la raíz del proyecto
+          navigator.serviceWorker.register('sw.js')
+            .then(registration => {
+              console.log('✅ Service Worker registrado con éxito. Alcance:', registration.scope);
+            })
+            .catch(error => {
+              console.log('❌ Error al registrar el Service Worker:', error);
+            });
+        });
+      }
     </script>
 </body>
 </html>
