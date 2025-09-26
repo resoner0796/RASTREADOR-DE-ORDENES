@@ -1,7 +1,7 @@
 {
-  "name": "Centro de Control de Producción v3.0",
-  "short_name": "Control CCP",
-  "description": "Centro de Control de Producción y Rastreo de Órdenes para CORNING.",
+  "name": "Centro de Rastreo de Ordenes",
+  "short_name": "CRO",
+  "description": "Centro de Rastreo de Ordenes",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#0a0a0a",
