@@ -108,16 +108,8 @@
             gap: 16px;
             position: sticky;
             align-self: start;
-
-            /* === INICIO: AJUSTE DE POSICIÓN VERTICAL === */
-            /* INSTRUCCIONES: Cambia el valor de 'top' para mover el panel de control. */
-            /* Un valor más PEQUEÑO (ej. 8px) lo SUBIRÁ. */
-            /* Un valor más GRANDE (ej. 32px) lo BAJARÁ. */
             top: 16px;
-            /* La altura se recalcula automáticamente. No necesitas cambiarla. */
-            /* Fórmula: 100vh - (valor de top + padding inferior del body) = 100vh - (16px + 32px) */
             height: calc(100vh - 48px);
-            /* === FIN: AJUSTE DE POSICIÓN VERTICAL === */
         }
         .sidebar > h2 { display: none; }
         .sidebar .card h3 { text-align: center; }
@@ -375,8 +367,9 @@
                         <h3>Panel de Control</h3>
                         <div class="card-content">
                                 <div style="display: flex; gap: 10px; margin-bottom: 16px;">
-                                    <button id="areaSelectBtn" class="btn" style="flex: 1; align-self: stretch;" disabled>Seleccionar Área</button>
+                                    <button id="areaSelectBtn" class="btn" style="flex: 1; align-self: stretch;">Área: MULTIPORT</button>
                                     <div style="display: flex; flex-direction: column; gap: 8px;">
+                                        <button id="logoutBtn" class="btn" style="padding: 6px 12px; line-height: 1; display: none;">🚪</button>
                                         <button id="adminBtn" class="btn" style="padding: 6px 12px; line-height: 1;">⚙️</button>
                                         <button id="themeToggleBtn" class="btn" style="padding: 6px 12px; font-size: 1.2rem; line-height: 1;">☀️</button>
                                     </div>
@@ -392,7 +385,7 @@
                     <div class="card" style="flex-grow: 1;" id="orderListCard">
                         <h3>Órdenes Cargadas</h3>
                         <div id="orderList" class="card-content">
-                            <p class="text-dark" style="font-size:0.9rem;">Inicia sesión para cargar órdenes.</p>
+                            <p class="text-dark" style="font-size:0.9rem;">Cargando órdenes...</p>
                         </div>
                     </div>
                 </aside>
@@ -574,7 +567,8 @@
             let orderToUpdateKey = null;
             let rastreoStatusFilter = 'all';
             let rastreoLineFilter = 'all';
-            let session = { area: null, isMaster: false }; // NUEVO: Objeto de sesión
+            let session = { area: null, isMaster: false }; 
+            let currentArea = 'MULTIPORT'; // MODIFICADO: Variable para el área visualizada
             let fwdListener = null;
             let sapListener = null;
 
@@ -603,6 +597,7 @@
             const areaSelectBtn = doc('areaSelectBtn');
             const adminBtn = doc('adminBtn');
             const themeToggleBtn = doc('themeToggleBtn');
+            const logoutBtn = doc('logoutBtn'); // NUEVO: Botón de logout
             
             // Control Containers
             const mobileControls = {
@@ -703,28 +698,26 @@
                 }
             });
 
+            // MODIFICADO: El botón de área ahora siempre está activo
+            areaSelectBtn.addEventListener('click', showAreaSelector);
+
+            // NUEVO: Event listener para el botón de logout
+            logoutBtn.addEventListener('click', logout);
+
             // ===================================
             // === CORE APP CONTROL & UTILITIES ===
             // ===================================
             function switchMainMode(mode) {
                 if (mainMode === mode) return;
-
                 const oldView = doc(`${mainMode}View`);
                 const newView = doc(`${mode}View`);
-
                 oldView.style.opacity = 0;
-
                 setTimeout(() => {
                     oldView.style.display = 'none';
                     document.body.classList.remove('mode-fwd', 'mode-sap');
-                    
                     newView.style.display = 'block';
                     document.body.classList.add(`mode-${mode}`);
-                    
-                    requestAnimationFrame(() => {
-                        newView.style.opacity = 1;
-                    });
-
+                    requestAnimationFrame(() => { newView.style.opacity = 1; });
                     mainMode = mode;
                     localStorage.setItem('mainMode', mode);
                     modeFwd.classList.toggle('active', mode === 'fwd');
@@ -769,7 +762,6 @@
                 };
                 doc('cancelBtn').onclick = hideModal;
             }
-
 
             function hideModal() { modalOverlay.classList.remove('visible'); }
 
@@ -970,7 +962,7 @@
             function updateOrderList() {
                 orderList.innerHTML = '';
                 if (loadedOrders.size === 0) {
-                    orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No hay órdenes cargadas para el área ${session.area || ''}.</p>`;
+                    orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No hay órdenes cargadas para el área ${currentArea || ''}.</p>`;
                     return;
                 }
                 const groupedByDate = new Map();
@@ -1017,14 +1009,14 @@
                     btn.classList.add('is-complete');
                 }
                 item.appendChild(btn);
-                if (key !== 'all' && session.area) { // Modificado para requerir solo sesión
+                if (key !== 'all' && session.area) { 
                     const updateBtn = document.createElement('button');
                     updateBtn.className = 'icon-btn'; updateBtn.title = 'Actualizar orden';
                     updateBtn.innerHTML = `✏️`;
                     updateBtn.onclick = () => { orderToUpdateKey = key; updateFileInput.value = ''; updateFileInput.click(); };
                     item.appendChild(updateBtn);
                     
-                    if(session.isMaster){ // Solo el admin maestro puede borrar
+                    if(session.isMaster){ 
                         const deleteBtn = document.createElement('button');
                         deleteBtn.className = 'icon-btn'; deleteBtn.title = 'Eliminar orden';
                         deleteBtn.innerHTML = `🗑️`;
@@ -1744,7 +1736,7 @@
             }
 
             // ===================================
-            // === AUTH & AREA FUNCTIONS (NUEVO) ===
+            // === AUTH & AREA FUNCTIONS (MODIFICADO) ===
             // ===================================
             function showLogin() {
                 let content = `
@@ -1777,8 +1769,15 @@
                     const areaData = areaDoc.data();
                     if (areaData.password === passwordInput) {
                         session = { area: areaDoc.id, isMaster: areaData.isMaster || false };
-                        sessionStorage.setItem('appSession', JSON.stringify(session)); // Guardar sesión
+                        sessionStorage.setItem('appSession', JSON.stringify(session)); 
                         hideModal();
+                        
+                        // MODIFICADO: Al iniciar sesión, el área visualizada cambia al área de la sesión.
+                        if (currentArea !== session.area) {
+                            currentArea = session.area;
+                            localStorage.setItem('currentArea', currentArea);
+                            setupListenersForArea(currentArea);
+                        }
                         updateUIAfterAuth();
                     } else {
                         showModal('Error', 'Contraseña incorrecta.', 'error');
@@ -1789,6 +1788,17 @@
                 }
             }
             
+            // NUEVO: Función para cerrar sesión
+            function logout() {
+                session = { area: null, isMaster: false };
+                sessionStorage.removeItem('appSession');
+                // Al cerrar sesión, volvemos a la vista por defecto (MULTIPORT)
+                currentArea = 'MULTIPORT';
+                localStorage.setItem('currentArea', currentArea);
+                setupListenersForArea(currentArea);
+                updateUIAfterAuth();
+            }
+
             function updateUIAfterAuth() {
                 const isAuthenticated = !!session.area;
                 fileDropArea.classList.toggle('disabled', !isAuthenticated);
@@ -1797,21 +1807,45 @@
                 sapFileDropArea.classList.toggle('disabled', !isAuthenticated);
                 sapFileDropArea.querySelector('p').textContent = isAuthenticated ? 'Arrastra un archivo de SAP (.xlsx)' : 'Autentícate para cargar archivos';
                 
-                // === INICIO DE LA CORRECCIÓN ===
-                // El botón ahora se oculta solo si hay una sesión activa que NO sea maestra.
-                adminBtn.style.display = (session.area && !session.isMaster) ? 'none' : 'block';
-                // === FIN DE LA CORRECCIÓN ===
+                // CORREGIDO: El engrane se oculta si has iniciado sesión y NO eres master.
+                adminBtn.style.display = (isAuthenticated && !session.isMaster) ? 'none' : 'block';
+                // NUEVO: El botón de logout solo aparece si hay sesión.
+                logoutBtn.style.display = isAuthenticated ? 'block' : 'none';
 
-                if (isAuthenticated) {
-                    areaSelectBtn.textContent = `Área: ${session.area}`;
-                    setupListenersForArea(session.area);
-                } else {
-                    areaSelectBtn.textContent = 'Seleccionar Área';
-                    orderList.innerHTML = '<p class="text-dark" style="font-size:0.9rem;">Inicia sesión para cargar órdenes.</p>';
-                    loadedOrders.clear();
-                    sapData = [];
-                    render();
+                areaSelectBtn.textContent = `Área: ${currentArea}`;
+                
+                if (!isAuthenticated) {
+                    // Si no hay sesión, nos aseguramos de que el listener esté en el área actual.
+                    if (fwdListener) setupListenersForArea(currentArea);
                 }
+                updateOrderList();
+            }
+
+            async function showAreaSelector() {
+                const areasSnapshot = await db.collection('areas').get();
+                let areas = [];
+                areasSnapshot.forEach(doc => areas.push({ id: doc.id, ...doc.data() }));
+
+                let content = '<h3>Selecciona un Área para Visualizar</h3><ul class="area-list">';
+                areas.forEach(area => {
+                    // MODIFICADO: Se remueve la contraseña de la vista de selección.
+                    content += `<li><span>${area.name}</span> <button class="btn select-area-btn" data-area="${area.id}" style="width: auto; padding: 5px 10px;">Seleccionar</button></li>`;
+                });
+                content += '</ul>';
+                showModal('Selector de Área', content);
+
+                doc('modalBody').querySelectorAll('.select-area-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const newArea = e.target.dataset.area;
+                        if (newArea !== currentArea) {
+                            currentArea = newArea;
+                            localStorage.setItem('currentArea', currentArea);
+                            areaSelectBtn.textContent = `Área: ${currentArea}`;
+                            setupListenersForArea(currentArea);
+                        }
+                        hideModal();
+                    });
+                });
             }
 
             async function showAdminPanel() {
@@ -1909,6 +1943,7 @@
             });
 
             function setupListenersForArea(area) {
+                if (!area) return; // No hacer nada si no hay un área que escuchar
                 if (fwdListener) fwdListener(); 
                 if (sapListener) sapListener(); 
 
@@ -1930,7 +1965,7 @@
                     if (mainMode === 'fwd') render();
                 }, err => {
                     console.error("Error escuchando datos de FWD: ", err);
-                    showModal('Error de Conexión', 'No se pudo conectar a la base de datos de FWD en tiempo real.', 'error');
+                    showModal('Error de Conexión', `No se pudo conectar a los datos del área ${area}.`, 'error');
                 });
 
                 sapListener = db.collection('areas').doc(area).collection('sap_data').doc('current_data').onSnapshot(docRef => {
@@ -1945,7 +1980,6 @@
                     if (mainMode === 'sap') render();
                 }, err => {
                     console.error("Error escuchando datos de SAP: ", err);
-                    showModal('Error de Conexión', 'No se pudo conectar a la base de datos de SAP en tiempo real.', 'error');
                 });
             }
 
@@ -1989,21 +2023,16 @@
             });
 
             async function initializeApp() {
-                // === INICIO DE LA CORRECCIÓN ===
-                // Esta sección ahora asegura que la cuenta maestra 'MULTIPORT'
-                // siempre exista y tenga la contraseña y permisos correctos.
-                // Si no existe, la crea. Si ya existe pero está incorrecta, la corrige.
                 const masterAreaRef = db.collection('areas').doc('MULTIPORT');
                 await masterAreaRef.set({
                     name: 'MULTIPORT',
                     password: 'CORNING25',
                     isMaster: true
-                }, { merge: true }); // merge:true es la clave, une los datos sin borrar.
+                }, { merge: true });
                 console.log("Área maestra 'MULTIPORT' verificada y asegurada.");
-                // === FIN DE LA CORRECCIÓN ===
-
 
                 mainMode = localStorage.getItem('mainMode') || 'fwd';
+                currentArea = localStorage.getItem('currentArea') || 'MULTIPORT';
                 applyTheme(currentTheme);
 
                 doc('fwdView').style.display = mainMode === 'fwd' ? 'block' : 'none';
@@ -2019,6 +2048,7 @@
                 }
 
                 updateUIAfterAuth();
+                setupListenersForArea(currentArea); // MODIFICADO: Se cargan los datos al iniciar
             }
 
             // === INICIO DE LA APP ===
