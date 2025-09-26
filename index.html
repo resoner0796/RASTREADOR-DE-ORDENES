@@ -53,9 +53,7 @@
             --text-secondary: #4B5563;
             --text-dark: #9CA3AF;
             --thead-bg: rgba(229, 231, 235, 0.8);
-            /* === INICIO: NUEVO COLOR DE MARCA PARA TEMA CLARO === */
-            --branding-color: #0055A5;
-            /* === FIN: NUEVO COLOR DE MARCA === */
+            --branding-color: #0055A5; /* Azul corporativo elegante */
         }
 
         @keyframes fadeInUp {
@@ -92,17 +90,14 @@
         .app-container { width: 100%; max-width: 1800px; }
         
         .top-header-container {
-            padding-left: 336px; /* Ancho de sidebar (320px) + gap (16px) */
+            padding-left: 336px;
         }
         
         .app-header { text-align: center; margin-bottom: 16px; position: relative; }
         .app-branding { font-family: 'Tinos', 'Times New Roman', serif; font-weight: 400; font-size: 2.2rem; color: var(--text-primary); letter-spacing: 2px; margin: 0; transition: color 0.3s ease-in-out; }
-        /* === INICIO: APLICACIÓN DE COLOR DE MARCA EN TEMA CLARO === */
         body.light-theme .app-branding {
             color: var(--branding-color);
         }
-        /* === FIN: APLICACIÓN DE COLOR DE MARCA === */
-
         .app-title { font-size: 1.25rem; font-weight: 600; color: var(--text-secondary); margin: 4px 0 0 0; }
 
         .main-container { width: 100%; display: grid; grid-template-columns: 320px 1fr; grid-template-rows: auto auto 1fr; grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; gap: 16px; }
@@ -134,7 +129,6 @@
         .header { grid-area: header; }
         .main-content { grid-area: main; display: flex; flex-direction: column; gap: 16px; }
         
-        /* === INICIO: EFECTO DE CRISTAL REALISTA === */
         .card, .modal-content {
             background-color: var(--surface-color);
             background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
@@ -156,13 +150,11 @@
             border-right: 2px solid rgba(0, 0, 0, 0.1);
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
         }
-        /* === FIN: EFECTO DE CRISTAL REALISTA === */
 
         .card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         h2, h3 { margin-top: 0; margin-bottom: 12px; color: var(--text-secondary); font-weight: 600; font-size: 1rem; }
         h3 { font-size: 0.9rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;}
         
-        /* Área de Carga de Archivos */
         .file-drop-area { border: 2px dashed var(--border-color); border-radius: 8px; padding: 24px 20px; text-align: center; cursor: pointer; transition: all 0.2s ease; }
         .file-drop-area.disabled { cursor: not-allowed; background-color: rgba(0,0,0,0.2); border-color: #475569; }
         .file-drop-area.disabled p, .file-drop-area.disabled span { color: var(--text-dark); }
@@ -170,7 +162,6 @@
         .file-drop-area p { margin: 0; color: var(--text-dark); }
         .file-drop-area span { color: var(--primary-color); font-weight: 500; }
 
-        /* Estilo Botones (con efecto de cristal) */
         .btn, .filter-btn, .order-item .order-btn {
             padding: 8px 14px; border-radius: 8px; cursor: pointer;
             background-color: var(--surface-color);
@@ -186,7 +177,6 @@
         .btn:hover, .filter-btn:hover, .order-item .order-btn:hover { background-color: var(--surface-hover-color); color: var(--text-primary); border-color: rgba(255, 255, 255, 0.2); }
         .filter-btn.active { color: var(--primary-text-color); font-weight: 700; background-color: var(--primary-color); border-color: var(--primary-color); }
         .btn { width: 100%; padding: 10px; background-color: var(--primary-color); color: var(--primary-text-color); font-weight: 700;}
-        /* === INICIO: CORRECCIÓN BOTÓN DE ÁREA === */
         #uploadCard #areaSelectBtn {
             background-color: var(--surface-color);
             color: var(--text-secondary);
@@ -196,75 +186,39 @@
             background-color: var(--surface-hover-color);
             color: var(--text-primary);
         }
-        /* === FIN: CORRECCIÓN BOTÓN DE ÁREA === */
         .btn.btn-danger { background-color: var(--danger-color); color: var(--text-primary); }
         .btn.btn-danger:hover { background-color: #f8516d; }
         .btn:disabled { background-color: var(--surface-color); opacity: 0.5; color: var(--text-dark); cursor: not-allowed; border-color: var(--border-color);}
         .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .light-theme .btn:hover:not(:disabled) { box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
 
-        /* Lista de Órdenes */
         .order-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
         
         .order-item .order-btn {
-            flex-grow: 1;
-            min-width: 0;
-            text-align: center;
-            padding: 10px 8px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            flex-grow: 1; min-width: 0; text-align: center; padding: 10px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
         .order-item .order-btn.active { background-color: var(--primary-color); color: var(--primary-text-color); }
         .order-item .order-btn.is-complete {
-            background-color: rgba(52, 211, 153, 0.1);
-            color: var(--success-color);
-            border-color: var(--success-color);
-            position: relative;
-            overflow: hidden;
+            background-color: rgba(52, 211, 153, 0.1); color: var(--success-color); border-color: var(--success-color); position: relative; overflow: hidden;
         }
         .order-item .order-btn.is-complete::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%);
-            transform: translateX(-100%);
-            animation: shine-green 4s infinite linear;
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); transform: translateX(-100%); animation: shine-green 4s infinite linear;
         }
         .order-item .order-btn.is-complete:hover { background-color: rgba(52, 211, 153, 0.2); }
         .order-item .order-btn.is-complete.active { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.4); }
         
-        /* === INICIO: CORRECCIÓN ÍCONOS SIN FONDO === */
         .order-item .icon-btn { 
-            flex-shrink: 0; 
-            background: transparent; 
-            border: none;
-            backdrop-filter: none;
-            box-shadow: none;
-            color: var(--text-dark); 
-            cursor: pointer; 
-            padding: 4px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            transition: all 0.2s; 
-            font-size: 1.2rem; 
-            filter: grayscale(1) opacity(0.6); 
+            flex-shrink: 0; background: transparent; border: none; backdrop-filter: none; box-shadow: none; color: var(--text-dark); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 1.2rem; filter: grayscale(1) opacity(0.6); 
         }
-        /* === FIN: CORRECCIÓN ÍCONOS SIN FONDO === */
         .order-item .icon-btn:hover { color: var(--text-primary); filter: grayscale(0) opacity(1); }
         
-        /* Switchers */
         .mode-switcher { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 4px; background-color: rgba(0,0,0,0.1); border-radius: 10px; }
         .light-theme .mode-switcher { background-color: rgba(0,0,0,0.05); }
         #mainModeSwitcher { grid-template-columns: 1fr 1fr; margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto; }
         .mode-switcher button { padding: 8px; border: none; background-color: transparent; color: var(--text-secondary); font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
         .mode-switcher button.active { background-color: var(--surface-color); color: var(--text-primary); box-shadow: 0 2px 10px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
-        .light-theme .mode-switcher button.active { color: var(--primary-color); }
+        .light-theme .mode-switcher button.active { color: var(--primary-text-color); background-color: var(--branding-color); border-color: var(--branding-color); }
         .header > .mode-switcher { margin-bottom: 20px; }
         
         /* Stats */
@@ -279,8 +233,19 @@
         #statRemainingQty, #sapTotalOrdersStat, #totalOrdersStat { color: var(--warning-color); } 
         #statScrapQty { color: var(--danger-color); }
 
+        /* === INICIO: AJUSTES DE COLOR TEMA CLARO === */
+        body.light-theme #statOrderNumber,
+        body.light-theme #uploadCard h3,
+        body.light-theme #orderListCard h3,
+        body.light-theme #sap-uploadCard h3,
+        body.light-theme #sap-orderListCard h3,
+        body.light-theme .mode-switcher button {
+            color: var(--branding-color);
+        }
+        /* === FIN: AJUSTES DE COLOR TEMA CLARO === */
+
         /* Tabla y Contenido de Empaque */
-        .table-wrapper { overflow: auto; flex-grow: 1; transition: opacity 0.3s ease-in-out; }
+        .table-wrapper { overflow: auto; flex-grow: 1; transition: opacity 0.3s ease-in-out; border-radius: 12px; border: 1px solid var(--border-color); }
         #tableCard { display: flex; flex-direction: column; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; font-size: 0.9rem;}
@@ -291,12 +256,6 @@
         .line-badge span { font-weight: 700; color: var(--text-secondary); }
         .box-row { cursor: pointer; }
         .box-row:hover { background-color: var(--surface-hover-color); }
-        .box-row td:first-child::before { content: '►'; display: inline-block; margin-right: 10px; font-size: 0.7rem; transition: transform 0.2s; }
-        .box-row.expanded td:first-child::before { transform: rotate(90deg); }
-        .serial-row { display: none; }
-        .box-row.expanded + .serial-row { display: table-row; }
-        .serial-row td { background-color: rgba(0,0,0,0.1); padding: 12px 20px 12px 40px; border-color: #2a3a5e; }
-        .box-summary-info { padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); }
         
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
@@ -308,14 +267,12 @@
         tbody tr.is-today, tbody tr.is-complete-sap { background-color: rgba(52, 211, 153, 0.1) !important; position: relative; overflow: hidden; }
         tbody tr.is-today::after, tbody tr.is-complete-sap::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); transform: translateX(-100%); animation: shine-green 4s infinite linear; animation-delay: 1.5s; }
         tbody tr.is-today td, tbody tr.is-complete-sap td { color: var(--success-color) !important; }
-
-        /* === INICIO: CORRECCIÓN EFECTO BRILLO TEMA CLARO === */
+        
         body.light-theme .order-item .order-btn.is-complete::after,
         body.light-theme tbody tr.is-today::after, 
         body.light-theme tbody tr.is-complete-sap::after {
             background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(16, 185, 129, 0.25) 50%, rgba(255,255,255,0) 80%);
         }
-        /* === FIN: CORRECCIÓN EFECTO BRILLO TEMA CLARO === */
         
         tbody tr.is-incomplete-sap { background-color: rgba(251, 191, 36, 0.1) !important; }
         tbody tr.is-incomplete-sap td { color: var(--warning-color) !important; }
@@ -339,6 +296,14 @@
         #modalBody .area-list li { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);}
         #modalBody .area-list li input { flex-grow: 1; margin: 0; }
 
+        /* NUEVO: Estilos para la lista de seriales en el modal */
+        #modalBody .packing-details-list { list-style: none; padding: 0; margin: 0; }
+        #modalBody .packing-details-list li { display: flex; justify-content: space-between; padding: 8px; border-radius: 6px; transition: background-color 0.2s; }
+        #modalBody .packing-details-list li:nth-child(odd) { background-color: rgba(255,255,255,0.03); }
+        #modalBody .packing-details-list li span:first-child { color: var(--text-secondary); }
+        #modalBody .packing-details-list li span:last-child { font-weight: 600; color: var(--text-primary); }
+
+
         /* Transiciones de Vista */
         #fwdView, #sapView { transition: opacity 0.3s ease-in-out; }
         body.mode-fwd #sapView, body.mode-sap #fwdView { display: none; }
@@ -351,9 +316,7 @@
         .date-header .status-indicator { font-weight: 400; font-size: 0.8rem; color: var(--success-color); }
         .date-header .collapse-icon { transition: transform 0.2s; }
         .date-group.expanded .date-header .collapse-icon { transform: rotate(90deg); }
-        /* === INICIO: CORRECCIÓN BORDE IZQUIERDO === */
         .orders-for-date { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding-left: 12px; margin-top: 0; }
-        /* === FIN: CORRECCIÓN BORDE IZQUIERDO === */
         .date-group.expanded .orders-for-date { max-height: 1000px; margin-top: 8px; }
         
         /* Media Queries */
