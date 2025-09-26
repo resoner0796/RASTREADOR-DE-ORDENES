@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -86,6 +86,13 @@
         
         /* Contenedores Principales */
         .app-container { width: 100%; max-width: 1800px; }
+        
+        /* === INICIO: CAMBIO 1.1 - Contenedor para centrar el header === */
+        .top-header-container {
+            padding-left: 276px; /* Ancho de sidebar (260px) + gap (16px) */
+        }
+        /* === FIN: CAMBIO 1.1 === */
+        
         .app-header { text-align: center; margin-bottom: 16px; position: relative; }
         .app-branding { font-family: 'Tinos', 'Times New Roman', serif; font-weight: 400; font-size: 2.2rem; color: var(--text-primary); letter-spacing: 2px; margin: 0; }
         .app-title { font-size: 1.25rem; font-weight: 600; color: var(--text-secondary); margin: 4px 0 0 0; }
@@ -104,19 +111,20 @@
             position: sticky;
             align-self: start;
 
-            /* === AJUSTE DE POSICIÓN VERTICAL === */
-            /* Modifica el valor de 'top' para mover el panel hacia arriba o abajo. */
-            /* Un valor más pequeño (ej. 180px) lo subirá; un valor más grande (ej. 200px) lo bajará. */
-            top: 192px;
-
-            /* La altura se ajusta automáticamente según el valor de 'top'. No es necesario cambiarla. */
-            height: calc(100vh - 208px); /* Se calcula como (valor de top + padding inferior del body) */
+            /* === INICIO: CAMBIO 2.1 - Ajuste de posición vertical y altura del sidebar === */
+            /* Se alinea con el padding superior del body para que coincida con el contenido principal. */
+            top: 32px;
+            /* La altura se recalcula: 100vh - (nuevo top + padding inferior del body) = 100vh - (32px + 32px) */
+            height: calc(100vh - 64px);
+            /* === FIN: CAMBIO 2.1 === */
         }
         /* Se oculta el H2 redundante en desktop para permitir la alineación de las tarjetas */
         .sidebar > h2 { display: none; }
         .sidebar .card h3 { text-align: center; }
         #sapView .sidebar > h2 { text-align: center; }
-        #sapView .sidebar { height: calc(100vh - 208px); }
+        /* === INICIO: CAMBIO 2.2 - Ajuste de altura para la vista SAP === */
+        #sapView .sidebar { height: calc(100vh - 64px); }
+        /* === FIN: CAMBIO 2.2 === */
         #orderListCard, #sap-orderListCard { display: flex; flex-direction: column; overflow: hidden; }
         #orderList, #sapOrderList { flex-grow: 1; overflow-y: auto; }
         
@@ -324,6 +332,12 @@
             .box-id-title { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); }
             .box-details-summary { text-align: right; }
             .mobile-packing-list .serial-details-container { padding: 0 1rem 1rem 1rem; }
+
+            /* === INICIO: CAMBIO 1.2 - Resetear el padding para la vista móvil === */
+            .top-header-container {
+                padding-left: 0;
+            }
+            /* === FIN: CAMBIO 1.2 === */
         }
         
         @media (min-width: 993px) {
@@ -342,16 +356,18 @@
 </head>
 <body class="dark-theme">
     <div class="app-container">
-        <header class="app-header animated-startup" style="animation-delay: 0s;">
-            <h1 class="app-branding">CORNING</h1>
-            <h2 id="app-title" class="app-title">Centro de Rastreo de Órdenes</h2>
-        </header>
 
-        <div id="mainModeSwitcher" class="mode-switcher card animated-startup" style="animation-delay: 0.1s;">
-            <button id="modeFwd" class="active">FWD</button>
-            <button id="modeSap">SAP</button>
+        <div class="top-header-container">
+            <header class="app-header animated-startup" style="animation-delay: 0s;">
+                <h1 class="app-branding">CORNING</h1>
+                <h2 id="app-title" class="app-title">Centro de Rastreo de Órdenes</h2>
+            </header>
+
+            <div id="mainModeSwitcher" class="mode-switcher card animated-startup" style="animation-delay: 0.1s;">
+                <button id="modeFwd" class="active">FWD</button>
+                <button id="modeSap">SAP</button>
+            </div>
         </div>
-
         <div id="fwdView">
             <div class="main-container">
                 <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
@@ -365,13 +381,13 @@
                     <div class="card" id="uploadCard">
                         <h3>Panel de Control</h3>
                         <div class="card-content">
-                             <div style="display: flex; gap: 10px; margin-bottom: 16px;">
-                                 <button id="areaSelectBtn" class="btn" style="flex: 1; align-self: stretch;">Área: MULTIPORT</button>
-                                 <div style="display: flex; flex-direction: column; gap: 8px;">
-                                     <button id="adminBtn" class="btn" style="padding: 6px 12px; line-height: 1;">⚙️</button>
-                                     <button id="themeToggleBtn" class="btn" style="padding: 6px 12px; font-size: 1.2rem; line-height: 1;">☀️</button>
-                                 </div>
-                             </div>
+                                <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                                    <button id="areaSelectBtn" class="btn" style="flex: 1; align-self: stretch;">Área: MULTIPORT</button>
+                                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                                        <button id="adminBtn" class="btn" style="padding: 6px 12px; line-height: 1;">⚙️</button>
+                                        <button id="themeToggleBtn" class="btn" style="padding: 6px 12px; font-size: 1.2rem; line-height: 1;">☀️</button>
+                                    </div>
+                                </div>
                             <div id="fileDropArea" class="file-drop-area disabled">
                                 <p>Arrastra archivos (.xlsx) para cargar/actualizar</p>
                                 <p><span>o haz clic para seleccionar</span></p>
@@ -511,8 +527,8 @@
                 </aside>
                 <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
                      <div class="global-dashboard-card">
-                            <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
-                            <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
+                             <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
+                             <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
                      </div>
                 </header>
                 <main class="main-content animated-startup" style="animation-delay: 0.4s;">
@@ -1845,23 +1861,23 @@
 
                 doc('modalBody').querySelectorAll('.delete-area-btn').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
-                         const areaId = e.target.dataset.id;
-                         if (areas.length <= 1) {
-                            showModal('Acción no permitida', 'No puedes eliminar la última área.', 'warning');
-                            return;
-                         }
-                         
-                         showConfirmationModal(`¿Estás seguro de que quieres eliminar el área "${areaId}" y todos sus datos? Esta acción no se puede deshacer.`, async () => {
-                            await deleteAreaAndSubcollections(areaId);
-                            if (currentArea === areaId) {
-                                const remainingArea = areas.find(a => a.id !== areaId);
-                                currentArea = remainingArea.id;
-                                localStorage.setItem('currentArea', currentArea);
-                                areaSelectBtn.textContent = `Área: ${currentArea}`;
-                                setupListenersForArea(currentArea);
-                            }
-                            showAdminPanel();
-                         });
+                          const areaId = e.target.dataset.id;
+                          if (areas.length <= 1) {
+                              showModal('Acción no permitida', 'No puedes eliminar la última área.', 'warning');
+                              return;
+                          }
+                          
+                          showConfirmationModal(`¿Estás seguro de que quieres eliminar el área "${areaId}" y todos sus datos? Esta acción no se puede deshacer.`, async () => {
+                              await deleteAreaAndSubcollections(areaId);
+                              if (currentArea === areaId) {
+                                  const remainingArea = areas.find(a => a.id !== areaId);
+                                  currentArea = remainingArea.id;
+                                  localStorage.setItem('currentArea', currentArea);
+                                  areaSelectBtn.textContent = `Área: ${currentArea}`;
+                                  setupListenersForArea(currentArea);
+                              }
+                              showAdminPanel();
+                          });
                     });
                 });
             }
