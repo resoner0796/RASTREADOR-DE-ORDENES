@@ -1162,8 +1162,8 @@
                     <button class="btn" id="exportImageButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Captura</button>
                     <button class="btn" id="exportStatusButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Reporte</button>
                 `;
-                mobileControls.actions.innerHTML = actionsHTML;
-                desktopControls.actions.innerHTML = desktopActionsHTML;
+                if (mobileControls.actions) mobileControls.actions.innerHTML = actionsHTML;
+                if (desktopControls.actions) desktopControls.actions.innerHTML = desktopActionsHTML;
 
                 doc('exportViewButtonMobile')?.addEventListener('click', handleReprintExport);
                 doc('exportViewButtonDesktop')?.addEventListener('click', handleReprintExport);
@@ -1236,8 +1236,8 @@
                     });
                 }
                 
-                mobileControls.line?.innerHTML = lineHTML;
-                desktopControls.line?.innerHTML = lineHTML;
+                if(mobileControls.line) mobileControls.line.innerHTML = lineHTML;
+                if(desktopControls.line) desktopControls.line.innerHTML = lineHTML;
             }
             
             function updateRastreoTable(data, headers) {
