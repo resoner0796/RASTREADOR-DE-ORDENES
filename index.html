@@ -22,9 +22,7 @@
         }
 
         body.dark-theme {
-            /* === INICIO: NUEVO FONDO === */
             --bg-gradient: radial-gradient(ellipse at center top, #22252a 0%, #0a0a0a 70%);
-            /* === FIN: NUEVO FONDO === */
             --surface-color: rgba(35, 38, 43, 0.6);
             --surface-hover-color: rgba(55, 58, 63, 0.7);
             --border-color: rgba(255, 255, 255, 0.1);
@@ -55,6 +53,9 @@
             --text-secondary: #4B5563;
             --text-dark: #9CA3AF;
             --thead-bg: rgba(229, 231, 235, 0.8);
+            /* === INICIO: NUEVO COLOR DE MARCA PARA TEMA CLARO === */
+            --branding-color: #0055A5;
+            /* === FIN: NUEVO COLOR DE MARCA === */
         }
 
         @keyframes fadeInUp {
@@ -95,7 +96,13 @@
         }
         
         .app-header { text-align: center; margin-bottom: 16px; position: relative; }
-        .app-branding { font-family: 'Tinos', 'Times New Roman', serif; font-weight: 400; font-size: 2.2rem; color: var(--text-primary); letter-spacing: 2px; margin: 0; }
+        .app-branding { font-family: 'Tinos', 'Times New Roman', serif; font-weight: 400; font-size: 2.2rem; color: var(--text-primary); letter-spacing: 2px; margin: 0; transition: color 0.3s ease-in-out; }
+        /* === INICIO: APLICACIÓN DE COLOR DE MARCA EN TEMA CLARO === */
+        body.light-theme .app-branding {
+            color: var(--branding-color);
+        }
+        /* === FIN: APLICACIÓN DE COLOR DE MARCA === */
+
         .app-title { font-size: 1.25rem; font-weight: 600; color: var(--text-secondary); margin: 4px 0 0 0; }
 
         .main-container { width: 100%; display: grid; grid-template-columns: 320px 1fr; grid-template-rows: auto auto 1fr; grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; gap: 16px; }
@@ -127,7 +134,7 @@
         .header { grid-area: header; }
         .main-content { grid-area: main; display: flex; flex-direction: column; gap: 16px; }
         
-        /* === INICIO: NUEVO EFECTO DE CRISTAL REALISTA === */
+        /* === INICIO: EFECTO DE CRISTAL REALISTA === */
         .card, .modal-content {
             background-color: var(--surface-color);
             background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
@@ -136,24 +143,20 @@
             border-radius: 16px;
             padding: 20px;
             transition: all 0.3s ease-in-out;
-            /* Borde superior para brillo */
             border-top: 1px solid rgba(255, 255, 255, 0.15);
-            /* Borde izquierdo para brillo */
             border-left: 1px solid rgba(255, 255, 255, 0.1);
-            /* Sombra inferior y derecha para crear efecto de grosor y 3D */
             border-bottom: 2px solid rgba(0, 0, 0, 0.3);
             border-right: 2px solid rgba(0, 0, 0, 0.3);
-            /* Sombra de la tarjeta para levantarla del fondo */
             box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
-        .light-theme .card, .light-theme .modal-content {
+        body.light-theme .card, body.light-theme .modal-content {
             border-top: 1px solid rgba(255, 255, 255, 0.8);
             border-left: 1px solid rgba(255, 255, 255, 0.8);
             border-bottom: 2px solid rgba(0, 0, 0, 0.1);
             border-right: 2px solid rgba(0, 0, 0, 0.1);
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
         }
-        /* === FIN: NUEVO EFECTO DE CRISTAL REALISTA === */
+        /* === FIN: EFECTO DE CRISTAL REALISTA === */
 
         .card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         h2, h3 { margin-top: 0; margin-bottom: 12px; color: var(--text-secondary); font-weight: 600; font-size: 1rem; }
@@ -183,6 +186,17 @@
         .btn:hover, .filter-btn:hover, .order-item .order-btn:hover { background-color: var(--surface-hover-color); color: var(--text-primary); border-color: rgba(255, 255, 255, 0.2); }
         .filter-btn.active { color: var(--primary-text-color); font-weight: 700; background-color: var(--primary-color); border-color: var(--primary-color); }
         .btn { width: 100%; padding: 10px; background-color: var(--primary-color); color: var(--primary-text-color); font-weight: 700;}
+        /* === INICIO: CORRECCIÓN BOTÓN DE ÁREA === */
+        #uploadCard #areaSelectBtn {
+            background-color: var(--surface-color);
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        #uploadCard #areaSelectBtn:hover {
+            background-color: var(--surface-hover-color);
+            color: var(--text-primary);
+        }
+        /* === FIN: CORRECCIÓN BOTÓN DE ÁREA === */
         .btn.btn-danger { background-color: var(--danger-color); color: var(--text-primary); }
         .btn.btn-danger:hover { background-color: #f8516d; }
         .btn:disabled { background-color: var(--surface-color); opacity: 0.5; color: var(--text-dark); cursor: not-allowed; border-color: var(--border-color);}
@@ -223,7 +237,25 @@
         }
         .order-item .order-btn.is-complete:hover { background-color: rgba(52, 211, 153, 0.2); }
         .order-item .order-btn.is-complete.active { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.4); }
-        .order-item .icon-btn { flex-shrink: 0; background: none; color: var(--text-dark); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 1.2rem; filter: grayscale(1) opacity(0.6); }
+        
+        /* === INICIO: CORRECCIÓN ÍCONOS SIN FONDO === */
+        .order-item .icon-btn { 
+            flex-shrink: 0; 
+            background: transparent; 
+            border: none;
+            backdrop-filter: none;
+            box-shadow: none;
+            color: var(--text-dark); 
+            cursor: pointer; 
+            padding: 4px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            transition: all 0.2s; 
+            font-size: 1.2rem; 
+            filter: grayscale(1) opacity(0.6); 
+        }
+        /* === FIN: CORRECCIÓN ÍCONOS SIN FONDO === */
         .order-item .icon-btn:hover { color: var(--text-primary); filter: grayscale(0) opacity(1); }
         
         /* Switchers */
@@ -276,6 +308,15 @@
         tbody tr.is-today, tbody tr.is-complete-sap { background-color: rgba(52, 211, 153, 0.1) !important; position: relative; overflow: hidden; }
         tbody tr.is-today::after, tbody tr.is-complete-sap::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); transform: translateX(-100%); animation: shine-green 4s infinite linear; animation-delay: 1.5s; }
         tbody tr.is-today td, tbody tr.is-complete-sap td { color: var(--success-color) !important; }
+
+        /* === INICIO: CORRECCIÓN EFECTO BRILLO TEMA CLARO === */
+        body.light-theme .order-item .order-btn.is-complete::after,
+        body.light-theme tbody tr.is-today::after, 
+        body.light-theme tbody tr.is-complete-sap::after {
+            background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(16, 185, 129, 0.25) 50%, rgba(255,255,255,0) 80%);
+        }
+        /* === FIN: CORRECCIÓN EFECTO BRILLO TEMA CLARO === */
+        
         tbody tr.is-incomplete-sap { background-color: rgba(251, 191, 36, 0.1) !important; }
         tbody tr.is-incomplete-sap td { color: var(--warning-color) !important; }
         tbody tr.is-late-sap { background-color: rgba(251, 113, 133, 0.1) !important; }
@@ -310,7 +351,9 @@
         .date-header .status-indicator { font-weight: 400; font-size: 0.8rem; color: var(--success-color); }
         .date-header .collapse-icon { transition: transform 0.2s; }
         .date-group.expanded .date-header .collapse-icon { transform: rotate(90deg); }
-        .orders-for-date { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding-left: 12px; border-left: 2px solid var(--border-color); margin-top: 0; }
+        /* === INICIO: CORRECCIÓN BORDE IZQUIERDO === */
+        .orders-for-date { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding-left: 12px; margin-top: 0; }
+        /* === FIN: CORRECCIÓN BORDE IZQUIERDO === */
         .date-group.expanded .orders-for-date { max-height: 1000px; margin-top: 8px; }
         
         /* Media Queries */
@@ -1111,7 +1154,7 @@
                     statOrderNumber.textContent = activeOrderKey;
                     statCatalogNumber.textContent = ordersToProcess[0].catalogNumber;
                 } else if (loadedOrders.size > 0) {
-                    setActiveOrder(null); // Cambiado a null para no seleccionar nada
+                    setActiveOrder(null);
                     return; 
                 } else {
                     statOrderNumber.textContent = 'N/A';
