@@ -568,7 +568,7 @@
             let rastreoStatusFilter = 'all';
             let rastreoLineFilter = 'all';
             let session = { area: null, isMaster: false }; 
-            let currentArea = 'MULTIPORT'; // MODIFICADO: Variable para el área visualizada
+            let currentArea = 'MULTIPORT'; 
             let fwdListener = null;
             let sapListener = null;
 
@@ -597,7 +597,7 @@
             const areaSelectBtn = doc('areaSelectBtn');
             const adminBtn = doc('adminBtn');
             const themeToggleBtn = doc('themeToggleBtn');
-            const logoutBtn = doc('logoutBtn'); // NUEVO: Botón de logout
+            const logoutBtn = doc('logoutBtn');
             
             // Control Containers
             const mobileControls = {
@@ -698,10 +698,7 @@
                 }
             });
 
-            // MODIFICADO: El botón de área ahora siempre está activo
             areaSelectBtn.addEventListener('click', showAreaSelector);
-
-            // NUEVO: Event listener para el botón de logout
             logoutBtn.addEventListener('click', logout);
 
             // ===================================
@@ -796,6 +793,7 @@
                 try {
                     const empaqueDataForDB = Array.from(orderData.empaqueData.entries()).map(([boxId, serials]) => ({ boxId, serials }));
                     const dataToSave = { ...orderData, empaqueData: empaqueDataForDB, lastUpdated: new Date() };
+                    // Los usuarios solo pueden guardar en su propia área de sesión
                     await db.collection('areas').doc(session.area).collection('orders').doc(orderKey).set(dataToSave, { merge: true });
                 } catch (e) {
                     console.error("Error al guardar en Firebase: ", e);
@@ -805,7 +803,10 @@
 
             async function deleteOrderFromFirebase(orderKey) {
                 try {
-                    await db.collection('areas').doc(session.area).collection('orders').doc(orderKey).delete();
+                    // === INICIO DE LA CORRECCIÓN ===
+                    // El admin maestro borra del ÁREA ACTUALMENTE VISUALIZADA (currentArea), no de su propia área de sesión.
+                    await db.collection('areas').doc(currentArea).collection('orders').doc(orderKey).delete();
+                    // === FIN DE LA CORRECCIÓN ===
                 } catch (e) {
                      console.error("Error al eliminar en Firebase: ", e);
                     showModal('Error al Eliminar', `No se pudo eliminar la orden ${orderKey}.`, 'error');
@@ -1009,7 +1010,7 @@
                     btn.classList.add('is-complete');
                 }
                 item.appendChild(btn);
-                if (key !== 'all' && session.area) { 
+                if (key !== 'all' && session.area && session.area === currentArea) { 
                     const updateBtn = document.createElement('button');
                     updateBtn.className = 'icon-btn'; updateBtn.title = 'Actualizar orden';
                     updateBtn.innerHTML = `✏️`;
@@ -1736,7 +1737,7 @@
             }
 
             // ===================================
-            // === AUTH & AREA FUNCTIONS (MODIFICADO) ===
+            // === AUTH & AREA FUNCTIONS ===
             // ===================================
             function showLogin() {
                 let content = `
@@ -1772,7 +1773,6 @@
                         sessionStorage.setItem('appSession', JSON.stringify(session)); 
                         hideModal();
                         
-                        // MODIFICADO: Al iniciar sesión, el área visualizada cambia al área de la sesión.
                         if (currentArea !== session.area) {
                             currentArea = session.area;
                             localStorage.setItem('currentArea', currentArea);
@@ -1788,11 +1788,9 @@
                 }
             }
             
-            // NUEVO: Función para cerrar sesión
             function logout() {
                 session = { area: null, isMaster: false };
                 sessionStorage.removeItem('appSession');
-                // Al cerrar sesión, volvemos a la vista por defecto (MULTIPORT)
                 currentArea = 'MULTIPORT';
                 localStorage.setItem('currentArea', currentArea);
                 setupListenersForArea(currentArea);
@@ -1801,21 +1799,20 @@
 
             function updateUIAfterAuth() {
                 const isAuthenticated = !!session.area;
-                fileDropArea.classList.toggle('disabled', !isAuthenticated);
-                fileDropArea.querySelector('p').textContent = isAuthenticated ? 'Arrastra archivos (.xlsx) para cargar/actualizar' : 'Autentícate para cargar archivos';
+                const canEdit = isAuthenticated && (session.isMaster || session.area === currentArea);
+
+                fileDropArea.classList.toggle('disabled', !canEdit);
+                fileDropArea.querySelector('p').textContent = canEdit ? 'Arrastra archivos (.xlsx) para cargar/actualizar' : 'Inicia sesión para esta área para cargar archivos';
                 
-                sapFileDropArea.classList.toggle('disabled', !isAuthenticated);
-                sapFileDropArea.querySelector('p').textContent = isAuthenticated ? 'Arrastra un archivo de SAP (.xlsx)' : 'Autentícate para cargar archivos';
+                sapFileDropArea.classList.toggle('disabled', !canEdit);
+                sapFileDropArea.querySelector('p').textContent = canEdit ? 'Arrastra un archivo de SAP (.xlsx)' : 'Inicia sesión para esta área para cargar archivos';
                 
-                // CORREGIDO: El engrane se oculta si has iniciado sesión y NO eres master.
                 adminBtn.style.display = (isAuthenticated && !session.isMaster) ? 'none' : 'block';
-                // NUEVO: El botón de logout solo aparece si hay sesión.
                 logoutBtn.style.display = isAuthenticated ? 'block' : 'none';
 
                 areaSelectBtn.textContent = `Área: ${currentArea}`;
                 
                 if (!isAuthenticated) {
-                    // Si no hay sesión, nos aseguramos de que el listener esté en el área actual.
                     if (fwdListener) setupListenersForArea(currentArea);
                 }
                 updateOrderList();
@@ -1828,7 +1825,6 @@
 
                 let content = '<h3>Selecciona un Área para Visualizar</h3><ul class="area-list">';
                 areas.forEach(area => {
-                    // MODIFICADO: Se remueve la contraseña de la vista de selección.
                     content += `<li><span>${area.name}</span> <button class="btn select-area-btn" data-area="${area.id}" style="width: auto; padding: 5px 10px;">Seleccionar</button></li>`;
                 });
                 content += '</ul>';
@@ -1842,6 +1838,7 @@
                             localStorage.setItem('currentArea', currentArea);
                             areaSelectBtn.textContent = `Área: ${currentArea}`;
                             setupListenersForArea(currentArea);
+                            updateUIAfterAuth(); // Actualiza la UI para reflejar permisos en la nueva área
                         }
                         hideModal();
                     });
@@ -1943,7 +1940,7 @@
             });
 
             function setupListenersForArea(area) {
-                if (!area) return; // No hacer nada si no hay un área que escuchar
+                if (!area) return; 
                 if (fwdListener) fwdListener(); 
                 if (sapListener) sapListener(); 
 
@@ -2048,7 +2045,7 @@
                 }
 
                 updateUIAfterAuth();
-                setupListenersForArea(currentArea); // MODIFICADO: Se cargan los datos al iniciar
+                setupListenersForArea(currentArea);
             }
 
             // === INICIO DE LA APP ===
