@@ -168,7 +168,18 @@
 
         /* Lista de Órdenes */
         .order-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .order-item .order-btn { flex-grow: 1; text-align: center; padding: 10px; white-space: nowrap; }
+        
+        /* === INICIO: CORRECCIÓN DE ESTILO PARA BOTÓN DE ORDEN === */
+        .order-item .order-btn {
+            flex-grow: 1;
+            display: flex; /* Permite centrado vertical y horizontal */
+            align-items: center;
+            justify-content: center;
+            padding: 10px 8px; /* Padding ajustado */
+            white-space: nowrap;
+        }
+        /* === FIN: CORRECCIÓN DE ESTILO === */
+
         .order-item .order-btn.active { background-color: var(--primary-color); color: var(--primary-text-color); }
         .order-item .order-btn.is-complete {
             background-color: rgba(52, 211, 153, 0.1);
@@ -190,7 +201,7 @@
         }
         .order-item .order-btn.is-complete:hover { background-color: rgba(52, 211, 153, 0.2); }
         .order-item .order-btn.is-complete.active { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.4); }
-        .order-item .icon-btn { background: none; border: none; color: var(--text-dark); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 1.2rem; filter: grayscale(1) opacity(0.6); }
+        .order-item .icon-btn { flex-shrink: 0; background: none; border: none; color: var(--text-dark); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 1.2rem; filter: grayscale(1) opacity(0.6); }
         .order-item .icon-btn:hover { color: var(--text-primary); filter: grayscale(0) opacity(1); }
         
         /* Switchers */
@@ -793,7 +804,6 @@
                 try {
                     const empaqueDataForDB = Array.from(orderData.empaqueData.entries()).map(([boxId, serials]) => ({ boxId, serials }));
                     const dataToSave = { ...orderData, empaqueData: empaqueDataForDB, lastUpdated: new Date() };
-                    // Los usuarios solo pueden guardar en su propia área de sesión
                     await db.collection('areas').doc(session.area).collection('orders').doc(orderKey).set(dataToSave, { merge: true });
                 } catch (e) {
                     console.error("Error al guardar en Firebase: ", e);
@@ -803,10 +813,8 @@
 
             async function deleteOrderFromFirebase(orderKey) {
                 try {
-                    // === INICIO DE LA CORRECCIÓN ===
-                    // El admin maestro borra del ÁREA ACTUALMENTE VISUALIZADA (currentArea), no de su propia área de sesión.
+                    // El admin maestro borra del ÁREA ACTUALMENTE VISUALIZADA (currentArea).
                     await db.collection('areas').doc(currentArea).collection('orders').doc(orderKey).delete();
-                    // === FIN DE LA CORRECCIÓN ===
                 } catch (e) {
                      console.error("Error al eliminar en Firebase: ", e);
                     showModal('Error al Eliminar', `No se pudo eliminar la orden ${orderKey}.`, 'error');
@@ -1010,7 +1018,11 @@
                     btn.classList.add('is-complete');
                 }
                 item.appendChild(btn);
-                if (key !== 'all' && session.area && session.area === currentArea) { 
+
+                // === INICIO: CORRECCIÓN DE LÓGICA DE PERMISOS ===
+                const canEditThisArea = session.area && (session.area === currentArea || session.isMaster);
+                if (key !== 'all' && canEditThisArea) {
+                // === FIN: CORRECCIÓN DE LÓGICA DE PERMISOS ===
                     const updateBtn = document.createElement('button');
                     updateBtn.className = 'icon-btn'; updateBtn.title = 'Actualizar orden';
                     updateBtn.innerHTML = `✏️`;
@@ -1024,8 +1036,7 @@
                         deleteBtn.onclick = () => {
                             showConfirmationModal(`¿Estás seguro de que quieres eliminar la orden ${key}?`, async () => {
                                 await deleteOrderFromFirebase(key);
-                                loadedOrders.delete(key);
-                                if (activeOrderKey === key) activeOrderKey = 'all';
+                                // La actualización de la lista será automática por el listener de Firebase
                             });
                         };
                         item.appendChild(deleteBtn);
@@ -1600,8 +1611,9 @@
             }
 
             function renderSapView() {
-                sapFileDropArea.classList.toggle('disabled', !session.area);
-                sapFileDropArea.querySelector('p').textContent = session.area ? 'Arrastra un archivo de SAP (.xlsx)' : 'Autentícate para cargar archivos';
+                const canEdit = session.area && (session.isMaster || session.area === currentArea);
+                sapFileDropArea.classList.toggle('disabled', !canEdit);
+                sapFileDropArea.querySelector('p').textContent = canEdit ? 'Arrastra un archivo de SAP (.xlsx)' : 'Inicia sesión para esta área para cargar archivos';
 
                 sapPlaceholderText.style.display = sapData.length > 0 ? 'none' : 'block';
                 updateSapDashboard();
@@ -1802,7 +1814,7 @@
                 const canEdit = isAuthenticated && (session.isMaster || session.area === currentArea);
 
                 fileDropArea.classList.toggle('disabled', !canEdit);
-                fileDropArea.querySelector('p').textContent = canEdit ? 'Arrastra archivos (.xlsx) para cargar/actualizar' : 'Inicia sesión para esta área para cargar archivos';
+                fileDropArea.querySelector('p').textContent = canEdit ? 'Arrastra archivos (.xlsx)' : 'Inicia sesión para esta área para cargar archivos';
                 
                 sapFileDropArea.classList.toggle('disabled', !canEdit);
                 sapFileDropArea.querySelector('p').textContent = canEdit ? 'Arrastra un archivo de SAP (.xlsx)' : 'Inicia sesión para esta área para cargar archivos';
@@ -1838,7 +1850,7 @@
                             localStorage.setItem('currentArea', currentArea);
                             areaSelectBtn.textContent = `Área: ${currentArea}`;
                             setupListenersForArea(currentArea);
-                            updateUIAfterAuth(); // Actualiza la UI para reflejar permisos en la nueva área
+                            updateUIAfterAuth();
                         }
                         hideModal();
                     });
