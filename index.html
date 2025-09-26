@@ -22,12 +22,14 @@
         }
 
         body.dark-theme {
-            --bg-gradient: linear-gradient(145deg, #1a1c20, #0a0a0a);
-            --surface-color: rgba(30, 31, 34, 0.6);
-            --surface-hover-color: rgba(55, 56, 61, 0.7);
-            --border-color: rgba(255, 255, 255, 0.18);
-            --primary-color: #E5E7EB; /* Light grey accent */
-            --primary-text-color: #0A0A0A; /* Text on primary button */
+            /* === INICIO: NUEVO FONDO === */
+            --bg-gradient: radial-gradient(ellipse at center top, #22252a 0%, #0a0a0a 70%);
+            /* === FIN: NUEVO FONDO === */
+            --surface-color: rgba(35, 38, 43, 0.6);
+            --surface-hover-color: rgba(55, 58, 63, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --primary-color: #E5E7EB;
+            --primary-text-color: #0A0A0A;
             --danger-color: #FB7185; 
             --warning-color: #FBBF24; 
             --orange-color: #F97316;
@@ -43,8 +45,8 @@
             --surface-color: rgba(255, 255, 255, 0.5);
             --surface-hover-color: rgba(243, 244, 246, 0.7);
             --border-color: rgba(0, 0, 0, 0.1);
-            --primary-color: #1F2937; /* Dark grey accent */
-            --primary-text-color: #FFFFFF; /* Text on primary button */
+            --primary-color: #1F2937;
+            --primary-text-color: #FFFFFF;
             --danger-color: #EF4444; 
             --warning-color: #F59E0B; 
             --orange-color: #EA580C;
@@ -77,6 +79,7 @@
             display: flex; 
             justify-content: center;
             transition: background 0.3s ease-in-out;
+            background-attachment: fixed;
         }
 
         .animated-startup {
@@ -109,7 +112,7 @@
             gap: 16px;
             position: sticky;
             align-self: start;
-            top: 8px;
+            top: 16px;
             height: calc(100vh - 48px);
         }
         .sidebar > h2 { display: none; }
@@ -124,18 +127,33 @@
         .header { grid-area: header; }
         .main-content { grid-area: main; display: flex; flex-direction: column; gap: 16px; }
         
-        /* Estilo Glass para Cards y Modales */
+        /* === INICIO: NUEVO EFECTO DE CRISTAL REALISTA === */
         .card, .modal-content {
             background-color: var(--surface-color);
-            background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.0) 100%);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border: 1px solid var(--border-color);
+            background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border-radius: 16px;
             padding: 20px;
             transition: all 0.3s ease-in-out;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            /* Borde superior para brillo */
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            /* Borde izquierdo para brillo */
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            /* Sombra inferior y derecha para crear efecto de grosor y 3D */
+            border-bottom: 2px solid rgba(0, 0, 0, 0.3);
+            border-right: 2px solid rgba(0, 0, 0, 0.3);
+            /* Sombra de la tarjeta para levantarla del fondo */
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
+        .light-theme .card, .light-theme .modal-content {
+            border-top: 1px solid rgba(255, 255, 255, 0.8);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+            border-right: 2px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        /* === FIN: NUEVO EFECTO DE CRISTAL REALISTA === */
 
         .card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         h2, h3 { margin-top: 0; margin-bottom: 12px; color: var(--text-secondary); font-weight: 600; font-size: 1rem; }
@@ -149,14 +167,18 @@
         .file-drop-area p { margin: 0; color: var(--text-dark); }
         .file-drop-area span { color: var(--primary-color); font-weight: 500; }
 
-        /* Estilo Botones */
+        /* Estilo Botones (con efecto de cristal) */
         .btn, .filter-btn, .order-item .order-btn {
             padding: 8px 14px; border-radius: 8px; cursor: pointer;
             background-color: var(--surface-color);
-            border: 1px solid var(--border-color);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+            border-right: 1px solid rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(5px);
             color: var(--text-secondary); font-weight: 500;
             text-align: center; transition: all 0.2s; font-size: 0.9rem;
+            box-shadow: inset 0px 1px 1px rgba(255,255,255,0.05);
         }
         .btn:hover, .filter-btn:hover, .order-item .order-btn:hover { background-color: var(--surface-hover-color); color: var(--text-primary); border-color: rgba(255, 255, 255, 0.2); }
         .filter-btn.active { color: var(--primary-text-color); font-weight: 700; background-color: var(--primary-color); border-color: var(--primary-color); }
@@ -201,7 +223,7 @@
         }
         .order-item .order-btn.is-complete:hover { background-color: rgba(52, 211, 153, 0.2); }
         .order-item .order-btn.is-complete.active { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.4); }
-        .order-item .icon-btn { flex-shrink: 0; background: none; border: none; color: var(--text-dark); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 1.2rem; filter: grayscale(1) opacity(0.6); }
+        .order-item .icon-btn { flex-shrink: 0; background: none; color: var(--text-dark); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 1.2rem; filter: grayscale(1) opacity(0.6); }
         .order-item .icon-btn:hover { color: var(--text-primary); filter: grayscale(0) opacity(1); }
         
         /* Switchers */
@@ -241,7 +263,7 @@
         .box-row.expanded td:first-child::before { transform: rotate(90deg); }
         .serial-row { display: none; }
         .box-row.expanded + .serial-row { display: table-row; }
-        .serial-row td { background-color: transparent; padding: 12px 20px 12px 40px; border-color: #2a3a5e; }
+        .serial-row td { background-color: rgba(0,0,0,0.1); padding: 12px 20px 12px 40px; border-color: #2a3a5e; }
         .box-summary-info { padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); }
         
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
@@ -571,9 +593,7 @@
             let loadedOrders = new Map();
             let sapData = [];
             let sapDateFilter = 'default';
-            // === INICIO: CAMBIO DE LÓGICA DE VISTA INICIAL 1.1 ===
-            let activeOrderKey = null; // La app inicia sin ninguna orden seleccionada.
-            // === FIN: CAMBIO DE LÓGICA DE VISTA INICIAL 1.1 ===
+            let activeOrderKey = null;
             let currentMode = 'rastreo';
             let mainMode = 'fwd';
             let currentVisibleData = []; 
@@ -1070,10 +1090,7 @@
             function renderSummary() {
                 let orderQty = 0, packedQty = 0, scrapCount = 0; let ordersToProcess = [];
                 
-                // === INICIO: CAMBIO DE LÓGICA DE VISTA INICIAL 1.2 ===
-                // El resumen ahora muestra "Órdenes del Día" si no hay ninguna orden específica seleccionada.
                 if (activeOrderKey === 'all' || activeOrderKey === null) {
-                // === FIN: CAMBIO DE LÓGICA DE VISTA INICIAL 1.2 ===
                     const todayString = new Date().toLocaleDateString('es-ES', { 
                         timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' 
                     });
@@ -1094,7 +1111,7 @@
                     statOrderNumber.textContent = activeOrderKey;
                     statCatalogNumber.textContent = ordersToProcess[0].catalogNumber;
                 } else if (loadedOrders.size > 0) {
-                    setActiveOrder('all');
+                    setActiveOrder(null); // Cambiado a null para no seleccionar nada
                     return; 
                 } else {
                     statOrderNumber.textContent = 'N/A';
@@ -1168,8 +1185,6 @@
                 tableWrapper.style.opacity = '0';
                 await new Promise(res => setTimeout(res, 150));
                 
-                // === INICIO: CAMBIO DE LÓGICA DE VISTA INICIAL 1.3 ===
-                // Si no hay ninguna orden seleccionada (key es null), limpia la tabla y muestra un mensaje.
                 if (!key) {
                     updateRastreoTable([], []);
                     updateLineCounts([], []);
@@ -1178,7 +1193,6 @@
                     tableWrapper.style.opacity = '1';
                     return;
                 }
-                // === FIN: CAMBIO DE LÓGICA DE VISTA INICIAL 1.3 ===
                 
                 let dataToShow = []; let headers = [];
                 if (key === 'all') {
@@ -1250,7 +1264,7 @@
                 }
 
                 if (!data || data.length === 0 || !headersToRender || headersToRender.length === 0) {
-                    table.innerHTML = `<thead><tr><th></th></tr></thead>`; // Tabla vacía para que no muestre "No se encontraron" al inicio
+                    table.innerHTML = `<thead><tr><th></th></tr></thead>`;
                     return;
                 }
                 table.innerHTML = `
@@ -1285,7 +1299,7 @@
                 await new Promise(res => setTimeout(res, 150));
                 
                 let dataToShow = new Map(); let headers = [];
-                if (key === 'all' || key === null) { // Modificado para manejar el estado inicial nulo
+                if (key === 'all' || key === null) {
                     loadedOrders.forEach(order => {
                         if(order.empaqueData) order.empaqueData.forEach((serials, boxId) => {
                             if (!dataToShow.has(boxId)) dataToShow.set(boxId, []);
