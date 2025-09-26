@@ -218,10 +218,9 @@
         #mainModeSwitcher { grid-template-columns: 1fr 1fr; margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto; }
         .mode-switcher button { padding: 8px; border: none; background-color: transparent; color: var(--text-secondary); font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
         .mode-switcher button.active { background-color: var(--surface-color); color: var(--text-primary); box-shadow: 0 2px 10px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
-        .light-theme .mode-switcher button.active { color: var(--primary-text-color); background-color: var(--branding-color); border-color: var(--branding-color); }
+        body.light-theme .mode-switcher button.active { color: var(--primary-text-color); background-color: var(--branding-color); border-color: var(--branding-color); }
         .header > .mode-switcher { margin-bottom: 20px; }
         
-        /* Stats */
         .summary-card, .global-dashboard-card { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; text-align: center; }
         .stat-item { display: flex; flex-direction: column; justify-content: flex-start; }
         .stat-item h3 { margin-bottom: 8px; font-size: 0.9rem; font-weight: 500; }
@@ -233,19 +232,17 @@
         #statRemainingQty, #sapTotalOrdersStat, #totalOrdersStat { color: var(--warning-color); } 
         #statScrapQty { color: var(--danger-color); }
 
-        /* === INICIO: AJUSTES DE COLOR TEMA CLARO === */
         body.light-theme #statOrderNumber,
         body.light-theme #uploadCard h3,
         body.light-theme #orderListCard h3,
         body.light-theme #sap-uploadCard h3,
         body.light-theme #sap-orderListCard h3,
+        body.light-theme #sap-tableCard h3,
         body.light-theme .mode-switcher button {
             color: var(--branding-color);
         }
-        /* === FIN: AJUSTES DE COLOR TEMA CLARO === */
 
-        /* Tabla y Contenido de Empaque */
-        .table-wrapper { overflow: auto; flex-grow: 1; transition: opacity 0.3s ease-in-out; border-radius: 12px; border: 1px solid var(--border-color); }
+        .table-wrapper { overflow: hidden; flex-grow: 1; transition: opacity 0.3s ease-in-out; border-radius: 12px; border: 1px solid var(--border-color); }
         #tableCard { display: flex; flex-direction: column; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; font-size: 0.9rem;}
@@ -296,7 +293,6 @@
         #modalBody .area-list li { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);}
         #modalBody .area-list li input { flex-grow: 1; margin: 0; }
 
-        /* NUEVO: Estilos para la lista de seriales en el modal */
         #modalBody .packing-details-list { list-style: none; padding: 0; margin: 0; }
         #modalBody .packing-details-list li { display: flex; justify-content: space-between; padding: 8px; border-radius: 6px; transition: background-color 0.2s; }
         #modalBody .packing-details-list li:nth-child(odd) { background-color: rgba(255,255,255,0.03); }
@@ -346,20 +342,10 @@
             .card.mobile-collapsible h3.mobile-trigger::after { content: '►'; display: inline-block; font-size: 0.7rem; transition: transform 0.2s; color: var(--text-secondary); }
             .card.mobile-collapsible.expanded h3.mobile-trigger::after { transform: rotate(90deg); }
             #rastreoTable thead, #empaqueTable thead, #sapTable thead { display: none; }
-            #rastreoTable tr, #sapTable tr { display: block; margin-bottom: 1rem; border-radius: 8px; border: 1px solid var(--border-color); padding: 1rem; }
-            #rastreoTable td, #sapTable td { display: flex; justify-content: space-between; text-align: right; border: none; padding: 0.5rem 0; white-space: normal; border-bottom: 1px solid rgba(15, 23, 42, 0.5); }
-            #rastreoTable tr td:last-child, #sapTable tr td:last-child { border-bottom: none; }
-            #rastreoTable td::before, #sapTable td::before { content: attr(data-label); float: left; font-weight: bold; text-align: left; margin-right: 1rem; color: var(--text-secondary); }
-            #empaqueTableContainer { display: none; }
-            .mobile-packing-list details { background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 1rem; }
-            .mobile-packing-list summary { padding: 1rem; cursor: pointer; list-style: none; }
-            .mobile-packing-list summary::-webkit-details-marker { display: none; }
-            .summary-content { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
-            .summary-content div:first-child::before { content: '►'; display: inline-block; margin-right: 10px; font-size: 0.7rem; transition: transform 0.2s; }
-            details[open] > summary .summary-content div:first-child::before { transform: rotate(90deg); }
-            .box-id-title { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); }
-            .box-details-summary { text-align: right; }
-            .mobile-packing-list .serial-details-container { padding: 0 1rem 1rem 1rem; }
+            #rastreoTable tr, #sapTable tr, #empaqueTable tr { display: block; margin-bottom: 1rem; border-radius: 8px; border: 1px solid var(--border-color); padding: 1rem; }
+            #rastreoTable td, #sapTable td, #empaqueTable td { display: flex; justify-content: space-between; text-align: right; border: none; padding: 0.5rem 0; white-space: normal; border-bottom: 1px solid rgba(15, 23, 42, 0.5); }
+            #rastreoTable tr td:last-child, #sapTable tr td:last-child, #empaqueTable tr td:last-child { border-bottom: none; }
+            #rastreoTable td::before, #sapTable td::before, #empaqueTable td::before { content: attr(data-label); float: left; font-weight: bold; text-align: left; margin-right: 1rem; color: var(--text-secondary); }
             .top-header-container { padding-left: 0; }
         }
         
@@ -373,7 +359,6 @@
             .filter-label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
             #desktop-controls-container .btn, #desktop-controls-container .filter-btn { width: auto; padding: 4px 10px; font-size: 0.8rem; margin: 0; }
             #desktop-controls-container .btn { padding: 5px 10px; font-size: 0.75rem; }
-            #empaqueMobileContainer { display: none; }
         }
     </style>
 </head>
@@ -524,7 +509,6 @@
                             <div id="empaqueTableContainer" class="table-wrapper">
                                 <table id="empaqueTable"></table>
                             </div>
-                            <div id="empaqueMobileContainer"></div>
                         </div>
                     </div>
                 </main>
@@ -559,7 +543,7 @@
                 <main class="main-content animated-startup" style="animation-delay: 0.4s;">
                      <div class="card" id="sap-tableCard">
                          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
-                             <h3>Detalle de Órdenes SAP</h3>
+                             <h3>WorkShop</h3>
                              <button id="sapResetFilter" class="filter-btn" style="display: none;">Mostrar Hoy/Tarde</button>
                          </div>
                          <div class="table-wrapper">
@@ -1299,6 +1283,28 @@
                 ).join('');
             }
             
+            // === INICIO: CORRECCIÓN VISTA DE EMPAQUE ===
+            function showPackingDetailsModal(boxId, serials, headers) {
+                const serialHeader = findHeader(headers, PACKING_KEYS.SERIAL);
+                const employeeIdHeader = findHeader(headers, PACKING_KEYS.EMPLOYEE_ID);
+                const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
+                
+                let content = '<ul class="packing-details-list">';
+                if (serials && serials.length > 0) {
+                    serials.forEach(serial => {
+                        content += `<li>
+                            <span>${serial[serialHeader]}</span>
+                            <span>${formatDateTime(excelSerialToDate(serial[packedDateHeader]))}</span>
+                        </li>`;
+                    });
+                } else {
+                    content += '<li>No hay seriales en esta caja.</li>';
+                }
+                content += '</ul>';
+
+                showModal(`Detalles de Caja: ${boxId}`, content);
+            }
+
             async function renderEmpaqueView(key) {
                 const tableWrapper = doc('empaqueTableContainer');
                 tableWrapper.style.opacity = '0';
@@ -1321,31 +1327,16 @@
                     dataToShow = order.empaqueData || new Map(); headers = order.headers.empaque || [];
                 }
 
-                const mobileContainer = doc('empaqueMobileContainer');
-                const noDataMsg = `<p class="text-dark" style="padding: 20px; text-align: center;">No hay datos de empaque disponibles.</p>`;
-                if (!dataToShow || dataToShow.size === 0 || !headers || headers.length === 0) {
-                    tableWrapper.innerHTML = `<table id="empaqueTable"><thead><tr><th>No hay datos de empaque disponibles.</th></tr></thead></table>`;
-                    mobileContainer.innerHTML = noDataMsg;
+                if (!dataToShow || dataToShow.size === 0) {
+                    tableWrapper.innerHTML = `<table id="empaqueTable"><thead><tr><th>No hay datos de empaque.</th></tr></thead></table>`;
                     tableWrapper.style.opacity = '1';
                     return;
                 }
 
-                const boxIdHeader = findHeader(headers, PACKING_KEYS.BOX_ID);
-                const serialHeader = findHeader(headers, PACKING_KEYS.SERIAL);
                 const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
-                const employeeIdHeader = findHeader(headers, PACKING_KEYS.EMPLOYEE_ID);
                 
-                if (!boxIdHeader || !serialHeader || !packedDateHeader || !employeeIdHeader) {
-                    const errorMsg = `Error: Columnas de empaque no encontradas. Verifique el archivo de Excel.`;
-                    tableWrapper.innerHTML = `<table id="empaqueTable"><thead><tr><th style="color: var(--warning-color);">${errorMsg}</th></tr></thead></table>`;
-                    mobileContainer.innerHTML = `<p class="text-dark" style="color: var(--warning-color); padding: 20px; text-align: center;">${errorMsg}</p>`;
-                    tableWrapper.style.opacity = '1';
-                    return;
-                }
-
                 const filterText = empaqueFilterInput.value.toLowerCase();
-                let desktopHTML = `<thead><tr><th>BoxID</th><th>Cantidad</th><th>Último Empaque</th></tr></thead><tbody>`;
-                let mobileHTML = `<div class="mobile-packing-list">`;
+                let tableHTML = `<thead><tr><th>BoxID</th><th>Cantidad</th><th>Último Empaque</th></tr></thead><tbody>`;
                 let entriesFound = 0;
 
                 const reversedEntries = Array.from(dataToShow.entries()).reverse();
@@ -1353,77 +1344,38 @@
                 for (const [boxId, serials] of reversedEntries) {
                     if(!serials || serials.length === 0) continue;
                     
-                    const serialsMatchFilter = serials.some(s => 
-                        String(s[serialHeader]).toLowerCase().includes(filterText) || 
-                        String(s[boxIdHeader]).toLowerCase().includes(filterText)
-                    );
+                    const serialsMatchFilter = serials.some(s => String(s[findHeader(headers, PACKING_KEYS.SERIAL)]).toLowerCase().includes(filterText));
                     
-                    if (!serialsMatchFilter) continue;
+                    if (filterText && !String(boxId).toLowerCase().includes(filterText) && !serialsMatchFilter) continue;
                     
                     entriesFound++;
-                    const latestSerial = serials.reduce((latest, current) => {
-                        return (current[packedDateHeader] > latest[packedDateHeader]) ? current : latest;
-                    }, serials[0]);
-                    const latestDate = latestSerial[packedDateHeader];
-                    const latestPacker = latestSerial[employeeIdHeader];
+                    const latestSerial = serials.reduce((latest, current) => (current[packedDateHeader] > latest[packedDateHeader]) ? current : latest, serials[0]);
 
-                    let serialsDetailsHTML = `<div class="serial-details-container">`;
-                    serialsDetailsHTML += `<div class="box-summary-info">
-                        <span class="detail-label">Empacador: ${latestPacker}</span>
-                        <span class="detail-value">Fecha: ${formatDateTime(excelSerialToDate(latestDate))}</span>
-                    </div>`;
-
-                    serials.forEach(serial => {
-                        serialsDetailsHTML += `
-                            <div class="serial-detail-item">
-                                <div class="serial-info">
-                                    <span class="detail-label">Serial Number</span>
-                                    <span class="detail-value">${serial[serialHeader]}</span>
-                                </div>
-                            </div>`;
-                    });
-                    serialsDetailsHTML += '</div>';
-
-                    desktopHTML += `
+                    tableHTML += `
                         <tr class="box-row" data-boxid="${boxId}">
-                            <td>${boxId}</td>
-                            <td>${serials.length}</td>
-                            <td>${formatDateTime(excelSerialToDate(latestDate))}</td>
-                        </tr>
-                        <tr class="serial-row" data-parentbox="${boxId}"><td colspan="3">${serialsDetailsHTML}</td></tr>`;
-                    
-                    mobileHTML += `
-                        <details>
-                            <summary>
-                                <div class="summary-content">
-                                    <div><span class="box-id-title">${boxId}</span></div>
-                                    <div class="box-details-summary">
-                                        <span class="detail-label">Seriales: ${serials.length}</span><br>
-                                        <span class="detail-value">${formatDateTime(excelSerialToDate(latestDate))}</span>
-                                    </div>
-                                </div>
-                            </summary>
-                            ${serialsDetailsHTML}
-                        </details>`;
+                            <td data-label="BoxID">${boxId}</td>
+                            <td data-label="Cantidad">${serials.length}</td>
+                            <td data-label="Último Empaque">${formatDateTime(excelSerialToDate(latestSerial[packedDateHeader]))}</td>
+                        </tr>`;
                 }
+                tableHTML += `</tbody>`;
 
                 if (entriesFound === 0) {
-                    tableWrapper.innerHTML = `<table id="empaqueTable"><thead><tr><th>No se encontraron resultados para "${filterText}".</th></tr></thead></table>`;
-                    mobileContainer.innerHTML = `<p class="text-dark" style="padding: 20px; text-align: center;">No se encontraron resultados.</p>`;
-                    tableWrapper.style.opacity = '1';
-                    return;
+                    tableWrapper.innerHTML = `<table id="empaqueTable"><thead><tr><th>No se encontraron resultados.</th></tr></thead></table>`;
+                } else {
+                    tableWrapper.innerHTML = `<table id="empaqueTable">${tableHTML}</table>`;
                 }
 
-                desktopHTML += `</tbody>`;
-                mobileHTML += `</div>`;
-                tableWrapper.innerHTML = `<table id="empaqueTable">${desktopHTML}</table>`;
-                mobileContainer.innerHTML = mobileHTML;
-
                 tableWrapper.querySelectorAll('.box-row').forEach(row => {
-                    row.addEventListener('click', () => row.classList.toggle('expanded'));
+                    row.addEventListener('click', () => {
+                        const boxId = row.dataset.boxid;
+                        const serialsForBox = dataToShow.get(boxId);
+                        showPackingDetailsModal(boxId, serialsForBox, headers);
+                    });
                 });
                 tableWrapper.style.opacity = '1';
             }
+            // === FIN: CORRECCIÓN VISTA DE EMPAQUE ===
 
             function handleReprintExport() {
                 if (!currentVisibleData || currentVisibleData.length === 0) {
