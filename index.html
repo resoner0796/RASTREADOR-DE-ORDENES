@@ -87,11 +87,9 @@
         /* Contenedores Principales */
         .app-container { width: 100%; max-width: 1800px; }
         
-        /* === INICIO: CAMBIO 1.1 - Contenedor para centrar el header === */
         .top-header-container {
             padding-left: 276px; /* Ancho de sidebar (260px) + gap (16px) */
         }
-        /* === FIN: CAMBIO 1.1 === */
         
         .app-header { text-align: center; margin-bottom: 16px; position: relative; }
         .app-branding { font-family: 'Tinos', 'Times New Roman', serif; font-weight: 400; font-size: 2.2rem; color: var(--text-primary); letter-spacing: 2px; margin: 0; }
@@ -111,20 +109,20 @@
             position: sticky;
             align-self: start;
 
-            /* === INICIO: CAMBIO 2.1 - Ajuste de posición vertical y altura del sidebar === */
-            /* Se alinea con el padding superior del body para que coincida con el contenido principal. */
-            top: 32px;
-            /* La altura se recalcula: 100vh - (nuevo top + padding inferior del body) = 100vh - (32px + 32px) */
-            height: calc(100vh - 32px);
-            /* === FIN: CAMBIO 2.1 === */
+            /* === INICIO: AJUSTE DE POSICIÓN VERTICAL === */
+            /* INSTRUCCIONES: Cambia el valor de 'top' para mover el panel de control. */
+            /* Un valor más PEQUEÑO (ej. 8px) lo SUBIRÁ. */
+            /* Un valor más GRANDE (ej. 32px) lo BAJARÁ. */
+            top: 16px;
+            /* La altura se recalcula automáticamente. No necesitas cambiarla. */
+            /* Fórmula: 100vh - (valor de top + padding inferior del body) = 100vh - (16px + 32px) */
+            height: calc(100vh - 48px);
+            /* === FIN: AJUSTE DE POSICIÓN VERTICAL === */
         }
-        /* Se oculta el H2 redundante en desktop para permitir la alineación de las tarjetas */
         .sidebar > h2 { display: none; }
         .sidebar .card h3 { text-align: center; }
         #sapView .sidebar > h2 { text-align: center; }
-        /* === INICIO: CAMBIO 2.2 - Ajuste de altura para la vista SAP === */
-        #sapView .sidebar { height: calc(100vh - 64px); }
-        /* === FIN: CAMBIO 2.2 === */
+        #sapView .sidebar { height: calc(100vh - 48px); }
         #orderListCard, #sap-orderListCard { display: flex; flex-direction: column; overflow: hidden; }
         #orderList, #sapOrderList { flex-grow: 1; overflow-y: auto; }
         
@@ -270,9 +268,9 @@
         #modalBody .status-report h4 { font-size: 1.1rem; color: var(--primary-color); margin: 16px 0 8px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;}
         #modalBody .status-report p { margin: 4px 0; }
         #modalBody .status-report strong { color: var(--text-secondary); }
-        #modalBody input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); margin-top: 10px; box-sizing: border-box;}
+        #modalBody input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--surface-color); color: var(--text-primary); margin-top: 10px; box-sizing: border-box;}
         #modalBody .area-list { list-style: none; padding: 0; margin-top: 16px; }
-        #modalBody .area-list li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color); gap: 10px;}
+        #modalBody .area-list li { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);}
         #modalBody .area-list li input { flex-grow: 1; margin: 0; }
 
         /* Transiciones de Vista */
@@ -298,7 +296,6 @@
             .sidebar, .main-content { display: contents !important; }
             #sap-uploadCard { display: none; }
             .sidebar > h2 { display: none; }
-            #adminBtn { display: none; }
             #areaSelectBtn { flex-grow: 1 !important; }
             .card-row { grid-template-columns: 1fr; }
             #desktop-controls-container { display: none; }
@@ -332,12 +329,7 @@
             .box-id-title { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); }
             .box-details-summary { text-align: right; }
             .mobile-packing-list .serial-details-container { padding: 0 1rem 1rem 1rem; }
-
-            /* === INICIO: CAMBIO 1.2 - Resetear el padding para la vista móvil === */
-            .top-header-container {
-                padding-left: 0;
-            }
-            /* === FIN: CAMBIO 1.2 === */
+            .top-header-container { padding-left: 0; }
         }
         
         @media (min-width: 993px) {
@@ -368,6 +360,7 @@
                 <button id="modeSap">SAP</button>
             </div>
         </div>
+
         <div id="fwdView">
             <div class="main-container">
                 <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
@@ -382,15 +375,15 @@
                         <h3>Panel de Control</h3>
                         <div class="card-content">
                                 <div style="display: flex; gap: 10px; margin-bottom: 16px;">
-                                    <button id="areaSelectBtn" class="btn" style="flex: 1; align-self: stretch;">Área: MULTIPORT</button>
+                                    <button id="areaSelectBtn" class="btn" style="flex: 1; align-self: stretch;" disabled>Seleccionar Área</button>
                                     <div style="display: flex; flex-direction: column; gap: 8px;">
                                         <button id="adminBtn" class="btn" style="padding: 6px 12px; line-height: 1;">⚙️</button>
                                         <button id="themeToggleBtn" class="btn" style="padding: 6px 12px; font-size: 1.2rem; line-height: 1;">☀️</button>
                                     </div>
                                 </div>
                             <div id="fileDropArea" class="file-drop-area disabled">
-                                <p>Arrastra archivos (.xlsx) para cargar/actualizar</p>
-                                <p><span>o haz clic para seleccionar</span></p>
+                                <p>Autentícate para cargar archivos</p>
+                                <p><span>o haz clic en ⚙️</span></p>
                             </div>
                             <input type="file" id="fileInput" accept=".xlsx, .xls" multiple style="display: none;">
                             <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
@@ -399,7 +392,7 @@
                     <div class="card" style="flex-grow: 1;" id="orderListCard">
                         <h3>Órdenes Cargadas</h3>
                         <div id="orderList" class="card-content">
-                            <p class="text-dark" style="font-size:0.9rem;">Cargando órdenes desde la base de datos...</p>
+                            <p class="text-dark" style="font-size:0.9rem;">Inicia sesión para cargar órdenes.</p>
                         </div>
                     </div>
                 </aside>
@@ -513,8 +506,8 @@
                     <div class="card" id="sap-uploadCard">
                         <h3>Panel de Control</h3>
                          <div id="sapFileDropArea" class="file-drop-area disabled">
-                             <p>Arrastra un archivo de SAP (.xlsx)</p>
-                             <p><span>o haz clic para seleccionar</span></p>
+                             <p>Autentícate para cargar archivos</p>
+                             <p><span>o haz clic en ⚙️</span></p>
                          </div>
                         <input type="file" id="sapFileInput" accept=".xlsx, .xls" style="display: none;">
                     </div>
@@ -581,11 +574,9 @@
             let orderToUpdateKey = null;
             let rastreoStatusFilter = 'all';
             let rastreoLineFilter = 'all';
-            let isAdminAuthenticated = false;
-            let currentArea = 'MULTIPORT';
+            let session = { area: null, isMaster: false }; // NUEVO: Objeto de sesión
             let fwdListener = null;
             let sapListener = null;
-
 
             // Key Maps
             const TRACKING_KEYS = { SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', DATE_REGISTERED: 'Date Registered', LINE: 'Line', STATION: 'Station' };
@@ -703,14 +694,14 @@
             });
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
+            
             adminBtn.addEventListener('click', () => {
-                if (isAdminAuthenticated) {
+                if (session.area && session.isMaster) {
                     showAdminPanel();
                 } else {
-                    showAdminLogin();
+                    showLogin();
                 }
             });
-            areaSelectBtn.addEventListener('click', showAreaSelector);
 
             // ===================================
             // === CORE APP CONTROL & UTILITIES ===
@@ -813,7 +804,7 @@
                 try {
                     const empaqueDataForDB = Array.from(orderData.empaqueData.entries()).map(([boxId, serials]) => ({ boxId, serials }));
                     const dataToSave = { ...orderData, empaqueData: empaqueDataForDB, lastUpdated: new Date() };
-                    await db.collection('areas').doc(currentArea).collection('orders').doc(orderKey).set(dataToSave, { merge: true });
+                    await db.collection('areas').doc(session.area).collection('orders').doc(orderKey).set(dataToSave, { merge: true });
                 } catch (e) {
                     console.error("Error al guardar en Firebase: ", e);
                     showModal('Error al Guardar', `No se pudo guardar la orden ${orderKey}.`, 'error');
@@ -822,7 +813,7 @@
 
             async function deleteOrderFromFirebase(orderKey) {
                 try {
-                    await db.collection('areas').doc(currentArea).collection('orders').doc(orderKey).delete();
+                    await db.collection('areas').doc(session.area).collection('orders').doc(orderKey).delete();
                 } catch (e) {
                      console.error("Error al eliminar en Firebase: ", e);
                     showModal('Error al Eliminar', `No se pudo eliminar la orden ${orderKey}.`, 'error');
@@ -979,7 +970,7 @@
             function updateOrderList() {
                 orderList.innerHTML = '';
                 if (loadedOrders.size === 0) {
-                    orderList.innerHTML = '<p class="text-dark" style="font-size:0.9rem;">No hay órdenes cargadas.</p>';
+                    orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No hay órdenes cargadas para el área ${session.area || ''}.</p>`;
                     return;
                 }
                 const groupedByDate = new Map();
@@ -1026,23 +1017,26 @@
                     btn.classList.add('is-complete');
                 }
                 item.appendChild(btn);
-                if (key !== 'all' && isAdminAuthenticated) {
+                if (key !== 'all' && session.area) { // Modificado para requerir solo sesión
                     const updateBtn = document.createElement('button');
                     updateBtn.className = 'icon-btn'; updateBtn.title = 'Actualizar orden';
                     updateBtn.innerHTML = `✏️`;
                     updateBtn.onclick = () => { orderToUpdateKey = key; updateFileInput.value = ''; updateFileInput.click(); };
                     item.appendChild(updateBtn);
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'icon-btn'; deleteBtn.title = 'Eliminar orden';
-                    deleteBtn.innerHTML = `🗑️`;
-                    deleteBtn.onclick = () => {
-                        showConfirmationModal(`¿Estás seguro de que quieres eliminar la orden ${key}?`, async () => {
-                            await deleteOrderFromFirebase(key);
-                            loadedOrders.delete(key);
-                            if (activeOrderKey === key) activeOrderKey = 'all';
-                        });
-                    };
-                    item.appendChild(deleteBtn);
+                    
+                    if(session.isMaster){ // Solo el admin maestro puede borrar
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'icon-btn'; deleteBtn.title = 'Eliminar orden';
+                        deleteBtn.innerHTML = `🗑️`;
+                        deleteBtn.onclick = () => {
+                            showConfirmationModal(`¿Estás seguro de que quieres eliminar la orden ${key}?`, async () => {
+                                await deleteOrderFromFirebase(key);
+                                loadedOrders.delete(key);
+                                if (activeOrderKey === key) activeOrderKey = 'all';
+                            });
+                        };
+                        item.appendChild(deleteBtn);
+                    }
                 }
                 return item;
             }
@@ -1541,7 +1535,7 @@
             async function saveSapDataToFirebase(data) {
                 try {
                     const dataToSave = { orders: data, lastUpdated: new Date() };
-                    await db.collection('areas').doc(currentArea).collection('sap_data').doc('current_data').set(dataToSave);
+                    await db.collection('areas').doc(session.area).collection('sap_data').doc('current_data').set(dataToSave);
                 } catch (e) {
                     console.error("Error al guardar datos SAP en Firebase: ", e);
                     showModal('Error', 'No se pudieron guardar los datos de SAP en la nube.', 'error');
@@ -1613,8 +1607,8 @@
             }
 
             function renderSapView() {
-                sapFileDropArea.classList.toggle('disabled', !isAdminAuthenticated);
-                sapFileDropArea.querySelector('p').textContent = isAdminAuthenticated ? 'Arrastra un archivo de SAP (.xlsx)' : 'Autentícate para cargar archivos';
+                sapFileDropArea.classList.toggle('disabled', !session.area);
+                sapFileDropArea.querySelector('p').textContent = session.area ? 'Arrastra un archivo de SAP (.xlsx)' : 'Autentícate para cargar archivos';
 
                 sapPlaceholderText.style.display = sapData.length > 0 ? 'none' : 'block';
                 updateSapDashboard();
@@ -1750,68 +1744,71 @@
             }
 
             // ===================================
-            // === AUTH & AREA FUNCTIONS ===
+            // === AUTH & AREA FUNCTIONS (NUEVO) ===
             // ===================================
-
-            function showAdminLogin() {
+            function showLogin() {
                 let content = `
-                    <p>Introduce la contraseña de administrador para habilitar la carga y edición de archivos.</p>
-                    <input type="password" id="adminPasswordInput" placeholder="Contraseña">
-                    <button id="adminLoginBtn" class="btn" style="margin-top: 16px;">Autenticar</button>
+                    <p>Introduce tus credenciales para acceder al área.</p>
+                    <input type="text" id="areaInput" placeholder="Área" style="text-transform:uppercase">
+                    <input type="password" id="passwordInput" placeholder="Contraseña">
+                    <button id="loginBtn" class="btn" style="margin-top: 16px;">Autenticar</button>
                 `;
-                showModal('Acceso de Administrador', content);
-                doc('adminLoginBtn').addEventListener('click', checkAdminPassword);
-                doc('adminPasswordInput').addEventListener('keyup', (e) => {
-                    if (e.key === 'Enter') checkAdminPassword();
-                });
+                showModal('Acceso de Área', content);
+                doc('loginBtn').addEventListener('click', checkCredentials);
+                doc('passwordInput').addEventListener('keyup', (e) => { if (e.key === 'Enter') checkCredentials(); });
+                doc('areaInput').addEventListener('keyup', (e) => { if (e.key === 'Enter') checkCredentials(); });
             }
 
-            function checkAdminPassword() {
-                const input = doc('adminPasswordInput');
-                if (input.value === 'CORNING25') {
-                    isAdminAuthenticated = true;
-                    hideModal();
-                    updateUIAfterAuth();
-                    showAdminPanel();
-                } else {
-                    showModal('Error', 'Contraseña incorrecta. Inténtalo de nuevo.', 'error');
+            async function checkCredentials() {
+                const areaInput = doc('areaInput').value.trim().toUpperCase();
+                const passwordInput = doc('passwordInput').value;
+                if (!areaInput || !passwordInput) {
+                    showModal('Error', 'Debes ingresar el área y la contraseña.', 'error');
+                    return;
+                }
+
+                try {
+                    const areaDoc = await db.collection('areas').doc(areaInput).get();
+                    if (!areaDoc.exists) {
+                        showModal('Error', 'El área no existe.', 'error');
+                        return;
+                    }
+
+                    const areaData = areaDoc.data();
+                    if (areaData.password === passwordInput) {
+                        session = { area: areaDoc.id, isMaster: areaData.isMaster || false };
+                        sessionStorage.setItem('appSession', JSON.stringify(session)); // Guardar sesión
+                        hideModal();
+                        updateUIAfterAuth();
+                    } else {
+                        showModal('Error', 'Contraseña incorrecta.', 'error');
+                    }
+                } catch (e) {
+                    console.error("Error de autenticación: ", e);
+                    showModal('Error', 'Ocurrió un error al verificar las credenciales.', 'error');
                 }
             }
             
             function updateUIAfterAuth() {
-                fileDropArea.classList.toggle('disabled', !isAdminAuthenticated);
-                fileDropArea.querySelector('p').textContent = isAdminAuthenticated ? 'Arrastra archivos (.xlsx) para cargar/actualizar' : 'Autentícate para cargar archivos';
+                const isAuthenticated = !!session.area;
+                fileDropArea.classList.toggle('disabled', !isAuthenticated);
+                fileDropArea.querySelector('p').textContent = isAuthenticated ? 'Arrastra archivos (.xlsx) para cargar/actualizar' : 'Autentícate para cargar archivos';
                 
-                sapFileDropArea.classList.toggle('disabled', !isAdminAuthenticated);
-                sapFileDropArea.querySelector('p').textContent = isAdminAuthenticated ? 'Arrastra un archivo de SAP (.xlsx)' : 'Autentícate para cargar archivos';
-
-                updateOrderList();
-            }
-
-            async function showAreaSelector() {
-                const areasSnapshot = await db.collection('areas').get();
-                let areas = [];
-                areasSnapshot.forEach(doc => areas.push({ id: doc.id, ...doc.data() }));
-
-                let content = '<h3>Selecciona un Área</h3><ul class="area-list">';
-                areas.forEach(area => {
-                    content += `<li><span>${area.name}</span> <button class="btn select-area-btn" data-area="${area.id}" style="width: auto; padding: 5px 10px;">Seleccionar</button></li>`;
-                });
-                content += '</ul>';
-                showModal('Selector de Área', content);
-
-                doc('modalBody').querySelectorAll('.select-area-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const newArea = e.target.dataset.area;
-                        if (newArea !== currentArea) {
-                            currentArea = newArea;
-                            localStorage.setItem('currentArea', currentArea);
-                            areaSelectBtn.textContent = `Área: ${currentArea}`;
-                            setupListenersForArea(currentArea);
-                        }
-                        hideModal();
-                    });
-                });
+                sapFileDropArea.classList.toggle('disabled', !isAuthenticated);
+                sapFileDropArea.querySelector('p').textContent = isAuthenticated ? 'Arrastra un archivo de SAP (.xlsx)' : 'Autentícate para cargar archivos';
+                
+                adminBtn.style.display = session.isMaster ? 'block' : 'none';
+                
+                if (isAuthenticated) {
+                    areaSelectBtn.textContent = `Área: ${session.area}`;
+                    setupListenersForArea(session.area);
+                } else {
+                    areaSelectBtn.textContent = 'Seleccionar Área';
+                    orderList.innerHTML = '<p class="text-dark" style="font-size:0.9rem;">Inicia sesión para cargar órdenes.</p>';
+                    loadedOrders.clear();
+                    sapData = [];
+                    render();
+                }
             }
 
             async function showAdminPanel() {
@@ -1819,9 +1816,11 @@
                 let areas = [];
                 areasSnapshot.forEach(doc => areas.push({ id: doc.id, ...doc.data() }));
 
-                let content = '<h3>Gestionar Áreas</h3><ul class="area-list">';
+                let content = `<h3>Gestionar Áreas y Contraseñas</h3><ul class="area-list">`;
                 areas.forEach(area => {
-                    content += `<li><input type="text" class="area-name-input" data-id="${area.id}" value="${area.name}"> 
+                    content += `<li>
+                        <input type="text" class="area-name-input" data-id="${area.id}" value="${area.name}" disabled>
+                        <input type="text" class="area-password-input" data-id="${area.id}" value="${area.password || ''}"> 
                         <div>
                            <button class="btn save-area-btn" data-id="${area.id}" style="width: auto; padding: 5px 10px;">Guardar</button>
                            <button class="btn btn-danger delete-area-btn" data-id="${area.id}" style="width: auto; padding: 5px 10px; margin-left: 5px;">Eliminar</button>
@@ -1830,31 +1829,35 @@
                 });
                 content += `</ul>
                     <h3 style="margin-top: 20px;">Crear Nueva Área</h3>
-                    <input type="text" id="newAreaInput" placeholder="Nombre de la nueva área">
+                    <input type="text" id="newAreaInput" placeholder="Nombre de la nueva área (ej. ENSAMBLE)" style="text-transform:uppercase">
+                    <input type="text" id="newPasswordInput" placeholder="Contraseña para la nueva área">
                     <button id="createAreaBtn" class="btn" style="margin-top: 10px;">Crear Área</button>`;
 
                 showModal('Panel de Administrador', content);
 
                 doc('createAreaBtn').addEventListener('click', async () => {
-                    const input = doc('newAreaInput');
-                    const newAreaName = input.value.trim().toUpperCase();
-                    if (newAreaName) {
-                        await db.collection('areas').doc(newAreaName).set({ name: newAreaName, createdAt: new Date() });
-                        input.value = '';
-                        showAdminPanel(); // Refresh panel
+                    const newAreaName = doc('newAreaInput').value.trim().toUpperCase();
+                    const newPassword = doc('newPasswordInput').value.trim();
+                    if (newAreaName && newPassword) {
+                        await db.collection('areas').doc(newAreaName).set({ 
+                            name: newAreaName, 
+                            password: newPassword,
+                            isMaster: false,
+                            createdAt: new Date() 
+                        });
+                        showAdminPanel();
+                    } else {
+                        showModal('Atención', 'Debes especificar un nombre y una contraseña para la nueva área.', 'warning');
                     }
                 });
 
                 doc('modalBody').querySelectorAll('.save-area-btn').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
                         const areaId = e.target.dataset.id;
-                        const newName = doc('modalBody').querySelector(`.area-name-input[data-id="${areaId}"]`).value.trim().toUpperCase();
-                        if (newName && newName !== areaId) {
-                            await db.collection('areas').doc(areaId).update({ name: newName });
-                            if(currentArea === areaId) {
-                                areaSelectBtn.textContent = `Área: ${newName}`;
-                            }
-                            showAdminPanel(); // Refresh
+                        const newPassword = doc('modalBody').querySelector(`.area-password-input[data-id="${areaId}"]`).value.trim();
+                        if (newPassword) {
+                            await db.collection('areas').doc(areaId).update({ password: newPassword });
+                            showAdminPanel();
                         }
                     });
                 });
@@ -1862,20 +1865,13 @@
                 doc('modalBody').querySelectorAll('.delete-area-btn').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
                           const areaId = e.target.dataset.id;
-                          if (areas.length <= 1) {
-                              showModal('Acción no permitida', 'No puedes eliminar la última área.', 'warning');
+                          const areaData = areas.find(a => a.id === areaId);
+                          if (areaData.isMaster) {
+                              showModal('Acción no permitida', 'No puedes eliminar el área maestra.', 'warning');
                               return;
                           }
-                          
                           showConfirmationModal(`¿Estás seguro de que quieres eliminar el área "${areaId}" y todos sus datos? Esta acción no se puede deshacer.`, async () => {
                               await deleteAreaAndSubcollections(areaId);
-                              if (currentArea === areaId) {
-                                  const remainingArea = areas.find(a => a.id !== areaId);
-                                  currentArea = remainingArea.id;
-                                  localStorage.setItem('currentArea', currentArea);
-                                  areaSelectBtn.textContent = `Área: ${currentArea}`;
-                                  setupListenersForArea(currentArea);
-                              }
                               showAdminPanel();
                           });
                     });
@@ -1989,53 +1985,40 @@
                 }
             });
 
-            async function migrateOldData() {
-                const oldOrders = await db.collection('production_orders').get();
-                if (!oldOrders.empty) {
-                    const batch = db.batch();
-                    const areaRef = db.collection('areas').doc('MULTIPORT');
-                    batch.set(areaRef, { name: 'MULTIPORT', createdAt: new Date() });
-
-                    oldOrders.forEach(doc => {
-                        const newDocRef = areaRef.collection('orders').doc(doc.id);
-                        batch.set(newDocRef, doc.data());
-                        batch.delete(doc.ref);
+            async function initializeApp() {
+                // Comprueba si ya existe un área maestra, si no, la crea.
+                const masterAreaRef = db.collection('areas').doc('MULTIPORT');
+                const masterAreaDoc = await masterAreaRef.get();
+                if (!masterAreaDoc.exists) {
+                    await masterAreaRef.set({
+                        name: 'MULTIPORT',
+                        password: 'CORNING25',
+                        isMaster: true,
+                        createdAt: new Date()
                     });
-                    
-                    const oldSap = await db.collection('sap_data').doc('current_data').get();
-                    if(oldSap.exists){
-                        const newSapRef = areaRef.collection('sap_data').doc('current_data');
-                        batch.set(newSapRef, oldSap.data());
-                        batch.delete(oldSap.ref);
-                    }
-
-                    await batch.commit();
-                    console.log("Migración completada.");
+                    console.log("Área maestra 'MULTIPORT' creada.");
                 }
+
+                mainMode = localStorage.getItem('mainMode') || 'fwd';
+                applyTheme(currentTheme);
+
+                doc('fwdView').style.display = mainMode === 'fwd' ? 'block' : 'none';
+                doc('sapView').style.display = mainMode === 'sap' ? 'block' : 'none';
+                doc('fwdView').style.opacity = mainMode === 'fwd' ? '1' : '0';
+                doc('sapView').style.opacity = mainMode === 'sap' ? '1' : '0';
+
+                if (isMobile) setupMobileMode();
+                
+                const savedSession = sessionStorage.getItem('appSession');
+                if (savedSession) {
+                    session = JSON.parse(savedSession);
+                }
+
+                updateUIAfterAuth();
             }
 
-
-            // === INITIALIZATION ===
-            mainMode = localStorage.getItem('mainMode') || 'fwd';
-            currentArea = localStorage.getItem('currentArea') || 'MULTIPORT';
-            areaSelectBtn.textContent = `Área: ${currentArea}`;
-            applyTheme(currentTheme);
-
-            // Set initial view display property
-            doc('fwdView').style.display = mainMode === 'fwd' ? 'block' : 'none';
-            doc('sapView').style.display = mainMode === 'sap' ? 'block' : 'none';
-            doc('fwdView').style.opacity = mainMode === 'fwd' ? '1' : '0';
-            doc('sapView').style.opacity = mainMode === 'sap' ? '1' : '0';
-
-            if (isMobile) setupMobileMode();
-            
-            migrateOldData().then(() => {
-                setupListenersForArea(currentArea);
-            }).catch(err => {
-                console.error("Error en la migración, cargando datos normalmente.", err);
-                setupListenersForArea(currentArea);
-            });
-            updateUIAfterAuth();
+            // === INICIO DE LA APP ===
+            initializeApp();
         });
     </script>
 </body>
