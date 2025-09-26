@@ -1989,18 +1989,19 @@
             });
 
             async function initializeApp() {
-                // Comprueba si ya existe un área maestra, si no, la crea.
+                // === INICIO DE LA CORRECCIÓN ===
+                // Esta sección ahora asegura que la cuenta maestra 'MULTIPORT'
+                // siempre exista y tenga la contraseña y permisos correctos.
+                // Si no existe, la crea. Si ya existe pero está incorrecta, la corrige.
                 const masterAreaRef = db.collection('areas').doc('MULTIPORT');
-                const masterAreaDoc = await masterAreaRef.get();
-                if (!masterAreaDoc.exists) {
-                    await masterAreaRef.set({
-                        name: 'MULTIPORT',
-                        password: 'CORNING25',
-                        isMaster: true,
-                        createdAt: new Date()
-                    });
-                    console.log("Área maestra 'MULTIPORT' creada.");
-                }
+                await masterAreaRef.set({
+                    name: 'MULTIPORT',
+                    password: 'CORNING25',
+                    isMaster: true
+                }, { merge: true }); // merge:true es la clave, une los datos sin borrar.
+                console.log("Área maestra 'MULTIPORT' verificada y asegurada.");
+                // === FIN DE LA CORRECCIÓN ===
+
 
                 mainMode = localStorage.getItem('mainMode') || 'fwd';
                 applyTheme(currentTheme);
