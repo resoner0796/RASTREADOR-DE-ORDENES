@@ -1,0 +1,23 @@
+{
+  "name": "Centro de Control de Producción v3.0",
+  "short_name": "Control CCP",
+  "description": "Centro de Control de Producción y Rastreo de Órdenes para CORNING.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#22252a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}
