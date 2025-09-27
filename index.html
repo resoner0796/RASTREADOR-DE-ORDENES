@@ -252,7 +252,7 @@
             color: var(--branding-color);
         }
 
-        .table-wrapper { overflow: hidden; flex-grow: 1; transition: opacity 0.3s ease-in-out; border-radius: 12px; border: 1px solid var(--border-color); }
+        .table-wrapper { overflow: auto; flex-grow: 1; transition: opacity 0.3s ease-in-out; border-radius: 12px; border: 1px solid var(--border-color); }
         #tableCard { display: flex; flex-direction: column; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; font-size: 0.9rem;}
@@ -353,12 +353,20 @@
             .card.mobile-collapsible:not(.expanded) h3.mobile-trigger { border-bottom: 1px solid var(--border-color); }
             .card.mobile-collapsible h3.mobile-trigger::after { content: '►'; display: inline-block; font-size: 0.7rem; transition: transform 0.2s; color: var(--text-secondary); }
             .card.mobile-collapsible.expanded h3.mobile-trigger::after { transform: rotate(90deg); }
-            #rastreoTable thead, #empaqueTable thead, #sapTable thead { display: none; }
-            #rastreoTable tr, #sapTable tr, #empaqueTable tr { display: block; margin-bottom: 1rem; border-radius: 8px; border: 1px solid var(--border-color); padding: 1rem; }
-            #rastreoTable td, #sapTable td, #empaqueTable td { display: flex; justify-content: space-between; text-align: right; border: none; padding: 0.5rem 0; white-space: normal; border-bottom: 1px solid rgba(15, 23, 42, 0.5); }
-            #rastreoTable tr td:last-child, #sapTable tr td:last-child, #empaqueTable tr td:last-child { border-bottom: none; }
-            #rastreoTable td::before, #sapTable td::before, #empaqueTable td::before { content: attr(data-label); float: left; font-weight: bold; text-align: left; margin-right: 1rem; color: var(--text-secondary); }
             .top-header-container { padding-left: 0; }
+
+            /* ============================================================================================= */
+            /* === INICIO DE AJUSTE: Tabla responsiva en móvil con Scroll Horizontal === */
+            /* Se eliminan las reglas que convertían la tabla en tarjetas para permitir el scroll horizontal. */
+            /* Las reglas eliminadas eran:
+                #rastreoTable thead, #empaqueTable thead, #sapTable thead { display: none; }
+                #rastreoTable tr, #sapTable tr, #empaqueTable tr { display: block; ... }
+                #rastreoTable td, #sapTable td, #empaqueTable td { display: flex; ... }
+                #rastreoTable td::before, #sapTable td::before, #empaqueTable td::before { content: attr(data-label); ... }
+            */
+            /* Ahora el .table-wrapper se encarga del scroll. La lógica JS ya reduce las columnas en móvil. */
+            /* ============================================================================================= */
+
         }
         
         @media (min-width: 993px) {
@@ -534,8 +542,8 @@
                     <div class="card" id="sap-uploadCard">
                         <h3>Panel de Control</h3>
                        <div id="sapFileDropArea" class="file-drop-area disabled">
-                             <p>Autentícate para cargar archivos</p>
-                             <p><span>o haz clic en ⚙️</span></p>
+                           <p>Autentícate para cargar archivos</p>
+                           <p><span>o haz clic en ⚙️</span></p>
                        </div>
                         <input type="file" id="sapFileInput" accept=".xlsx, .xls" style="display: none;">
                     </div>
@@ -1578,7 +1586,6 @@
                 const processedData = [];
                 const range = XLSX.utils.decode_range(worksheet['!ref']);
                 const reynosaTodayString = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Matamoros' });
-                const reynosaTodayDateString = new Date().toLocaleDateString('es-ES', { timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' });
 
                 for (let i = range.s.r + 1; i <= range.e.r; i++) {
                     const rowNum = i + 1;
@@ -1601,6 +1608,8 @@
                         status = 'late';
                     }
 
+                    // === INICIO DE AJUSTE: Se elimina la propiedad 'isToday' estática ===
+                    // Ya no se guarda 'isToday' en los datos. Se calculará dinámicamente.
                     processedData.push({
                         'Orden': orderId,
                         'Catalogo': getCellValue('D' + rowNum) || null,
@@ -1609,9 +1618,9 @@
                         'Total orden': total,
                         'Total confirmado': confirmed,
                         'Faltante': faltante,
-                        'status': status,
-                        'isToday': finishDate && formatDate(finishDate) === reynosaTodayDateString
+                        'status': status
                     });
+                     // === FIN DE AJUSTE ===
                 }
                 return processedData;
             }
@@ -1628,14 +1637,26 @@
                 sapResetFilterBtn.style.display = (sapDateFilter !== 'default' && sapData.length > 0) ? 'inline-block' : 'none';
             }
 
+            // === INICIO DE AJUSTE: Nueva función para determinar si una orden SAP es para hoy dinámicamente ===
+            function isSapOrderForToday(order) {
+                const todayString = new Date().toLocaleDateString('es-ES', { 
+                    timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' 
+                });
+                const finishDate = excelSerialToDate(order['Finish']);
+                return finishDate && formatDate(finishDate) === todayString;
+            }
+            // === FIN DE AJUSTE ===
+
             function updateSapDashboard() {
                 if(sapData.length === 0) {
                     sapTotalOrdersStat.textContent = '0';
                     sapCompletedOrdersStat.textContent = '0';
                     return;
                 }
-                const ordersToday = sapData.filter(row => row.isToday).length;
-                const ordersCompletedToday = sapData.filter(row => row.status === 'complete' && row.isToday).length;
+                // === INICIO DE AJUSTE: Se usa la función dinámica en lugar de la propiedad estática 'isToday' ===
+                const ordersToday = sapData.filter(row => isSapOrderForToday(row)).length;
+                const ordersCompletedToday = sapData.filter(row => row.status === 'complete' && isSapOrderForToday(row)).length;
+                // === FIN DE AJUSTE ===
 
                 sapTotalOrdersStat.textContent = ordersToday;
                 sapCompletedOrdersStat.textContent = ordersCompletedToday;
@@ -1674,7 +1695,7 @@
                                   <span>📅 ${dateString}</span> 
                                   ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''}
                                   <span class="collapse-icon">►</span>
-                                </button>`;
+                                 </button>`;
                     html += `<div class="orders-for-date">`;
                     orders.forEach(order => {
                         const itemClass = order.status === 'complete' ? 'is-complete' : '';
@@ -1704,7 +1725,9 @@
 
                 let dataToDisplay = sapData;
                 if (sapDateFilter === 'default') {
-                    dataToDisplay = sapData.filter(row => row.status === 'late' || row.isToday);
+                    // === INICIO DE AJUSTE: Se usa la función dinámica en lugar de la propiedad estática 'isToday' ===
+                    dataToDisplay = sapData.filter(row => row.status === 'late' || isSapOrderForToday(row));
+                    // === FIN DE AJUSTE ===
                 } else if (sapDateFilter) {
                     dataToDisplay = sapData.filter(row => formatDate(excelSerialToDate(row['Finish'])) === sapDateFilter);
                 }
@@ -1916,16 +1939,16 @@
 
                 doc('modalBody').querySelectorAll('.delete-area-btn').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
-                          const areaId = e.target.dataset.id;
-                          const areaData = areas.find(a => a.id === areaId);
-                          if (areaData.isMaster) {
-                              showModal('Acción no permitida', 'No puedes eliminar el área maestra.', 'warning');
-                              return;
-                          }
-                          showConfirmationModal(`¿Estás seguro de que quieres eliminar el área "${areaId}" y todos sus datos? Esta acción no se puede deshacer.`, async () => {
-                              await deleteAreaAndSubcollections(areaId);
-                              showAdminPanel();
-                          });
+                         const areaId = e.target.dataset.id;
+                         const areaData = areas.find(a => a.id === areaId);
+                         if (areaData.isMaster) {
+                             showModal('Acción no permitida', 'No puedes eliminar el área maestra.', 'warning');
+                             return;
+                         }
+                         showConfirmationModal(`¿Estás seguro de que quieres eliminar el área "${areaId}" y todos sus datos? Esta acción no se puede deshacer.`, async () => {
+                             await deleteAreaAndSubcollections(areaId);
+                             showAdminPanel();
+                         });
                     });
                 });
             }
@@ -2011,7 +2034,7 @@
                         if (!trigger.dataset.mobileListener) {
                             trigger.addEventListener('click', (e) => {
                                 if(window.innerWidth <= 992) {
-                                   e.currentTarget.closest('.card').classList.toggle('expanded');
+                                    e.currentTarget.closest('.card').classList.toggle('expanded');
                                 }
                             });
                             trigger.dataset.mobileListener = 'true';
