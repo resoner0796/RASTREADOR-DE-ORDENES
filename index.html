@@ -645,6 +645,7 @@
             let currentArea = 'MULTIPORT'; 
             let fwdListener = null;
             let sapListener = null;
+            let initialSyncDoneForArea = {}; 
 
             // Key Maps
             const TRACKING_KEYS = { SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', DATE_REGISTERED: 'Date Registered', LINE: 'Line', STATION: 'Station' };
@@ -900,11 +901,11 @@
                         });
                         
                         Promise.all(updatePromises).then(() => {
-                            showModal('Éxito', `${results.length} orden(es) cargada(s) y guardada(s).`, 'success');
+                            showModal('Éxito', `${results.length} orden(es) actualizadas con detalles.`, 'success');
                         });
                     })
                     .catch(err => {
-                        showModal('Error al Cargar', 'Uno o más archivos no pudieron ser procesados.', 'error');
+                        showModal('Error al Cargar', err.message || 'Uno o más archivos no pudieron ser procesados.', 'error');
                         console.error("Error detallado en handleFiles:", err);
                     });
             }
@@ -918,7 +919,7 @@
                             const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                             const orderNumber = String(worksheet['B3']?.v || `Archivo_${file.name.slice(0,10)}`);
                             
-                            if (!isUpdate && !loadedOrders.has(orderNumber)) {
+                            if (!loadedOrders.has(orderNumber)) {
                                 reject(new Error(`La orden ${orderNumber} no existe. Por favor, cárguela primero desde el archivo maestro de SAP.`));
                                 return;
                             }
@@ -929,11 +930,11 @@
                             const rastreoRawData = extractTableData(worksheet, TRACKING_COLS, 20);
                             const packingRawData = extractTableData(worksheet, PACKING_COLS, 20);
                             
+                            const existingOrderData = loadedOrders.get(keyToUse) || {};
+
                             const orderData = {
-                                orderQty: parseInt(worksheet['O3']?.v || 0),
-                                packedQty: parseInt(worksheet['U3']?.v || 0),
-                                catalogNumber: worksheet['I3']?.v || 'N/A',
-                                orderDate: excelSerialToDate(worksheet['E6']?.v) || new Date(),
+                                ...existingOrderData, // Conserva datos maestros como orderQty, catalogNumber, etc.
+                                packedQty: parseInt(worksheet['U3']?.v || existingOrderData.packedQty || 0),
                                 rastreoData: processRastreoData(rastreoRawData),
                                 empaqueData: groupEmpaqueData(packingRawData),
                                 headers: {
@@ -1091,7 +1092,7 @@
 
                 if (key !== 'all' && canManageThisArea) {
                     const updateBtn = document.createElement('button');
-                    updateBtn.className = 'icon-btn'; updateBtn.title = 'Actualizar orden';
+                    updateBtn.className = 'icon-btn'; updateBtn.title = 'Actualizar orden con archivo de detalle';
                     updateBtn.innerHTML = `✏️`;
                     updateBtn.onclick = () => { orderToUpdateKey = key; updateFileInput.value = ''; updateFileInput.click(); };
                     item.appendChild(updateBtn);
@@ -1608,6 +1609,7 @@
                         await saveSapDataToFirebase(processedSapData); 
                         
                         await syncSapOrdersToFwd(processedSapData);
+                        initialSyncDoneForArea[session.area] = true; // Marcamos que la sincronización ya se hizo con este nuevo archivo.
 
                         sapDateFilter = 'default';
                         showModal('Éxito', `Archivo SAP cargado. Se han creado/actualizado ${processedSapData.length} órdenes en la vista FWD.`, 'success');
@@ -1620,8 +1622,7 @@
             }
 
             async function syncSapOrdersToFwd(sapOrders) {
-                if (!session.area) {
-                    console.error("No hay un área de sesión para sincronizar.");
+                if (!session.area || sapOrders.length === 0) {
                     return;
                 }
 
@@ -1705,7 +1706,7 @@
             function renderSapView() {
                 const canEdit = session.area && (session.isMaster || session.area === currentArea);
                 sapFileDropArea.classList.toggle('disabled', !canEdit);
-                sapFileDropArea.querySelector('p').textContent = canEdit ? 'Arrastra un archivo de SAP (.xlsx)' : 'Inicia sesión para esta área para cargar archivos';
+                sapFileDropArea.querySelector('p').textContent = canEdit ? 'Arrastra un archivo maestro SAP (.xlsx)' : 'Inicia sesión para esta área para cargar archivos';
 
                 sapPlaceholderText.style.display = sapData.length > 0 ? 'none' : 'block';
                 updateSapDashboard();
@@ -1903,6 +1904,7 @@
             function logout() {
                 session = { area: null, isMaster: false };
                 sessionStorage.removeItem('appSession');
+                initialSyncDoneForArea[currentArea] = false; // Resetea la bandera de sincronización al salir
                 currentArea = 'MULTIPORT';
                 localStorage.setItem('currentArea', currentArea);
                 setupListenersForArea(currentArea);
@@ -2076,28 +2078,23 @@
                     console.error("Error escuchando datos de FWD: ", err);
                     showModal('Error de Conexión', `No se pudo conectar a los datos del área ${area}.`, 'error');
                 });
-
-                // *** AJUSTE PRINCIPAL: Sincronización Automática ***
+                
+                // *** AJUSTE PRINCIPAL: Sincronización Automática al Cargar ***
                 sapListener = db.collection('areas').doc(area).collection('sap_data').doc('current_data').onSnapshot(async (docRef) => {
                     let newSapData = [];
-                    let lastUpdated = null;
                     if (docRef.exists) {
                         const data = docRef.data();
                         newSapData = data.orders || [];
-                        lastUpdated = data.lastUpdated?.toDate().getTime();
                     }
 
-                    const lastSync = sessionStorage.getItem(`lastSync-${area}`);
-                    // Sincroniza si hay datos nuevos y no hemos sincronizado esta versión ya
-                    if (newSapData.length > 0 && session.area && (!lastSync || (lastUpdated && lastUpdated > lastSync))) {
-                        console.log("Detectados nuevos datos de SAP, iniciando sincronización automática con FWD...");
+                    if (newSapData.length > 0 && session.area && !initialSyncDoneForArea[area]) {
+                        console.log(`Datos de SAP cargados para el área ${area}, iniciando sincronización inicial con FWD...`);
                         await syncSapOrdersToFwd(newSapData);
-                        sessionStorage.setItem(`lastSync-${area}`, lastUpdated);
+                        initialSyncDoneForArea[area] = true;
                     }
 
                     sapData = newSapData;
                     
-                    // El resto del renderizado continúa normalmente
                     syncFwdAndSapDates();
                     updateOrderList();
                     if (mainMode === 'sap') {
