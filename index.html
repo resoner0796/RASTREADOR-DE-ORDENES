@@ -343,9 +343,15 @@
         #modalBody .status-report p { margin: 4px 0; }
         #modalBody .status-report strong { color: var(--text-secondary); }
         #modalBody input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--surface-color); color: var(--text-primary); margin-top: 10px; box-sizing: border-box;}
-        #modalBody .area-list { list-style: none; padding: 0; margin-top: 16px; }
+        #modalBody .area-list { list-style: none; padding: 0; margin-top: 16px; max-height: 250px; overflow-y: auto;}
         #modalBody .area-list li { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);}
         #modalBody .area-list li input { flex-grow: 1; margin: 0; }
+        #modalBody .config-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        #modalBody .config-item label { font-weight: 600; color: var(--text-secondary); }
+        #modalBody .config-item input { width: 80px; margin: 0; }
+        #modalBody .mapping-item { grid-template-columns: 1fr 1fr auto; }
+        #modalBody .mapping-item input { text-transform: uppercase; }
+
 
         .packing-modal-header { text-align: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
         .packer-info { font-size: 1.1rem; color: var(--text-secondary); }
@@ -631,6 +637,10 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             // State variables
+            let workshopConfig = { // Configuración por defecto, se sobreescribe desde Firebase
+                mapping: { 'K46': 'MULTIPORT' },
+                column: 'C'
+            };
             let loadedOrders = new Map();
             let sapData = [];
             let sapDateFilter = 'default';
@@ -864,11 +874,11 @@
             // =========================
             // === FWD VIEW FUNCTIONS ===
             // =========================
-            async function saveOrderToFirebase(orderKey, orderData) {
+            async function saveOrderToFirebase(orderKey, orderData, area) {
                 try {
                     const empaqueDataForDB = Array.from(orderData.empaqueData.entries()).map(([boxId, serials]) => ({ boxId, serials }));
                     const dataToSave = { ...orderData, empaqueData: empaqueDataForDB, lastUpdated: new Date() };
-                    await db.collection('areas').doc(session.area).collection('orders').doc(orderKey).set(dataToSave, { merge: true });
+                    await db.collection('areas').doc(area).collection('orders').doc(orderKey).set(dataToSave, { merge: true });
                 } catch (e) {
                     console.error("Error al guardar en Firebase: ", e);
                     showModal('Error al Guardar', `No se pudo guardar la orden ${orderKey}.`, 'error');
@@ -890,13 +900,11 @@
 
                 Promise.all(filePromises)
                     .then(results => {
-                        let lastKey = activeOrderKey;
                         const updatePromises = [];
                         results.forEach(result => {
                             if (result) {
                                 loadedOrders.set(result.key, result.data);
-                                updatePromises.push(saveOrderToFirebase(result.key, result.data));
-                                lastKey = result.key;
+                                updatePromises.push(saveOrderToFirebase(result.key, result.data, session.area));
                             }
                         });
                         
@@ -933,7 +941,7 @@
                             const existingOrderData = loadedOrders.get(keyToUse) || {};
 
                             const orderData = {
-                                ...existingOrderData, // Conserva datos maestros como orderQty, catalogNumber, etc.
+                                ...existingOrderData, 
                                 packedQty: parseInt(worksheet['U3']?.v || existingOrderData.packedQty || 0),
                                 rastreoData: processRastreoData(rastreoRawData),
                                 empaqueData: groupEmpaqueData(packingRawData),
@@ -1588,14 +1596,35 @@
             // ========================
             // === SAP VIEW FUNCTIONS ===
             // ========================
-            async function saveSapDataToFirebase(data) {
+            async function saveSapDataToFirebase(data, area) {
                 try {
                     const dataToSave = { orders: data, lastUpdated: new Date() };
-                    await db.collection('areas').doc(session.area).collection('sap_data').doc('current_data').set(dataToSave);
+                    await db.collection('areas').doc(area).collection('sap_data').doc('current_data').set(dataToSave);
                 } catch (e) {
-                    console.error("Error al guardar datos SAP en Firebase: ", e);
-                    showModal('Error', 'No se pudieron guardar los datos de SAP en la nube.', 'error');
+                    console.error(`Error al guardar datos SAP en Firebase para ${area}: `, e);
+                    showModal('Error', `No se pudieron guardar los datos de SAP en la nube para ${area}.`, 'error');
                 }
+            }
+            
+            async function syncMultiAreaSapData(groupedData) {
+                const totalOrders = Object.values(groupedData).reduce((sum, arr) => sum + arr.length, 0);
+                const areasAffected = Object.keys(groupedData);
+
+                showModal('Procesando...', `Sincronizando ${totalOrders} órdenes en ${areasAffected.length} áreas...`, 'info');
+
+                const promises = [];
+                for (const areaName in groupedData) {
+                    if (Object.hasOwnProperty.call(groupedData, areaName)) {
+                        const ordersForArea = groupedData[areaName];
+                        promises.push(saveSapDataToFirebase(ordersForArea, areaName));
+                        promises.push(syncSapOrdersToFwd(ordersForArea, areaName));
+                        initialSyncDoneForArea[areaName] = true;
+                    }
+                }
+
+                await Promise.all(promises);
+                hideModal();
+                showModal('Éxito', `Workshop general procesado. Se han sincronizado los datos para las áreas: ${areasAffected.join(', ')}.`, 'success');
             }
 
             async function handleSapFile(file) {
@@ -1604,15 +1633,18 @@
                 reader.onload = async (e) => {
                     try {
                         const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-                        const processedSapData = processSapFile(workbook);
-                        
-                        await saveSapDataToFirebase(processedSapData); 
-                        
-                        await syncSapOrdersToFwd(processedSapData);
-                        initialSyncDoneForArea[session.area] = true; // Marcamos que la sincronización ya se hizo con este nuevo archivo.
+                        const processedData = processSapFile(workbook, session.isMaster);
 
+                        if (session.isMaster && processedData.isMultiArea) {
+                            await syncMultiAreaSapData(processedData.data);
+                        } else {
+                            const orders = processedData.isMultiArea ? processedData.data[session.area] || [] : processedData;
+                            await saveSapDataToFirebase(orders, session.area); 
+                            await syncSapOrdersToFwd(orders, session.area);
+                            initialSyncDoneForArea[session.area] = true;
+                            showModal('Éxito', `Archivo SAP cargado para el área ${session.area}. Se han creado/actualizado ${orders.length} órdenes.`, 'success');
+                        }
                         sapDateFilter = 'default';
-                        showModal('Éxito', `Archivo SAP cargado. Se han creado/actualizado ${processedSapData.length} órdenes en la vista FWD.`, 'success');
                     } catch (err) {
                         console.error("Error procesando archivo SAP:", err);
                         showModal('Error', `No se pudo procesar el archivo SAP. <br><small>${err.message}</small>`, 'error');
@@ -1621,13 +1653,11 @@
                 reader.readAsArrayBuffer(file);
             }
 
-            async function syncSapOrdersToFwd(sapOrders) {
-                if (!session.area || sapOrders.length === 0) {
-                    return;
-                }
+            async function syncSapOrdersToFwd(sapOrders, areaName) {
+                if (!areaName || sapOrders.length === 0) return;
 
                 const batch = db.batch();
-                const ordersCollectionRef = db.collection('areas').doc(session.area).collection('orders');
+                const ordersCollectionRef = db.collection('areas').doc(areaName).collection('orders');
 
                 for (const sapOrder of sapOrders) {
                     const orderId = String(sapOrder['Orden']);
@@ -1652,62 +1682,90 @@
 
                 try {
                     await batch.commit();
-                    console.log(`${sapOrders.length} órdenes de SAP sincronizadas con FWD.`);
+                    console.log(`${sapOrders.length} órdenes de SAP sincronizadas con FWD para el área ${areaName}.`);
                 } catch (e) {
-                    console.error("Error al sincronizar órdenes de SAP a FWD:", e);
-                    showModal('Error de Sincronización', 'No se pudieron actualizar las órdenes en la vista FWD.', 'error');
+                    console.error(`Error al sincronizar órdenes de SAP a FWD para ${areaName}:`, e);
+                    showModal('Error de Sincronización', `No se pudieron actualizar las órdenes en la vista FWD para ${areaName}.`, 'error');
                 }
             }
 
-            function processSapFile(workbook) {
+            function processSapFile(workbook, isMasterUpload = false) {
                 const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                 if (!worksheet) throw new Error("No se encontró una hoja de cálculo en el archivo.");
                 const getCellValue = (cellAddress) => (worksheet[cellAddress] ? worksheet[cellAddress].v : null);
                 
-                const processedData = [];
                 const range = XLSX.utils.decode_range(worksheet['!ref']);
                 const reynosaTodayString = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Matamoros' });
+                
+                if (isMasterUpload) {
+                    const resultsByArea = {};
+                    for (let i = range.s.r + 1; i <= range.e.r; i++) {
+                        const rowNum = i + 1;
+                        const orderId = getCellValue('A' + rowNum);
+                        if (!orderId) continue;
 
-                for (let i = range.s.r + 1; i <= range.e.r; i++) {
-                    const rowNum = i + 1;
-                    const orderId = getCellValue('A' + rowNum);
-                    if (!orderId) continue;
+                        const areaCode = getCellValue(workshopConfig.column + rowNum);
+                        const areaName = workshopConfig.mapping[areaCode];
 
-                    const total = parseFloat(getCellValue('I' + rowNum)) || 0;
-                    const confirmed = parseFloat(getCellValue('J' + rowNum)) || 0;
-                    const faltante = total - confirmed;
-                    const stock1 = getCellValue('B' + rowNum) || '';
-                    const stock2 = getCellValue('L' + rowNum) || '';
-                    let status = 'incomplete';
-                    const finishDateSerial = getCellValue('G' + rowNum);
-                    const finishDate = excelSerialToDate(finishDateSerial);
-                    const finishDateStringCA = finishDate ? finishDate.toISOString().slice(0, 10) : '';
-                    
-                    if (faltante <= 0) {
-                        status = 'complete';
-                    } else if (finishDateStringCA && finishDateStringCA < reynosaTodayString) {
-                        status = 'late';
+                        if (areaName) {
+                            if (!resultsByArea[areaName]) {
+                                resultsByArea[areaName] = [];
+                            }
+                            const orderData = extractSapRow(worksheet, rowNum, reynosaTodayString);
+                            resultsByArea[areaName].push(orderData);
+                        }
                     }
-
-                    processedData.push({
-                        'Orden': orderId,
-                        'Catalogo': getCellValue('D' + rowNum) || null,
-                        'Special Stock': [stock1, stock2].filter(Boolean).join(' / ') || null,
-                        'Finish': finishDateSerial,
-                        'Total orden': total,
-                        'Total confirmado': confirmed,
-                        'Faltante': faltante,
-                        'status': status
-                    });
+                    return { isMultiArea: true, data: resultsByArea };
+                } else {
+                    const processedData = [];
+                    for (let i = range.s.r + 1; i <= range.e.r; i++) {
+                        const rowNum = i + 1;
+                        const orderId = getCellValue('A' + rowNum);
+                        if (!orderId) continue;
+                        processedData.push(extractSapRow(worksheet, rowNum, reynosaTodayString));
+                    }
+                    return processedData;
                 }
-                return processedData;
+            }
+
+            function extractSapRow(worksheet, rowNum, reynosaTodayString){
+                const getCellValue = (cellAddress) => (worksheet[cellAddress] ? worksheet[cellAddress].v : null);
+                const total = parseFloat(getCellValue('I' + rowNum)) || 0;
+                const confirmed = parseFloat(getCellValue('J' + rowNum)) || 0;
+                const faltante = total - confirmed;
+                const stock1 = getCellValue('B' + rowNum) || '';
+                const stock2 = getCellValue('L' + rowNum) || '';
+                let status = 'incomplete';
+                const finishDateSerial = getCellValue('G' + rowNum);
+                const finishDate = excelSerialToDate(finishDateSerial);
+                const finishDateStringCA = finishDate ? finishDate.toISOString().slice(0, 10) : '';
+                
+                if (faltante <= 0) {
+                    status = 'complete';
+                } else if (finishDateStringCA && finishDateStringCA < reynosaTodayString) {
+                    status = 'late';
+                }
+
+                return {
+                    'Orden': getCellValue('A' + rowNum),
+                    'Catalogo': getCellValue('D' + rowNum) || null,
+                    'Special Stock': [stock1, stock2].filter(Boolean).join(' / ') || null,
+                    'Finish': finishDateSerial,
+                    'Total orden': total,
+                    'Total confirmado': confirmed,
+                    'Faltante': faltante,
+                    'status': status
+                };
             }
 
             function renderSapView() {
                 const canEdit = session.area && (session.isMaster || session.area === currentArea);
                 sapFileDropArea.classList.toggle('disabled', !canEdit);
-                sapFileDropArea.querySelector('p').textContent = canEdit ? 'Arrastra un archivo maestro SAP (.xlsx)' : 'Inicia sesión para esta área para cargar archivos';
-
+                if (sapFileDropArea.querySelector('p')) {
+                    sapFileDropArea.querySelector('p').textContent = canEdit 
+                        ? (session.isMaster ? 'Arrastra un archivo maestro SAP (General o de Área)' : 'Arrastra un archivo maestro SAP (.xlsx)')
+                        : 'Inicia sesión para esta área para cargar archivos';
+                }
                 sapPlaceholderText.style.display = sapData.length > 0 ? 'none' : 'block';
                 updateSapDashboard();
                 updateSapOrderList();
@@ -1890,6 +1948,9 @@
                             currentArea = session.area;
                             localStorage.setItem('currentArea', currentArea);
                             setupListenersForArea(currentArea);
+                        } else {
+                           initialSyncDoneForArea[currentArea] = false;
+                           setupListenersForArea(currentArea);
                         }
                         updateUIAfterAuth();
                     } else {
@@ -1904,7 +1965,7 @@
             function logout() {
                 session = { area: null, isMaster: false };
                 sessionStorage.removeItem('appSession');
-                initialSyncDoneForArea[currentArea] = false; // Resetea la bandera de sincronización al salir
+                initialSyncDoneForArea[currentArea] = false;
                 currentArea = 'MULTIPORT';
                 localStorage.setItem('currentArea', currentArea);
                 setupListenersForArea(currentArea);
@@ -1919,7 +1980,11 @@
                 fileDropArea.querySelector('p').textContent = canEdit ? 'Arrastra archivos de detalle (.xlsx)' : 'Inicia sesión para esta área para cargar archivos';
                 
                 sapFileDropArea.classList.toggle('disabled', !canEdit);
-                sapFileDropArea.querySelector('p').textContent = canEdit ? 'Arrastra un archivo maestro SAP (.xlsx)' : 'Inicia sesión para esta área para cargar archivos';
+                if(sapFileDropArea.querySelector('p')) {
+                    sapFileDropArea.querySelector('p').textContent = canEdit 
+                        ? (session.isMaster ? 'Arrastra un archivo maestro SAP (General o de Área)' : 'Arrastra un archivo maestro SAP (.xlsx)')
+                        : 'Inicia sesión para esta área para cargar archivos';
+                }
                 
                 adminBtn.style.display = (isAuthenticated && !session.isMaster) ? 'none' : 'block';
                 logoutBtn.style.display = isAuthenticated ? 'block' : 'none';
@@ -1979,9 +2044,36 @@
                     <h3 style="margin-top: 20px;">Crear Nueva Área</h3>
                     <input type="text" id="newAreaInput" placeholder="Nombre de la nueva área (ej. ENSAMBLE)" style="text-transform:uppercase">
                     <input type="text" id="newPasswordInput" placeholder="Contraseña para la nueva área">
-                    <button id="createAreaBtn" class="btn" style="margin-top: 10px;">Crear Área</button>`;
+                    <button id="createAreaBtn" class="btn" style="margin-top: 10px;">Crear Área</button>
+                    
+                    <div id="masterConfigSection" style="display: none; border-top: 1px solid var(--border-color); margin-top: 20px; padding-top: 20px;">
+                         <h3 style="margin-top: 0;">Configuración de Workshop General</h3>
+                         <div class="config-item">
+                            <label for="masterColumnInput">Columna de Código de Área:</label>
+                            <input type="text" id="masterColumnInput" value="${workshopConfig.column}">
+                         </div>
+                         <h4>Mapeo de Códigos a Áreas</h4>
+                         <ul id="areaMappingList" class="area-list"></ul>
+                         <button id="addMappingBtn" class="btn" style="width: auto; padding: 5px 10px; margin-top: 10px;">Añadir Mapeo</button>
+                         <button id="saveWorkshopConfigBtn" class="btn" style="margin-top: 20px;">Guardar Configuración General</button>
+                    </div>
+                    `;
 
                 showModal('Panel de Administrador', content);
+
+                if(session.isMaster){
+                    doc('masterConfigSection').style.display = 'block';
+                    const mappingList = doc('areaMappingList');
+                    mappingList.innerHTML = '';
+                    for (const code in workshopConfig.mapping) {
+                        const areaName = workshopConfig.mapping[code];
+                        mappingList.appendChild(createMappingItem(code, areaName));
+                    }
+                    doc('addMappingBtn').addEventListener('click', () => {
+                        mappingList.appendChild(createMappingItem('', ''));
+                    });
+                    doc('saveWorkshopConfigBtn').addEventListener('click', saveWorkshopConfig);
+                }
 
                 doc('createAreaBtn').addEventListener('click', async () => {
                     const newAreaName = doc('newAreaInput').value.trim().toUpperCase();
@@ -2037,6 +2129,54 @@
                 await db.collection('areas').doc(areaId).delete();
             }
 
+            function createMappingItem(code, areaName) {
+                const li = document.createElement('li');
+                li.className = 'mapping-item';
+                li.innerHTML = `
+                    <input type="text" class="mapping-code" placeholder="Código (ej. K46)" value="${code}">
+                    <input type="text" class="mapping-area" placeholder="Nombre de Área" value="${areaName}">
+                    <button class="btn btn-danger" style="width: auto; padding: 5px 10px;" onclick="this.parentElement.remove()">X</button>
+                `;
+                return li;
+            }
+
+            async function saveWorkshopConfig() {
+                const newColumn = doc('masterColumnInput').value.trim().toUpperCase() || 'C';
+                const newMapping = {};
+                doc('areaMappingList').querySelectorAll('.mapping-item').forEach(item => {
+                    const code = item.querySelector('.mapping-code').value.trim().toUpperCase();
+                    const area = item.querySelector('.mapping-area').value.trim().toUpperCase();
+                    if (code && area) {
+                        newMapping[code] = area;
+                    }
+                });
+                
+                const newConfig = { column: newColumn, mapping: newMapping };
+                
+                try {
+                    await db.collection('areas').doc('CONFIG').set({ general_workshop: newConfig }, { merge: true });
+                    workshopConfig = newConfig;
+                    showModal('Éxito', 'La configuración del workshop general ha sido guardada.', 'success');
+                } catch (e) {
+                    console.error("Error guardando configuración:", e);
+                    showModal('Error', 'No se pudo guardar la configuración.', 'error');
+                }
+            }
+
+            async function loadWorkshopConfig() {
+                try {
+                    const configDoc = await db.collection('areas').doc('CONFIG').get();
+                    if (configDoc.exists && configDoc.data().general_workshop) {
+                        workshopConfig = configDoc.data().general_workshop;
+                        console.log("Configuración de workshop cargada desde Firebase.");
+                    } else {
+                        console.log("No se encontró configuración de workshop, usando valores por defecto.");
+                    }
+                } catch(e) {
+                    console.error("Error cargando configuración de workshop:", e);
+                }
+            }
+
             // ===================================
             // === THEME & INITIALIZATION ===
             // ===================================
@@ -2079,7 +2219,6 @@
                     showModal('Error de Conexión', `No se pudo conectar a los datos del área ${area}.`, 'error');
                 });
                 
-                // *** AJUSTE PRINCIPAL: Sincronización Automática al Cargar ***
                 sapListener = db.collection('areas').doc(area).collection('sap_data').doc('current_data').onSnapshot(async (docRef) => {
                     let newSapData = [];
                     if (docRef.exists) {
@@ -2089,7 +2228,7 @@
 
                     if (newSapData.length > 0 && session.area && !initialSyncDoneForArea[area]) {
                         console.log(`Datos de SAP cargados para el área ${area}, iniciando sincronización inicial con FWD...`);
-                        await syncSapOrdersToFwd(newSapData);
+                        await syncSapOrdersToFwd(newSapData, area);
                         initialSyncDoneForArea[area] = true;
                     }
 
@@ -2145,6 +2284,8 @@
             });
 
             async function initializeApp() {
+                await loadWorkshopConfig(); // Carga la configuración primero
+
                 const masterAreaRef = db.collection('areas').doc('MULTIPORT');
                 await masterAreaRef.set({
                     name: 'MULTIPORT',
