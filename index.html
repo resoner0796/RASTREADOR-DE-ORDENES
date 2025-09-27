@@ -264,14 +264,27 @@
         .box-row { cursor: pointer; }
         .box-row:hover { background-color: var(--surface-hover-color); }
         
-        tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
+                tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
-        tbody tr.is-very_delayed { background-color: rgba(249, 115, 22, 0.1) !important; position: relative; overflow: hidden; }
+        
+        tbody tr.is-very_delayed { 
+            background-color: rgba(249, 115, 22, 0.1) !important; 
+            position: relative; 
+            overflow: hidden; 
+            isolation: isolate; /* <-- AJUSTE AÑADIDO */
+        }
         tbody tr.is-very_delayed::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(249, 115, 22, 0.15) 50%, rgba(255,255,255,0) 80%); transform: translateX(100%); animation: shine-orange-reverse 3s infinite linear; }
         tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
+        
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
         tbody tr.is-delayed td { color: var(--warning-color) !important; }
-        tbody tr.is-today, tbody tr.is-complete-sap { background-color: rgba(52, 211, 153, 0.1) !important; position: relative; overflow: hidden; }
+
+        tbody tr.is-today, tbody tr.is-complete-sap { 
+            background-color: rgba(52, 211, 153, 0.1) !important; 
+            position: relative; 
+            overflow: hidden; 
+            isolation: isolate; /* <-- AJUSTE AÑADIDO */
+        }
         tbody tr.is-today::after, tbody tr.is-complete-sap::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); transform: translateX(-100%); animation: shine-green 4s infinite linear; animation-delay: 1.5s; }
         tbody tr.is-today td, tbody tr.is-complete-sap td { color: var(--success-color) !important; }
         
@@ -285,7 +298,7 @@
         tbody tr.is-incomplete-sap td { color: var(--warning-color) !important; }
         tbody tr.is-late-sap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-late-sap td { color: var(--danger-color) !important; }
-        
+
         /* Modales */
         #loader, #placeholderText, #sapPlaceholderText { text-align: center; padding: 60px; color: var(--text-dark); font-size: 1.1rem; }
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.3s; }
