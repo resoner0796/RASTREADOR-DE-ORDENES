@@ -264,62 +264,66 @@
         .box-row { cursor: pointer; }
         .box-row:hover { background-color: var(--surface-hover-color); }
         
-                                tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
+                                /* ========================================================================= */
+        /* === INICIA EL AJUSTE FINAL PARA LA ANIMACIÓN DE BRILLO === */
+        /* ========================================================================= */
+
+        /* PASO 1: Se añade un "transform" al TBODY. Esta es la clave. */
+        /* Esto fuerza al cuerpo de la tabla a una nueva capa de renderizado, */
+        /* obligando a que todo su contenido (incluidas las animaciones) se contenga correctamente. */
+        tbody {
+            transform: translateZ(0);
+        }
+
+        tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
 
-        /* --- INICIA EL AJUSTE PARA TODA LA FILA --- */
-
+        /* PASO 2: Volvemos a poner el posicionamiento y overflow en la FILA (tr) */
         tbody tr.is-very_delayed { 
             background-color: rgba(249, 115, 22, 0.1) !important; 
             position: relative; 
-            overflow: hidden; /* Asegura que el contenido que se sale de la fila se oculte */
-            /* isolation: isolate; */ /* Una opción moderna. Si no funciona, prueba con z-index */
-            z-index: 1; /* Esto crea un nuevo contexto de apilamiento para la fila */
+            overflow: hidden;
         }
+        /* PASO 3: La animación del brillo se aplica a la FILA COMPLETA (::after) */
         tbody tr.is-very_delayed::after { 
             content: ''; 
             position: absolute; 
             top: 0; 
             left: 0; 
-            width: 100%; /* El brillo cubre toda la fila */
+            width: 100%; 
             height: 100%; 
             background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(249, 115, 22, 0.15) 50%, rgba(255,255,255,0) 80%); 
             transform: translateX(100%); 
             animation: shine-orange-reverse 3s infinite linear; 
-            /* z-index: -1; */ /* Si el brillo se superpone al texto, descomenta esto */
         }
         tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
 
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
         tbody tr.is-delayed td { color: var(--warning-color) !important; }
 
+        /* Repetimos los mismos pasos para las filas verdes */
         tbody tr.is-today, tbody tr.is-complete-sap { 
             background-color: rgba(52, 211, 153, 0.1) !important; 
             position: relative; 
-            overflow: hidden; /* Asegura que el contenido que se sale de la fila se oculte */
-            /* isolation: isolate; */ /* Una opción moderna. Si no funciona, prueba con z-index */
-            z-index: 1; /* Esto crea un nuevo contexto de apilamiento para la fila */
+            overflow: hidden;
         }
         tbody tr.is-today::after, tbody tr.is-complete-sap::after { 
             content: ''; 
             position: absolute; 
             top: 0; 
             left: 0; 
-            width: 100%; /* El brillo cubre toda la fila */
+            width: 100%; 
             height: 100%; 
             background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); 
             transform: translateX(-100%); 
             animation: shine-green 4s infinite linear; 
             animation-delay: 1.5s; 
-            /* z-index: -1; */ /* Si el brillo se superpone al texto, descomenta esto */
         }
         tbody tr.is-today td, tbody tr.is-complete-sap td { color: var(--success-color) !important; }
-
-        /* --- TERMINA EL AJUSTE PARA TODA LA FILA --- */
         
         body.light-theme .order-item .order-btn.is-complete::after,
-        body.light-theme tbody tr.is-today::after, /* Apunta de nuevo a la fila */
-        body.light-theme tbody tr.is-complete-sap::after { /* Apunta de nuevo a la fila */
+        body.light-theme tbody tr.is-today::after, 
+        body.light-theme tbody tr.is-complete-sap::after {
             background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(16, 185, 129, 0.25) 50%, rgba(255,255,255,0) 80%);
         }
         
