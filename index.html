@@ -78,17 +78,19 @@
             100% { transform: translateX(-100%); }
         }
 
-        body {
+                body {
             font-family: 'Inter', sans-serif; 
             background: var(--bg-gradient);
             color: var(--text-primary); 
             margin: 0; 
-            padding: 32px 16px;
+            /* padding: 32px 16px;  <-- SE ELIMINA DE AQUÍ */
+            min-height: 100vh; /* <-- SE AÑADE ESTO */
             display: flex; 
             justify-content: center;
             transition: background 0.3s ease-in-out;
             background-attachment: fixed;
         }
+
 
         .animated-startup {
             animation: fadeInUp 0.5s ease-out forwards;
@@ -96,7 +98,12 @@
         }
         
         /* Contenedores Principales */
-        .app-container { width: 100%; max-width: 1800px; }
+            .app-container { 
+            width: 100%; 
+            max-width: 1800px; 
+            padding: 32px 16px; /* <-- SE AÑADE AQUÍ */
+        }
+
         
         .top-header-container {
             padding-left: 336px;
@@ -374,8 +381,9 @@
         .date-group.expanded .orders-for-date { max-height: 1000px; margin-top: 8px; }
         
         /* Media Queries */
-        @media (max-width: 992px) {
-            body { padding: 8px; }
+                @media (max-width: 992px) {
+            /* Se elimina la regla 'body { padding: 8px; }' y se reemplaza por la siguiente: */
+            .app-container { padding: 8px; }
             .main-container { display: flex; flex-direction: column; gap: 12px; }
             .sidebar { position: static; height: auto; }
             .sidebar, .main-content { display: contents !important; }
