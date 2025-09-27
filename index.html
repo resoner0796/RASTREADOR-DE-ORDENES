@@ -23,6 +23,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Tinos&display=swap" rel="stylesheet">
     <style>
+        html {
+            min-height: 100%;
+            background-color: #0a0a0a; /* Color base oscuro del tema */
+        }
+        body {
+            min-height: 100vh;
+        }
+
         /* =================================== */
         /* === REDISEÑO GLASSMORPHISM v3.0 === */
         /* =================================== */
@@ -65,15 +73,6 @@
             --branding-color: #0055A5; /* Azul corporativo elegante */
         }
 
-        html {
-            min-height: 100%;
-            background-color: #0a0a0a; /* Color base oscuro del tema */
-        }
-        body {
-            min-height: 100vh;
-        }
-
-
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -87,19 +86,16 @@
             100% { transform: translateX(-100%); }
         }
 
-                body {
+        body {
             font-family: 'Inter', sans-serif; 
             background: var(--bg-gradient);
             color: var(--text-primary); 
             margin: 0; 
-            /* padding: 32px 16px;  <-- SE ELIMINA DE AQUÍ */
-            min-height: 100vh; /* <-- SE AÑADE ESTO */
             display: flex; 
             justify-content: center;
             transition: background 0.3s ease-in-out;
             background-attachment: fixed;
         }
-
 
         .animated-startup {
             animation: fadeInUp 0.5s ease-out forwards;
@@ -107,12 +103,11 @@
         }
         
         /* Contenedores Principales */
-            .app-container { 
+        .app-container { 
             width: 100%; 
             max-width: 1800px; 
-            padding: 32px 16px; /* <-- SE AÑADE AQUÍ */
+            padding: 32px 16px;
         }
-
         
         .top-header-container {
             padding-left: 336px;
@@ -280,27 +275,19 @@
         .box-row { cursor: pointer; }
         .box-row:hover { background-color: var(--surface-hover-color); }
         
-                                /* ========================================================================= */
-        /* === INICIA EL AJUSTE FINAL PARA LA ANIMACIÓN DE BRILLO === */
         /* ========================================================================= */
-
-        /* PASO 1: Se añade un "transform" al TBODY. Esta es la clave. */
-        /* Esto fuerza al cuerpo de la tabla a una nueva capa de renderizado, */
-        /* obligando a que todo su contenido (incluidas las animaciones) se contenga correctamente. */
+        /* === AJUSTE FINAL PARA LA ANIMACIÓN DE BRILLO === */
+        /* ========================================================================= */
         tbody {
             transform: translateZ(0);
         }
-
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
-
-        /* PASO 2: Volvemos a poner el posicionamiento y overflow en la FILA (tr) */
         tbody tr.is-very_delayed { 
             background-color: rgba(249, 115, 22, 0.1) !important; 
             position: relative; 
             overflow: hidden;
         }
-        /* PASO 3: La animación del brillo se aplica a la FILA COMPLETA (::after) */
         tbody tr.is-very_delayed::after { 
             content: ''; 
             position: absolute; 
@@ -313,11 +300,8 @@
             animation: shine-orange-reverse 3s infinite linear; 
         }
         tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
-
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
         tbody tr.is-delayed td { color: var(--warning-color) !important; }
-
-        /* Repetimos los mismos pasos para las filas verdes */
         tbody tr.is-today, tbody tr.is-complete-sap { 
             background-color: rgba(52, 211, 153, 0.1) !important; 
             position: relative; 
@@ -336,13 +320,11 @@
             animation-delay: 1.5s; 
         }
         tbody tr.is-today td, tbody tr.is-complete-sap td { color: var(--success-color) !important; }
-        
         body.light-theme .order-item .order-btn.is-complete::after,
         body.light-theme tbody tr.is-today::after, 
         body.light-theme tbody tr.is-complete-sap::after {
             background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(16, 185, 129, 0.25) 50%, rgba(255,255,255,0) 80%);
         }
-        
         tbody tr.is-incomplete-sap { background-color: rgba(251, 191, 36, 0.1) !important; }
         tbody tr.is-incomplete-sap td { color: var(--warning-color) !important; }
         tbody tr.is-late-sap { background-color: rgba(251, 113, 133, 0.1) !important; }
@@ -390,8 +372,7 @@
         .date-group.expanded .orders-for-date { max-height: 1000px; margin-top: 8px; }
         
         /* Media Queries */
-                @media (max-width: 992px) {
-            /* Se elimina la regla 'body { padding: 8px; }' y se reemplaza por la siguiente: */
+        @media (max-width: 992px) {
             .app-container { padding: 8px; }
             .main-container { display: flex; flex-direction: column; gap: 12px; }
             .sidebar { position: static; height: auto; }
@@ -417,19 +398,6 @@
             .card.mobile-collapsible h3.mobile-trigger::after { content: '►'; display: inline-block; font-size: 0.7rem; transition: transform 0.2s; color: var(--text-secondary); }
             .card.mobile-collapsible.expanded h3.mobile-trigger::after { transform: rotate(90deg); }
             .top-header-container { padding-left: 0; }
-
-            /* ============================================================================================= */
-            /* === INICIO DE AJUSTE: Tabla responsiva en móvil con Scroll Horizontal === */
-            /* Se eliminan las reglas que convertían la tabla en tarjetas para permitir el scroll horizontal. */
-            /* Las reglas eliminadas eran:
-                #rastreoTable thead, #empaqueTable thead, #sapTable thead { display: none; }
-                #rastreoTable tr, #sapTable tr, #empaqueTable tr { display: block; ... }
-                #rastreoTable td, #sapTable td, #empaqueTable td { display: flex; ... }
-                #rastreoTable td::before, #sapTable td::before, #empaqueTable td::before { content: attr(data-label); ... }
-            */
-            /* Ahora el .table-wrapper se encarga del scroll. La lógica JS ya reduce las columnas en móvil. */
-            /* ============================================================================================= */
-
         }
         
         @media (min-width: 993px) {
@@ -949,6 +917,12 @@
                             const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
                             const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                             const orderNumber = String(worksheet['B3']?.v || `Archivo_${file.name.slice(0,10)}`);
+                            
+                            if (!isUpdate && !loadedOrders.has(orderNumber)) {
+                                reject(new Error(`La orden ${orderNumber} no existe. Por favor, cárguela primero desde el archivo maestro de SAP.`));
+                                return;
+                            }
+
                             const keyToUse = isUpdate ? orderToUpdateKey : orderNumber;
                             const TRACKING_COLS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
                             const PACKING_COLS = ['AE', 'AF', 'AK', 'AO'];
@@ -1337,7 +1311,7 @@
                 }
 
                 if (!data || data.length === 0 || !headersToRender || headersToRender.length === 0) {
-                    table.innerHTML = `<thead><tr><th></th></tr></thead>`;
+                    table.innerHTML = `<thead><tr><th></th></tr></thead><tbody></tbody>`;
                     return;
                 }
                 table.innerHTML = `
@@ -1629,16 +1603,59 @@
                 reader.onload = async (e) => {
                     try {
                         const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-                        const processed = processSapFile(workbook);
-                        await saveSapDataToFirebase(processed); 
+                        const processedSapData = processSapFile(workbook);
+                        
+                        await saveSapDataToFirebase(processedSapData); 
+                        
+                        await syncSapOrdersToFwd(processedSapData);
+
                         sapDateFilter = 'default';
-                        showModal('Éxito', 'Archivo SAP cargado y guardado. Los datos se actualizarán en todos los dispositivos.', 'success');
+                        showModal('Éxito', `Archivo SAP cargado. Se han creado/actualizado ${processedSapData.length} órdenes en la vista FWD.`, 'success');
                     } catch (err) {
                         console.error("Error procesando archivo SAP:", err);
                         showModal('Error', `No se pudo procesar el archivo SAP. <br><small>${err.message}</small>`, 'error');
                     }
                 };
                 reader.readAsArrayBuffer(file);
+            }
+
+            async function syncSapOrdersToFwd(sapOrders) {
+                if (!session.area) {
+                    console.error("No hay un área de sesión para sincronizar.");
+                    return;
+                }
+
+                const batch = db.batch();
+                const ordersCollectionRef = db.collection('areas').doc(session.area).collection('orders');
+
+                for (const sapOrder of sapOrders) {
+                    const orderId = String(sapOrder['Orden']);
+                    const orderRef = ordersCollectionRef.doc(orderId);
+
+                    const orderData = {
+                        orderQty: sapOrder['Total orden'] || 0,
+                        catalogNumber: sapOrder['Catalogo'] || 'N/A',
+                        orderDate: excelSerialToDate(sapOrder['Finish']) || new Date(),
+                        lastUpdated: new Date()
+                    };
+
+                    const defaultData = {
+                        packedQty: 0,
+                        rastreoData: [],
+                        empaqueData: [],
+                        headers: { rastreo: [], empaque: [] }
+                    };
+
+                    batch.set(orderRef, { ...defaultData, ...orderData }, { merge: true });
+                }
+
+                try {
+                    await batch.commit();
+                    console.log(`${sapOrders.length} órdenes de SAP sincronizadas con FWD.`);
+                } catch (e) {
+                    console.error("Error al sincronizar órdenes de SAP a FWD:", e);
+                    showModal('Error de Sincronización', 'No se pudieron actualizar las órdenes en la vista FWD.', 'error');
+                }
             }
 
             function processSapFile(workbook) {
@@ -1671,8 +1688,6 @@
                         status = 'late';
                     }
 
-                    // === INICIO DE AJUSTE: Se elimina la propiedad 'isToday' estática ===
-                    // Ya no se guarda 'isToday' en los datos. Se calculará dinámicamente.
                     processedData.push({
                         'Orden': orderId,
                         'Catalogo': getCellValue('D' + rowNum) || null,
@@ -1683,7 +1698,6 @@
                         'Faltante': faltante,
                         'status': status
                     });
-                     // === FIN DE AJUSTE ===
                 }
                 return processedData;
             }
@@ -1699,8 +1713,7 @@
                 updateSapTable();
                 sapResetFilterBtn.style.display = (sapDateFilter !== 'default' && sapData.length > 0) ? 'inline-block' : 'none';
             }
-
-            // === INICIO DE AJUSTE: Nueva función para determinar si una orden SAP es para hoy dinámicamente ===
+            
             function isSapOrderForToday(order) {
                 const todayString = new Date().toLocaleDateString('es-ES', { 
                     timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' 
@@ -1708,7 +1721,6 @@
                 const finishDate = excelSerialToDate(order['Finish']);
                 return finishDate && formatDate(finishDate) === todayString;
             }
-            // === FIN DE AJUSTE ===
 
             function updateSapDashboard() {
                 if(sapData.length === 0) {
@@ -1716,10 +1728,8 @@
                     sapCompletedOrdersStat.textContent = '0';
                     return;
                 }
-                // === INICIO DE AJUSTE: Se usa la función dinámica en lugar de la propiedad estática 'isToday' ===
                 const ordersToday = sapData.filter(row => isSapOrderForToday(row)).length;
                 const ordersCompletedToday = sapData.filter(row => row.status === 'complete' && isSapOrderForToday(row)).length;
-                // === FIN DE AJUSTE ===
 
                 sapTotalOrdersStat.textContent = ordersToday;
                 sapCompletedOrdersStat.textContent = ordersCompletedToday;
@@ -1788,9 +1798,7 @@
 
                 let dataToDisplay = sapData;
                 if (sapDateFilter === 'default') {
-                    // === INICIO DE AJUSTE: Se usa la función dinámica en lugar de la propiedad estática 'isToday' ===
                     dataToDisplay = sapData.filter(row => row.status === 'late' || isSapOrderForToday(row));
-                    // === FIN DE AJUSTE ===
                 } else if (sapDateFilter) {
                     dataToDisplay = sapData.filter(row => formatDate(excelSerialToDate(row['Finish'])) === sapDateFilter);
                 }
@@ -1906,10 +1914,10 @@
                 const canEdit = isAuthenticated && (session.isMaster || session.area === currentArea);
 
                 fileDropArea.classList.toggle('disabled', !canEdit);
-                fileDropArea.querySelector('p').textContent = canEdit ? 'Arrastra archivos (.xlsx)' : 'Inicia sesión para esta área para cargar archivos';
+                fileDropArea.querySelector('p').textContent = canEdit ? 'Arrastra archivos de detalle (.xlsx)' : 'Inicia sesión para esta área para cargar archivos';
                 
                 sapFileDropArea.classList.toggle('disabled', !canEdit);
-                sapFileDropArea.querySelector('p').textContent = canEdit ? 'Arrastra un archivo de SAP (.xlsx)' : 'Inicia sesión para esta área para cargar archivos';
+                sapFileDropArea.querySelector('p').textContent = canEdit ? 'Arrastra un archivo maestro SAP (.xlsx)' : 'Inicia sesión para esta área para cargar archivos';
                 
                 adminBtn.style.display = (isAuthenticated && !session.isMaster) ? 'none' : 'block';
                 logoutBtn.style.display = isAuthenticated ? 'block' : 'none';
@@ -2069,16 +2077,32 @@
                     showModal('Error de Conexión', `No se pudo conectar a los datos del área ${area}.`, 'error');
                 });
 
-                sapListener = db.collection('areas').doc(area).collection('sap_data').doc('current_data').onSnapshot(docRef => {
+                // *** AJUSTE PRINCIPAL: Sincronización Automática ***
+                sapListener = db.collection('areas').doc(area).collection('sap_data').doc('current_data').onSnapshot(async (docRef) => {
+                    let newSapData = [];
+                    let lastUpdated = null;
                     if (docRef.exists) {
                         const data = docRef.data();
-                        sapData = data.orders || [];
-                    } else {
-                        sapData = [];
+                        newSapData = data.orders || [];
+                        lastUpdated = data.lastUpdated?.toDate().getTime();
                     }
+
+                    const lastSync = sessionStorage.getItem(`lastSync-${area}`);
+                    // Sincroniza si hay datos nuevos y no hemos sincronizado esta versión ya
+                    if (newSapData.length > 0 && session.area && (!lastSync || (lastUpdated && lastUpdated > lastSync))) {
+                        console.log("Detectados nuevos datos de SAP, iniciando sincronización automática con FWD...");
+                        await syncSapOrdersToFwd(newSapData);
+                        sessionStorage.setItem(`lastSync-${area}`, lastUpdated);
+                    }
+
+                    sapData = newSapData;
+                    
+                    // El resto del renderizado continúa normalmente
                     syncFwdAndSapDates();
                     updateOrderList();
-                    if (mainMode === 'sap') render();
+                    if (mainMode === 'sap') {
+                        render();
+                    }
                 }, err => {
                     console.error("Error escuchando datos de SAP: ", err);
                 });
