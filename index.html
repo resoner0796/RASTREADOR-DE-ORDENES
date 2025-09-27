@@ -264,33 +264,65 @@
         .box-row { cursor: pointer; }
         .box-row:hover { background-color: var(--surface-hover-color); }
         
-                tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
+                        tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
-        
+
+        /* --- INICIA EL AJUSTE --- */
+
+        /* 1. A la fila solo le dejamos el color de fondo. Quitamos el posicionamiento. */
         tbody tr.is-very_delayed { 
             background-color: rgba(249, 115, 22, 0.1) !important; 
-            position: relative; 
-            overflow: hidden; 
-            isolation: isolate; /* <-- AJUSTE AÑADIDO */
         }
-        tbody tr.is-very_delayed::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(249, 115, 22, 0.15) 50%, rgba(255,255,255,0) 80%); transform: translateX(100%); animation: shine-orange-reverse 3s infinite linear; }
         tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
-        
+
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
         tbody tr.is-delayed td { color: var(--warning-color) !important; }
 
+        /* 2. Hacemos lo mismo para las filas verdes. */
         tbody tr.is-today, tbody tr.is-complete-sap { 
             background-color: rgba(52, 211, 153, 0.1) !important; 
-            position: relative; 
-            overflow: hidden; 
-            isolation: isolate; /* <-- AJUSTE AÑADIDO */
         }
-        tbody tr.is-today::after, tbody tr.is-complete-sap::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); transform: translateX(-100%); animation: shine-green 4s infinite linear; animation-delay: 1.5s; }
         tbody tr.is-today td, tbody tr.is-complete-sap td { color: var(--success-color) !important; }
+
+        /* 3. AHORA, aplicamos el posicionamiento y overflow a CADA CELDA de las filas afectadas. */
+        tbody tr.is-very_delayed td,
+        tbody tr.is-today td, 
+        tbody tr.is-complete-sap td {
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 4. Finalmente, creamos la animación del brillo para CADA CELDA. */
+        tbody tr.is-very_delayed td::after { 
+            content: ''; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(249, 115, 22, 0.15) 50%, rgba(255,255,255,0) 80%); 
+            transform: translateX(100%); 
+            animation: shine-orange-reverse 3s infinite linear; 
+        }
+        
+        tbody tr.is-today td::after, tbody tr.is-complete-sap td::after { 
+            content: ''; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); 
+            transform: translateX(-100%); 
+            animation: shine-green 4s infinite linear; 
+            animation-delay: 1.5s; 
+        }
+
+        /* --- TERMINA EL AJUSTE --- */
         
         body.light-theme .order-item .order-btn.is-complete::after,
-        body.light-theme tbody tr.is-today::after, 
-        body.light-theme tbody tr.is-complete-sap::after {
+        body.light-theme tbody tr.is-today td::after, /* Ajustado para apuntar a la celda */
+        body.light-theme tbody tr.is-complete-sap td::after { /* Ajustado para apuntar a la celda */
             background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(16, 185, 129, 0.25) 50%, rgba(255,255,255,0) 80%);
         }
         
