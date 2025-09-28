@@ -352,6 +352,39 @@
         #modalBody .mapping-item { grid-template-columns: 1fr 1fr auto; }
         #modalBody .mapping-item input { text-transform: uppercase; }
 
+        /* Estilos para Admin Panel Desplegable */
+        .admin-section-header {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 0;
+        }
+        .admin-section-header:hover {
+            color: var(--text-primary);
+        }
+        .admin-section-header::after {
+            content: '►';
+            font-size: 0.8rem;
+            transition: transform 0.2s ease-in-out;
+        }
+        .admin-section.expanded .admin-section-header::after {
+            transform: rotate(90deg);
+        }
+        .admin-section-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+            padding: 0;
+        }
+        .admin-section.expanded .admin-section-content {
+            max-height: 600px; /* Ajusta si el contenido es muy alto */
+            padding: 16px 0 0 0;
+        }
+
 
         .packing-modal-header { text-align: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
         .packer-info { font-size: 1.1rem; color: var(--text-secondary); }
@@ -637,7 +670,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             // State variables
-            let workshopConfig = { // Configuración por defecto, se sobreescribe desde Firebase
+            let workshopConfig = { 
                 mapping: { 'K46': 'MULTIPORT' },
                 column: 'C'
             };
@@ -2029,37 +2062,49 @@
                 let areas = [];
                 areasSnapshot.forEach(doc => areas.push({ id: doc.id, ...doc.data() }));
 
-                let content = `<h3>Gestionar Áreas y Contraseñas</h3><ul class="area-list">`;
-                areas.forEach(area => {
-                    content += `<li>
-                        <input type="text" class="area-name-input" data-id="${area.id}" value="${area.name}" disabled>
-                        <input type="text" class="area-password-input" data-id="${area.id}" value="${area.password || ''}"> 
-                        <div>
-                           <button class="btn save-area-btn" data-id="${area.id}" style="width: auto; padding: 5px 10px;">Guardar</button>
-                           <button class="btn btn-danger delete-area-btn" data-id="${area.id}" style="width: auto; padding: 5px 10px; margin-left: 5px;">Eliminar</button>
+                let content = `
+                    <div class="admin-section">
+                        <h3 class="admin-section-header">Gestionar Áreas y Contraseñas</h3>
+                        <div class="admin-section-content">
+                            <ul class="area-list">
+                                ${areas.map(area => `<li>
+                                    <input type="text" class="area-name-input" data-id="${area.id}" value="${area.name}" disabled>
+                                    <input type="text" class="area-password-input" data-id="${area.id}" value="${area.password || ''}"> 
+                                    <div>
+                                        <button class="btn save-area-btn" data-id="${area.id}" style="width: auto; padding: 5px 10px;">Guardar</button>
+                                        <button class="btn btn-danger delete-area-btn" data-id="${area.id}" style="width: auto; padding: 5px 10px; margin-left: 5px;">Eliminar</button>
+                                    </div>
+                                </li>`).join('')}
+                            </ul>
+                            <h4 style="margin-top: 20px;">Crear Nueva Área</h4>
+                            <input type="text" id="newAreaInput" placeholder="Nombre de Área (ej. ENSAMBLE)" style="text-transform:uppercase">
+                            <input type="text" id="newPasswordInput" placeholder="Contraseña para la nueva área">
+                            <button id="createAreaBtn" class="btn" style="margin-top: 10px;">Crear Área</button>
                         </div>
-                    </li>`;
-                });
-                content += `</ul>
-                    <h3 style="margin-top: 20px;">Crear Nueva Área</h3>
-                    <input type="text" id="newAreaInput" placeholder="Nombre de la nueva área (ej. ENSAMBLE)" style="text-transform:uppercase">
-                    <input type="text" id="newPasswordInput" placeholder="Contraseña para la nueva área">
-                    <button id="createAreaBtn" class="btn" style="margin-top: 10px;">Crear Área</button>
-                    
-                    <div id="masterConfigSection" style="display: none; border-top: 1px solid var(--border-color); margin-top: 20px; padding-top: 20px;">
-                         <h3 style="margin-top: 0;">Configuración de Workshop General</h3>
-                         <div class="config-item">
-                            <label for="masterColumnInput">Columna de Código de Área:</label>
-                            <input type="text" id="masterColumnInput" value="${workshopConfig.column}">
-                         </div>
-                         <h4>Mapeo de Códigos a Áreas</h4>
-                         <ul id="areaMappingList" class="area-list"></ul>
-                         <button id="addMappingBtn" class="btn" style="width: auto; padding: 5px 10px; margin-top: 10px;">Añadir Mapeo</button>
-                         <button id="saveWorkshopConfigBtn" class="btn" style="margin-top: 20px;">Guardar Configuración General</button>
                     </div>
-                    `;
+                    
+                    <div id="masterConfigSection" class="admin-section" style="display: none;">
+                        <h3 class="admin-section-header">Configuración de Workshop General</h3>
+                        <div class="admin-section-content">
+                             <div class="config-item">
+                                <label for="masterColumnInput">Columna de Código de Área:</label>
+                                <input type="text" id="masterColumnInput" value="${workshopConfig.column}">
+                             </div>
+                             <h4>Mapeo de Códigos a Áreas</h4>
+                             <ul id="areaMappingList" class="area-list"></ul>
+                             <button id="addMappingBtn" class="btn" style="width: auto; padding: 5px 10px; margin-top: 10px;">Añadir Mapeo</button>
+                             <button id="saveWorkshopConfigBtn" class="btn" style="margin-top: 20px;">Guardar Configuración General</button>
+                        </div>
+                    </div>`;
 
                 showModal('Panel de Administrador', content);
+                
+                // Activar la funcionalidad de acordeón
+                doc('modalBody').querySelectorAll('.admin-section-header').forEach(header => {
+                    header.addEventListener('click', () => {
+                        header.parentElement.classList.toggle('expanded');
+                    });
+                });
 
                 if(session.isMaster){
                     doc('masterConfigSection').style.display = 'block';
@@ -2284,7 +2329,7 @@
             });
 
             async function initializeApp() {
-                await loadWorkshopConfig(); // Carga la configuración primero
+                await loadWorkshopConfig();
 
                 const masterAreaRef = db.collection('areas').doc('MULTIPORT');
                 await masterAreaRef.set({
