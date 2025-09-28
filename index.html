@@ -252,6 +252,11 @@
         #statRemainingQty, #sapTotalOrdersStat, #totalOrdersStat { color: var(--warning-color); } 
         #statScrapQty { color: var(--danger-color); }
 
+        .daily-plan-container {
+            grid-column: 1 / -1; /* Ocupa todo el ancho del grid */
+            margin-top: 16px;
+        }
+
         body.light-theme #statOrderNumber,
         body.light-theme #uploadCard h3,
         body.light-theme #orderListCard h3,
@@ -471,8 +476,11 @@
             <div class="main-container">
                 <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
                     <div class="global-dashboard-card">
-                            <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
-                            <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
+                        <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
+                        <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
+                        <div class="daily-plan-container" id="dailyPlanContainer" style="display: none;">
+                            <button id="showDailyPlanBtn" class="btn">Ver Plan del Día General</button>
+                        </div>
                     </div>
                 </header>
                 <aside class="sidebar animated-startup" style="animation-delay: 0.2s;">
@@ -716,6 +724,8 @@
             const adminBtn = doc('adminBtn');
             const themeToggleBtn = doc('themeToggleBtn');
             const logoutBtn = doc('logoutBtn');
+            const showDailyPlanBtn = doc('showDailyPlanBtn');
+            const dailyPlanContainer = doc('dailyPlanContainer');
             
             // Control Containers
             const mobileControls = {
@@ -818,6 +828,7 @@
 
             areaSelectBtn.addEventListener('click', showAreaSelector);
             logoutBtn.addEventListener('click', logout);
+            showDailyPlanBtn.addEventListener('click', generateDailyPlanReport);
 
             // ===================================
             // === CORE APP CONTROL & UTILITIES ===
@@ -2021,6 +2032,7 @@
                 
                 adminBtn.style.display = (isAuthenticated && !session.isMaster) ? 'none' : 'block';
                 logoutBtn.style.display = isAuthenticated ? 'block' : 'none';
+                dailyPlanContainer.style.display = session.isMaster ? 'block' : 'none';
 
                 areaSelectBtn.textContent = `Área: ${currentArea}`;
                 
@@ -2033,7 +2045,9 @@
             async function showAreaSelector() {
                 const areasSnapshot = await db.collection('areas').get();
                 let areas = [];
-                areasSnapshot.forEach(doc => areas.push({ id: doc.id, ...doc.data() }));
+                areasSnapshot.forEach(doc => {
+                    if(doc.id !== 'CONFIG') areas.push({ id: doc.id, ...doc.data() })
+                });
 
                 let content = '<h3>Selecciona un Área para Visualizar</h3><ul class="area-list">';
                 areas.forEach(area => {
@@ -2060,7 +2074,9 @@
             async function showAdminPanel() {
                 const areasSnapshot = await db.collection('areas').get();
                 let areas = [];
-                areasSnapshot.forEach(doc => areas.push({ id: doc.id, ...doc.data() }));
+                areasSnapshot.forEach(doc => {
+                     if(doc.id !== 'CONFIG') areas.push({ id: doc.id, ...doc.data() })
+                });
 
                 let content = `
                     <div class="admin-section">
@@ -2099,7 +2115,6 @@
 
                 showModal('Panel de Administrador', content);
                 
-                // Activar la funcionalidad de acordeón
                 doc('modalBody').querySelectorAll('.admin-section-header').forEach(header => {
                     header.addEventListener('click', () => {
                         header.parentElement.classList.toggle('expanded');
@@ -2288,6 +2303,66 @@
                     console.error("Error escuchando datos de SAP: ", err);
                 });
             }
+            
+            // *** NUEVA FUNCIÓN PARA EL REPORTE GENERAL ***
+            async function generateDailyPlanReport() {
+                showModal('Plan del Día', '<h4>Cargando reporte...</h4>');
+                try {
+                    const todayString = new Date().toLocaleDateString('es-ES', { 
+                        timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' 
+                    });
+
+                    const areasSnapshot = await db.collection('areas').get();
+                    const areaDocs = areasSnapshot.docs.filter(doc => doc.id !== 'CONFIG');
+                    
+                    const promises = areaDocs.map(doc => doc.ref.collection('orders').get());
+                    const allOrdersSnapshots = await Promise.all(promises);
+
+                    let dailyOrdersByArea = {};
+                    let totalDailyOrders = 0;
+
+                    allOrdersSnapshots.forEach((ordersSnapshot, index) => {
+                        const areaName = areaDocs[index].id;
+                        let countForArea = 0;
+                        ordersSnapshot.forEach(orderDoc => {
+                            const orderData = orderDoc.data();
+                            const orderDate = orderData.orderDate?.toDate();
+                            if (orderDate && formatDate(orderDate) === todayString) {
+                                countForArea++;
+                            }
+                        });
+                        if (countForArea > 0) {
+                            dailyOrdersByArea[areaName] = countForArea;
+                            totalDailyOrders += countForArea;
+                        }
+                    });
+
+                    let reportHTML = `
+                        <div class="status-report">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">
+                                <h4 style="margin:0;">Órdenes totales: <span style="color: var(--primary-color);">${totalDailyOrders}</span></h4>
+                                <strong style="color: var(--text-secondary);">Fecha: ${todayString}</strong>
+                            </div>
+                            <ul style="list-style: none; padding: 0; margin:0;">
+                    `;
+
+                    if (totalDailyOrders > 0) {
+                         for (const area in dailyOrdersByArea) {
+                            reportHTML += `<li style="display:flex; justify-content:space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color);"><strong>${area}:</strong> <span style="font-weight:700; color: var(--text-primary);">${dailyOrdersByArea[area]}</span></li>`;
+                         }
+                    } else {
+                        reportHTML += `<li>No hay órdenes programadas para el día de hoy.</li>`;
+                    }
+                    
+                    reportHTML += `</ul></div>`;
+                    showModal('Plan del Día', reportHTML);
+
+                } catch (e) {
+                    console.error("Error al generar el reporte del plan diario:", e);
+                    showModal('Error', 'No se pudo generar el reporte del plan diario.', 'error');
+                }
+            }
+
 
             let isMobile = window.innerWidth <= 992;
             const mobileCollapsibleCardIds = ['uploadCard', 'orderListCard', 'filtersCard', 'actionsCard', 'sap-uploadCard', 'sap-orderListCard'];
