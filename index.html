@@ -241,7 +241,13 @@
         body.light-theme .mode-switcher button.active { color: var(--primary-text-color); background-color: var(--branding-color); border-color: var(--branding-color); }
         .header > .mode-switcher { margin-bottom: 20px; }
         
-        .summary-card, .global-dashboard-card { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; text-align: center; }
+        .summary-card { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; text-align: center; }
+        .global-dashboard-card {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Mantiene siempre 2 columnas para los stats */
+            gap: 16px;
+            text-align: center;
+        }
         .stat-item { display: flex; flex-direction: column; justify-content: flex-start; }
         .stat-item h3 { margin-bottom: 8px; font-size: 0.9rem; font-weight: 500; }
         .stat-item .stat-value-wrapper { margin-top: auto; }
@@ -253,8 +259,15 @@
         #statScrapQty { color: var(--danger-color); }
 
         .daily-plan-container {
-            grid-column: 1 / -1; /* Ocupa todo el ancho del grid */
+            grid-column: 1 / -1;
             margin-top: 16px;
+            display: flex;
+            justify-content: center;
+        }
+        #showDailyPlanBtn {
+            width: auto;
+            padding-left: 24px;
+            padding-right: 24px;
         }
 
         body.light-theme #statOrderNumber,
@@ -341,7 +354,7 @@
         .modal-overlay.visible { opacity: 1; visibility: visible; }
         .modal-content { transform: scale(0.95); transition: transform 0.3s; }
         .modal-overlay.visible .modal-content { transform: scale(1); }
-        .modal-title { font-size: 1.25rem; font-weight: 600; margin: 0; }
+        .modal-title { font-size: 1.25rem; font-weight: 600; margin: 0; text-align: center; width: 100%; }
         .modal-close { font-size: 1.75rem; color: var(--text-dark); cursor: pointer; line-height: 1; position: absolute; top: 16px; right: 16px; }
         #modalBody .status-report { font-family: 'Inter', sans-serif; font-size: 0.95rem; white-space: pre-wrap; color: var(--text-primary); }
         #modalBody .status-report h4 { font-size: 1.1rem; color: var(--primary-color); margin: 16px 0 8px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;}
@@ -556,7 +569,7 @@
                         <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
                         <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
                         <div class="daily-plan-container" id="dailyPlanContainer" style="display: none;">
-                            <button id="showDailyPlanBtn" class="btn">Ver Plan del Día General</button>
+                            <button id="showDailyPlanBtn" class="btn">Ver Plan del Día</button>
                         </div>
                     </div>
                 </header>
