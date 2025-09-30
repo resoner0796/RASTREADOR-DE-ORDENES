@@ -527,7 +527,7 @@
         .date-header .collapse-icon { transition: transform 0.2s; }
         .date-group.expanded .date-header .collapse-icon { transform: rotate(90deg); }
         .orders-for-date { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding-left: 12px; margin-top: 0; }
-        .date-group.expanded .orders-for-date { max-height: 1000px; margin-top: 8px; }
+        .date-group.expanded .orders-for-date { max-height: 5000px; margin-top: 8px; } /* Aumentado para evitar cortes */
         
         /* Media Queries */
         @media (max-width: 992px) {
@@ -664,6 +664,7 @@
                                </div>
                            </div>
                     </div>
+                     <div id="lastUpdatedContainer" style="text-align: right; font-size: 0.75rem; color: var(--text-dark); margin-top: 12px; height: 1em;"></div>
                 </section>
         
                 <main class="main-content animated-startup" style="animation-delay: 0.5s;">
@@ -840,6 +841,7 @@
             const logoutBtn = doc('logoutBtn');
             const showDailyPlanBtn = doc('showDailyPlanBtn');
             const dailyPlanContainer = doc('dailyPlanContainer');
+            const lastUpdatedContainer = doc('lastUpdatedContainer');
             
             // Control Containers
             const mobileControls = {
@@ -1106,7 +1108,8 @@
                                 headers: {
                                     rastreo: Object.keys(rastreoRawData[0] || {}),
                                     empaque: Object.keys(packingRawData[0] || {})
-                                }
+                                },
+                                lastUpdated: new Date() // Actualizamos la fecha aquí
                             };
                             resolve({ key: keyToUse, data: orderData });
                         } catch(err) { reject(err); }
@@ -1273,12 +1276,15 @@
 
                 const canManageThisArea = session.area && (session.area === currentArea || session.isMaster);
                 if (key !== 'all' && canManageThisArea) {
+                    const controls = document.createElement('div');
+                    controls.className = 'order-controls';
+
                     const updateBtn = document.createElement('button');
                     updateBtn.className = 'icon-btn';
                     updateBtn.title = 'Actualizar orden con archivo de detalle';
                     updateBtn.innerHTML = `✏️`;
                     updateBtn.onclick = () => { orderToUpdateKey = key; updateFileInput.value = ''; updateFileInput.click(); };
-                    item.appendChild(updateBtn);
+                    controls.appendChild(updateBtn);
                     
                     if(session.isMaster){ 
                         const deleteBtn = document.createElement('button');
@@ -1290,8 +1296,9 @@
                                 await deleteOrderFromFirebase(key);
                             });
                         };
-                        item.appendChild(deleteBtn);
+                        controls.appendChild(deleteBtn);
                     }
+                    item.appendChild(controls);
                 }
                 return item;
             }
@@ -1322,6 +1329,7 @@
 
             function renderSummary() {
                 let orderQty = 0, packedQty = 0, scrapCount = 0; let ordersToProcess = [];
+                lastUpdatedContainer.textContent = '';
                 
                 if (activeOrderKey === 'all' || activeOrderKey === null) {
                     const todayString = new Date().toLocaleDateString('es-ES', { 
@@ -1341,8 +1349,12 @@
                 
                 } else if (loadedOrders.has(activeOrderKey)) {
                     ordersToProcess = [loadedOrders.get(activeOrderKey)];
+                    const order = ordersToProcess[0];
                     statOrderNumber.textContent = activeOrderKey;
-                    statCatalogNumber.textContent = ordersToProcess[0].catalogNumber;
+                    statCatalogNumber.textContent = order.catalogNumber;
+                    if (order.lastUpdated) {
+                        lastUpdatedContainer.textContent = `Última actualización: ${formatDateTime(order.lastUpdated)}`;
+                    }
                 } else if (loadedOrders.size > 0) {
                     setActiveOrder(null);
                     return; 
@@ -1677,11 +1689,23 @@
                 cloneContainer.style.top = '0';
                 cloneContainer.style.width = 'auto'; 
                 cloneContainer.style.minWidth = '1200px';
-                cloneContainer.style.background = getComputedStyle(document.documentElement).getPropertyValue('--bg-color').trim();
-                cloneContainer.style.padding = '1px';
+                cloneContainer.style.background = 'var(--surface-color)';
+                cloneContainer.style.padding = '20px';
 
                 const tableToClone = doc('rastreoTable');
                 const clonedTable = tableToClone.cloneNode(true);
+                
+                if (activeOrderKey && activeOrderKey !== 'all') {
+                    const titleElement = document.createElement('h2');
+                    titleElement.textContent = `Orden: ${activeOrderKey}`;
+                    titleElement.style.color = 'var(--text-secondary)';
+                    titleElement.style.fontFamily = "'Inter', sans-serif";
+                    titleElement.style.fontSize = '24px';
+                    titleElement.style.fontWeight = '700';
+                    titleElement.style.textAlign = 'center';
+                    titleElement.style.marginBottom = '20px';
+                    cloneContainer.appendChild(titleElement);
+                }
                 
                 const style = document.createElement('style');
                 style.innerHTML = `
@@ -1710,11 +1734,10 @@
                 await new Promise(resolve => setTimeout(resolve, 100));
 
                 try {
-                    const canvas = await html2canvas(clonedTable, {
+                    const canvas = await html2canvas(cloneContainer, {
                         scale: 2,
                         useCORS: true,
                         backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--surface-color').trim(),
-                        scrollY: -window.scrollY
                     });
 
                     const a = document.createElement('a');
@@ -2478,6 +2501,7 @@
                     snapshot.forEach(doc => {
                         const data = doc.data();
                         if (data.orderDate && data.orderDate.toDate) { data.orderDate = data.orderDate.toDate(); }
+                        if (data.lastUpdated && data.lastUpdated.toDate) { data.lastUpdated = data.lastUpdated.toDate(); }
                         const empaqueDataMap = new Map();
                         if (data.empaqueData && Array.isArray(data.empaqueData)) {
                             data.empaqueData.forEach(item => { empaqueDataMap.set(item.boxId, item.serials); });
