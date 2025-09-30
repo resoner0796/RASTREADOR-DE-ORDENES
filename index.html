@@ -212,10 +212,25 @@
         .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .light-theme .btn:hover:not(:disabled) { box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
 
-        .order-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .order-item { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
         
         .order-item .order-btn {
             flex-grow: 1; min-width: 0; text-align: center; padding: 10px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        .order-progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: var(--surface-hover-color);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .order-progress-bar-inner {
+            height: 100%;
+            width: 0%;
+            border-radius: 2px;
+            transition: width 0.3s ease, background-color 0.3s ease;
         }
 
         .order-item .order-btn.active { background-color: var(--primary-color); color: var(--primary-text-color); }
@@ -228,6 +243,10 @@
         .order-item .order-btn.is-complete:hover { background-color: rgba(52, 211, 153, 0.2); }
         .order-item .order-btn.is-complete.active { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.4); }
         
+        .order-item .order-controls {
+            display: flex;
+            gap: 8px;
+        }
         .order-item .icon-btn { 
             flex-shrink: 0; background: transparent; border: none; backdrop-filter: none; box-shadow: none; color: var(--text-dark); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 1.2rem; filter: grayscale(1) opacity(0.6); 
         }
@@ -244,7 +263,7 @@
         .summary-card { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; text-align: center; }
         .global-dashboard-card {
             display: grid;
-            grid-template-columns: 1fr 1fr; /* Mantiene siempre 2 columnas para los stats */
+            grid-template-columns: 1fr 1fr;
             gap: 16px;
             text-align: center;
         }
@@ -1210,7 +1229,7 @@
                     headerBtn.innerHTML = `<span>📅 ${dateString}</span> ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''} <span class="collapse-icon">►</span>`;
                     const ordersContainer = document.createElement('div');
                     ordersContainer.className = 'orders-for-date';
-                    orders.forEach(order => ordersContainer.appendChild(createOrderButton(order.key, order.key)));
+                    orders.forEach(order => ordersContainer.appendChild(createOrderButton(order.key, order)));
                     groupDiv.appendChild(headerBtn);
                     groupDiv.appendChild(ordersContainer);
                     orderList.appendChild(groupDiv);
@@ -1219,40 +1238,69 @@
                 setActiveOrder(activeOrderKey);
             }
 
-            function createOrderButton(key, text) {
-                const item = document.createElement('div'); item.className = 'order-item';
+            function createOrderButton(key, orderData) {
+                const item = document.createElement('div');
+                item.className = 'order-item';
+                
+                const btnWrapper = document.createElement('div');
+                btnWrapper.style.width = '100%';
+
                 const btn = document.createElement('button');
-                btn.className = 'order-btn'; btn.textContent = text; btn.dataset.key = key;
+                btn.className = 'order-btn';
+                btn.textContent = key;
+                btn.dataset.key = key;
                 btn.onclick = () => setActiveOrder(key);
-                const orderData = loadedOrders.get(key);
                 if (orderData && orderData.orderQty > 0 && orderData.orderQty <= orderData.packedQty) {
                     btn.classList.add('is-complete');
                 }
-                item.appendChild(btn);
-                
-                const canManageThisArea = session.area && (session.area === currentArea || session.isMaster);
+                btnWrapper.appendChild(btn);
 
+                const progressBar = document.createElement('div');
+                progressBar.className = 'order-progress-bar';
+                const progressBarInner = document.createElement('div');
+                progressBarInner.className = 'order-progress-bar-inner';
+                
+                const percentage = (orderData.orderQty > 0) ? (orderData.packedQty / orderData.orderQty) * 100 : 0;
+                progressBarInner.style.width = `${Math.min(percentage, 100)}%`;
+
+                if (percentage < 30) progressBarInner.style.backgroundColor = 'var(--danger-color)';
+                else if (percentage < 70) progressBarInner.style.backgroundColor = 'var(--warning-color)';
+                else progressBarInner.style.backgroundColor = 'var(--success-color)';
+
+                progressBar.appendChild(progressBarInner);
+                btnWrapper.appendChild(progressBar);
+                
+                item.appendChild(btnWrapper);
+
+                const canManageThisArea = session.area && (session.area === currentArea || session.isMaster);
                 if (key !== 'all' && canManageThisArea) {
+                    const controls = document.createElement('div');
+                    controls.className = 'order-controls';
+
                     const updateBtn = document.createElement('button');
-                    updateBtn.className = 'icon-btn'; updateBtn.title = 'Actualizar orden con archivo de detalle';
+                    updateBtn.className = 'icon-btn';
+                    updateBtn.title = 'Actualizar orden con archivo de detalle';
                     updateBtn.innerHTML = `✏️`;
                     updateBtn.onclick = () => { orderToUpdateKey = key; updateFileInput.value = ''; updateFileInput.click(); };
-                    item.appendChild(updateBtn);
+                    controls.appendChild(updateBtn);
                     
                     if(session.isMaster){ 
                         const deleteBtn = document.createElement('button');
-                        deleteBtn.className = 'icon-btn'; deleteBtn.title = 'Eliminar orden';
+                        deleteBtn.className = 'icon-btn';
+                        deleteBtn.title = 'Eliminar orden';
                         deleteBtn.innerHTML = `🗑️`;
                         deleteBtn.onclick = () => {
                             showConfirmationModal(`¿Estás seguro de que quieres eliminar la orden ${key}?`, async () => {
                                 await deleteOrderFromFirebase(key);
                             });
                         };
-                        item.appendChild(deleteBtn);
+                        controls.appendChild(deleteBtn);
                     }
+                    item.appendChild(controls);
                 }
                 return item;
             }
+
 
             function setActiveOrder(key) {
                 activeOrderKey = key;
@@ -1789,29 +1837,44 @@
 
             async function syncSapOrdersToFwd(sapOrders, areaName) {
                 if (!areaName || sapOrders.length === 0) return;
-
+            
                 const batch = db.batch();
                 const ordersCollectionRef = db.collection('areas').doc(areaName).collection('orders');
+
+                // Para optimizar, primero obtenemos todas las órdenes existentes del área de una sola vez
+                const existingOrdersSnapshot = await ordersCollectionRef.get();
+                const existingOrdersMap = new Map();
+                existingOrdersSnapshot.forEach(doc => {
+                    existingOrdersMap.set(doc.id, doc.data());
+                });
 
                 for (const sapOrder of sapOrders) {
                     const orderId = String(sapOrder['Orden']);
                     const orderRef = ordersCollectionRef.doc(orderId);
+                    
+                    const existingOrder = existingOrdersMap.get(orderId);
 
-                    const orderData = {
+                    // Datos maestros que siempre se actualizan desde SAP
+                    const masterData = {
                         orderQty: sapOrder['Total orden'] || 0,
                         catalogNumber: sapOrder['Catalogo'] || 'N/A',
                         orderDate: excelSerialToDate(sapOrder['Finish']) || new Date(),
                         lastUpdated: new Date()
                     };
 
-                    const defaultData = {
-                        packedQty: 0,
-                        rastreoData: [],
-                        empaqueData: [],
-                        headers: { rastreo: [], empaque: [] }
-                    };
-
-                    batch.set(orderRef, { ...defaultData, ...orderData }, { merge: true });
+                    if (existingOrder) {
+                        // La orden existe: Actualizamos solo los datos maestros, conservamos los de detalle
+                        batch.update(orderRef, masterData);
+                    } else {
+                        // La orden es nueva: Creamos el documento completo con valores por defecto
+                        const defaultData = {
+                            packedQty: 0,
+                            rastreoData: [],
+                            empaqueData: [],
+                            headers: { rastreo: [], empaque: [] }
+                        };
+                        batch.set(orderRef, { ...defaultData, ...masterData });
+                    }
                 }
 
                 try {
@@ -1822,6 +1885,7 @@
                     showModal('Error de Sincronización', `No se pudieron actualizar las órdenes en la vista FWD para ${areaName}.`, 'error');
                 }
             }
+
 
             function processSapFile(workbook, isMasterUpload = false) {
                 const worksheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -2328,7 +2392,7 @@
             }
             
             async function generateDailyPlanReport() {
-                showModal('Plan del Día', '<h4>Cargando reporte...</h4>');
+                showModal('Plan del Día', '<h4 style="text-align: center;">Cargando reporte...</h4>');
                 try {
                     const todayString = new Date().toLocaleDateString('es-ES', { 
                         timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' 
