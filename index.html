@@ -212,15 +212,24 @@
         .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .light-theme .btn:hover:not(:disabled) { box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
 
-        .order-item { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+        .order-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
         
         .order-item .order-btn {
-            flex-grow: 1; min-width: 0; text-align: center; padding: 10px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            width: 100%;
+            flex-grow: 1;
+            min-width: 0;
+            text-align: center;
+            padding: 10px 8px 14px 8px; /* Padding extra abajo para la barra */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: relative; /* Contexto para la barra */
         }
 
         .order-progress-bar {
-            width: 100%;
+            position: absolute;
+            bottom: 4px;
+            left: 8px;
+            right: 8px;
             height: 4px;
             background-color: var(--surface-hover-color);
             border-radius: 2px;
@@ -243,10 +252,6 @@
         .order-item .order-btn.is-complete:hover { background-color: rgba(52, 211, 153, 0.2); }
         .order-item .order-btn.is-complete.active { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.4); }
         
-        .order-item .order-controls {
-            display: flex;
-            gap: 8px;
-        }
         .order-item .icon-btn { 
             flex-shrink: 0; background: transparent; border: none; backdrop-filter: none; box-shadow: none; color: var(--text-dark); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 1.2rem; filter: grayscale(1) opacity(0.6); 
         }
@@ -1241,9 +1246,6 @@
             function createOrderButton(key, orderData) {
                 const item = document.createElement('div');
                 item.className = 'order-item';
-                
-                const btnWrapper = document.createElement('div');
-                btnWrapper.style.width = '100%';
 
                 const btn = document.createElement('button');
                 btn.className = 'order-btn';
@@ -1253,36 +1255,30 @@
                 if (orderData && orderData.orderQty > 0 && orderData.orderQty <= orderData.packedQty) {
                     btn.classList.add('is-complete');
                 }
-                btnWrapper.appendChild(btn);
-
+                
                 const progressBar = document.createElement('div');
                 progressBar.className = 'order-progress-bar';
                 const progressBarInner = document.createElement('div');
                 progressBarInner.className = 'order-progress-bar-inner';
-                
                 const percentage = (orderData.orderQty > 0) ? (orderData.packedQty / orderData.orderQty) * 100 : 0;
                 progressBarInner.style.width = `${Math.min(percentage, 100)}%`;
 
                 if (percentage < 30) progressBarInner.style.backgroundColor = 'var(--danger-color)';
                 else if (percentage < 70) progressBarInner.style.backgroundColor = 'var(--warning-color)';
                 else progressBarInner.style.backgroundColor = 'var(--success-color)';
-
-                progressBar.appendChild(progressBarInner);
-                btnWrapper.appendChild(progressBar);
                 
-                item.appendChild(btnWrapper);
+                progressBar.appendChild(progressBarInner);
+                btn.appendChild(progressBar);
+                item.appendChild(btn);
 
                 const canManageThisArea = session.area && (session.area === currentArea || session.isMaster);
                 if (key !== 'all' && canManageThisArea) {
-                    const controls = document.createElement('div');
-                    controls.className = 'order-controls';
-
                     const updateBtn = document.createElement('button');
                     updateBtn.className = 'icon-btn';
                     updateBtn.title = 'Actualizar orden con archivo de detalle';
                     updateBtn.innerHTML = `✏️`;
                     updateBtn.onclick = () => { orderToUpdateKey = key; updateFileInput.value = ''; updateFileInput.click(); };
-                    controls.appendChild(updateBtn);
+                    item.appendChild(updateBtn);
                     
                     if(session.isMaster){ 
                         const deleteBtn = document.createElement('button');
@@ -1294,9 +1290,8 @@
                                 await deleteOrderFromFirebase(key);
                             });
                         };
-                        controls.appendChild(deleteBtn);
+                        item.appendChild(deleteBtn);
                     }
-                    item.appendChild(controls);
                 }
                 return item;
             }
@@ -1841,7 +1836,6 @@
                 const batch = db.batch();
                 const ordersCollectionRef = db.collection('areas').doc(areaName).collection('orders');
 
-                // Para optimizar, primero obtenemos todas las órdenes existentes del área de una sola vez
                 const existingOrdersSnapshot = await ordersCollectionRef.get();
                 const existingOrdersMap = new Map();
                 existingOrdersSnapshot.forEach(doc => {
@@ -1854,7 +1848,6 @@
                     
                     const existingOrder = existingOrdersMap.get(orderId);
 
-                    // Datos maestros que siempre se actualizan desde SAP
                     const masterData = {
                         orderQty: sapOrder['Total orden'] || 0,
                         catalogNumber: sapOrder['Catalogo'] || 'N/A',
@@ -1863,10 +1856,8 @@
                     };
 
                     if (existingOrder) {
-                        // La orden existe: Actualizamos solo los datos maestros, conservamos los de detalle
                         batch.update(orderRef, masterData);
                     } else {
-                        // La orden es nueva: Creamos el documento completo con valores por defecto
                         const defaultData = {
                             packedQty: 0,
                             rastreoData: [],
