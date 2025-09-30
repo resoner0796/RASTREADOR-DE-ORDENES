@@ -471,6 +471,7 @@
             letter-spacing: 1px;
             text-transform: uppercase;
             margin-bottom: 16px;
+            text-align: center; /* Centrar este texto */
         }
         .plan-area-list {
             list-style: none;
@@ -527,7 +528,7 @@
         .date-header .collapse-icon { transition: transform 0.2s; }
         .date-group.expanded .date-header .collapse-icon { transform: rotate(90deg); }
         .orders-for-date { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding-left: 12px; margin-top: 0; }
-        .date-group.expanded .orders-for-date { max-height: 5000px; margin-top: 8px; } /* Aumentado para evitar cortes */
+        .date-group.expanded .orders-for-date { max-height: 5000px; }
         
         /* Media Queries */
         @media (max-width: 992px) {
@@ -1037,7 +1038,7 @@
             async function saveOrderToFirebase(orderKey, orderData, area) {
                 try {
                     const empaqueDataForDB = Array.from(orderData.empaqueData.entries()).map(([boxId, serials]) => ({ boxId, serials }));
-                    const dataToSave = { ...orderData, empaqueData: empaqueDataForDB, lastUpdated: new Date() };
+                    const dataToSave = { ...orderData, empaqueData: empaqueDataForDB };
                     await db.collection('areas').doc(area).collection('orders').doc(orderKey).set(dataToSave, { merge: true });
                 } catch (e) {
                     console.error("Error al guardar en Firebase: ", e);
@@ -1109,7 +1110,7 @@
                                     rastreo: Object.keys(rastreoRawData[0] || {}),
                                     empaque: Object.keys(packingRawData[0] || {})
                                 },
-                                lastUpdated: new Date() // Actualizamos la fecha aquí
+                                lastUpdated: new Date()
                             };
                             resolve({ key: keyToUse, data: orderData });
                         } catch(err) { reject(err); }
@@ -1276,15 +1277,12 @@
 
                 const canManageThisArea = session.area && (session.area === currentArea || session.isMaster);
                 if (key !== 'all' && canManageThisArea) {
-                    const controls = document.createElement('div');
-                    controls.className = 'order-controls';
-
                     const updateBtn = document.createElement('button');
                     updateBtn.className = 'icon-btn';
                     updateBtn.title = 'Actualizar orden con archivo de detalle';
                     updateBtn.innerHTML = `✏️`;
                     updateBtn.onclick = () => { orderToUpdateKey = key; updateFileInput.value = ''; updateFileInput.click(); };
-                    controls.appendChild(updateBtn);
+                    item.appendChild(updateBtn);
                     
                     if(session.isMaster){ 
                         const deleteBtn = document.createElement('button');
@@ -1296,9 +1294,8 @@
                                 await deleteOrderFromFirebase(key);
                             });
                         };
-                        controls.appendChild(deleteBtn);
+                        item.appendChild(deleteBtn);
                     }
-                    item.appendChild(controls);
                 }
                 return item;
             }
@@ -1687,30 +1684,24 @@
                 cloneContainer.style.position = 'absolute';
                 cloneContainer.style.left = '-9999px';
                 cloneContainer.style.top = '0';
-                cloneContainer.style.width = 'auto'; 
-                cloneContainer.style.minWidth = '1200px';
+                cloneContainer.style.display = 'inline-block';
                 cloneContainer.style.background = 'var(--surface-color)';
                 cloneContainer.style.padding = '20px';
+                cloneContainer.style.borderRadius = '16px';
 
                 const tableToClone = doc('rastreoTable');
                 const clonedTable = tableToClone.cloneNode(true);
                 
                 if (activeOrderKey && activeOrderKey !== 'all') {
-                    const titleElement = document.createElement('h2');
-                    titleElement.textContent = `Orden: ${activeOrderKey}`;
-                    titleElement.style.color = 'var(--text-secondary)';
-                    titleElement.style.fontFamily = "'Inter', sans-serif";
-                    titleElement.style.fontSize = '24px';
-                    titleElement.style.fontWeight = '700';
-                    titleElement.style.textAlign = 'center';
-                    titleElement.style.marginBottom = '20px';
-                    cloneContainer.appendChild(titleElement);
+                    const caption = clonedTable.createCaption();
+                    caption.textContent = activeOrderKey;
                 }
                 
                 const style = document.createElement('style');
                 style.innerHTML = `
                     :root { --surface-color: #1E293B; --border-color: #334155; --danger-color: #FB7185; --warning-color: #FBBF24; --orange-color: #F97316; --success-color: #34D399; --text-primary: #F8FAFC; --text-secondary: #94A3B8; }
-                    table { color: var(--text-primary); background-color: var(--surface-color); border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 14px; table-layout: auto; width: auto; }
+                    table { color: var(--text-primary); background-color: var(--surface-color); border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 14px; }
+                    caption { caption-side: top; text-align: center; font-size: 24px; font-weight: 700; color: var(--text-secondary); margin-bottom: 20px; font-family: 'Inter', sans-serif; }
                     th, td { padding: 12px 24px; text-align: center !important; border: 1px solid var(--border-color); white-space: nowrap; }
                     thead { display: table-header-group !important; background-color: #1a2436; position: static !important; }
                     th { font-weight: 600; color: var(--text-secondary); font-size: 12px; }
@@ -1737,7 +1728,7 @@
                     const canvas = await html2canvas(cloneContainer, {
                         scale: 2,
                         useCORS: true,
-                        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--surface-color').trim(),
+                        backgroundColor: null,
                     });
 
                     const a = document.createElement('a');
@@ -1875,7 +1866,6 @@
                         orderQty: sapOrder['Total orden'] || 0,
                         catalogNumber: sapOrder['Catalogo'] || 'N/A',
                         orderDate: excelSerialToDate(sapOrder['Finish']) || new Date(),
-                        lastUpdated: new Date()
                     };
 
                     if (existingOrder) {
@@ -1885,7 +1875,8 @@
                             packedQty: 0,
                             rastreoData: [],
                             empaqueData: [],
-                            headers: { rastreo: [], empaque: [] }
+                            headers: { rastreo: [], empaque: [] },
+                            lastUpdated: new Date()
                         };
                         batch.set(orderRef, { ...defaultData, ...masterData });
                     }
