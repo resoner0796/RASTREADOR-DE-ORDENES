@@ -1023,8 +1023,6 @@
                 return null;
             }
             
-            // CORRECCIÓN: Nueva función para formatear fechas y horas directamente desde el serial de Excel
-            // sin aplicar conversiones de zona horaria, mostrando los valores literales del archivo.
             function formatDateTimeFromSerial(serial) {
                 if (typeof serial !== 'number' || isNaN(serial)) return '';
                 try {
@@ -1986,6 +1984,7 @@
                 return {
                     'Orden': getCellValue('A' + rowNum),
                     'Catalogo': getCellValue('D' + rowNum) || null,
+                    'Material': getCellValue('C' + rowNum) || null, // CORRECCIÓN: Se añade el campo Material
                     'Special Stock': [stock1, stock2].filter(Boolean).join(' / ') || null,
                     'Finish': finishDateSerial,
                     'Total orden': total,
@@ -2104,14 +2103,16 @@
                     return;
                 }
 
-                const headers = ['Orden', 'Catalogo', 'Special Stock', 'Finish', 'Total orden', 'Total confirmado', 'Faltante'];
+                // CORRECCIÓN: Se añade "Material" a los encabezados de la tabla SAP.
+                const headers = ['Orden', 'Catalogo', 'Material', 'Special Stock', 'Finish', 'Total orden', 'Total confirmado', 'Faltante'];
                 table.innerHTML = `
-                    <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+                    <thead><tr>${headers.map(h => `<th>${h.replace(/_/g, ' ')}</th>`).join('')}</tr></thead>
                     <tbody>
                         ${dataToDisplay.map(row => `
                             <tr class="is-${row.status}-sap">
                                 <td data-label="Orden">${row['Orden']}</td>
                                 <td data-label="Catalogo">${row['Catalogo']}</td>
+                                <td data-label="Material">${row['Material']}</td>
                                 <td data-label="Special Stock">${row['Special Stock']}</td>
                                 <td data-label="Finish">${formatDate(excelSerialToDate(row['Finish']))}</td>
                                 <td data-label="Total orden">${row['Total orden']}</td>
@@ -2440,25 +2441,29 @@
                     const areasSnapshot = await db.collection('areas').get();
                     const areaDocs = areasSnapshot.docs.filter(doc => doc.id !== 'CONFIG');
                     
-                    const promises = areaDocs.map(doc => doc.ref.collection('orders').get());
-                    const allOrdersSnapshots = await Promise.all(promises);
+                    // CORRECCIÓN: Obtener datos de SAP en lugar de FWD
+                    const promises = areaDocs.map(doc => doc.ref.collection('sap_data').doc('current_data').get());
+                    const allSapDataDocs = await Promise.all(promises);
 
                     let dailyOrdersByArea = {};
                     let totalDailyOrders = 0;
 
-                    allOrdersSnapshots.forEach((ordersSnapshot, index) => {
-                        const areaName = areaDocs[index].id;
-                        let countForArea = 0;
-                        ordersSnapshot.forEach(orderDoc => {
-                            const orderData = orderDoc.data();
-                            const orderDate = orderData.orderDate?.toDate();
-                            if (orderDate && formatDate(orderDate) === todayString) {
-                                countForArea++;
+                    allSapDataDocs.forEach((sapDoc, index) => {
+                        if (sapDoc.exists) {
+                            const areaName = areaDocs[index].id;
+                            const sapOrders = sapDoc.data().orders || [];
+                            
+                            // CORRECCIÓN: Filtrar órdenes pendientes para hoy
+                            const pendingOrdersForToday = sapOrders.filter(order => 
+                                isSapOrderForToday(order) && order.status !== 'complete'
+                            );
+                            
+                            const countForArea = pendingOrdersForToday.length;
+                            
+                            if (countForArea > 0) {
+                                dailyOrdersByArea[areaName] = countForArea;
+                                totalDailyOrders += countForArea;
                             }
-                        });
-                        if (countForArea > 0) {
-                            dailyOrdersByArea[areaName] = countForArea;
-                            totalDailyOrders += countForArea;
                         }
                     });
 
@@ -2466,7 +2471,7 @@
                         <div class="daily-plan-modal">
                             <div class="plan-header">
                                 <div class="plan-stat">
-                                    <span>Órdenes Totales</span>
+                                    <span>Órdenes Pendientes</span>
                                     <p>${totalDailyOrders}</p>
                                 </div>
                                 <div class="plan-date">
@@ -2487,11 +2492,11 @@
                                                 </li>`;
                          }
                     } else {
-                        reportHTML += `<li class="plan-area-item-empty">No hay órdenes programadas para el día de hoy.</li>`;
+                        reportHTML += `<li class="plan-area-item-empty">No hay órdenes pendientes para el día de hoy.</li>`;
                     }
                     
                     reportHTML += `</ul></div>`;
-                    showModal('Plan del Día', reportHTML);
+                    showModal('Plan del Día (Pendientes SAP)', reportHTML);
 
                 } catch (e) {
                     console.error("Error al generar el reporte del plan diario:", e);
