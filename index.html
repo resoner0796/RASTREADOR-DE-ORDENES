@@ -1015,19 +1015,23 @@
                 if (typeof serial !== 'number' || isNaN(serial)) return null;
                 try {
                     const decoded = XLSX.SSF.parse_date_code(serial);
-                    if (decoded) return new Date(Date.UTC(decoded.y, decoded.m - 1, decoded.d, decoded.H, decoded.M, decoded.S));
+                    if (decoded) {
+                        // CORRECCIÓN: Si una fecha de Excel no tiene componente de tiempo (es medianoche),
+                        // se ajusta a mediodía (12:00 UTC). Esto evita que la conversión a la zona horaria
+                        // local (ej. UTC-5) haga que la fecha retroceda al día anterior.
+                        const hours = (decoded.H === 0 && decoded.M === 0 && decoded.S === 0) ? 12 : decoded.H;
+                        return new Date(Date.UTC(decoded.y, decoded.m - 1, decoded.d, hours, decoded.M, decoded.S));
+                    }
                 } catch(e) { console.error("Error al parsear la fecha serial de Excel:", e); }
                 return null;
             }
 
             function formatDate(date) {
                 if (!(date instanceof Date) || isNaN(date)) return '';
-                // CORRECCIÓN: Usar la zona horaria de Reynosa para formatear la fecha.
                 return date.toLocaleDateString('es-ES', { timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' });
             }
             function formatDateTime(date) {
                 if (!(date instanceof Date) || isNaN(date)) return '';
-                // CORRECCIÓN: Usar toLocaleString con la zona horaria de Reynosa para obtener fecha y hora correctas.
                 return date.toLocaleString('es-ES', {
                     timeZone: REYNOSA_TIMEZONE,
                     year: 'numeric', month: '2-digit', day: '2-digit',
@@ -1911,7 +1915,6 @@
                         const orderId = getCellValue('A' + rowNum);
                         if (!orderId) continue;
                         
-                        // CORRECCIÓN: Filtrar órdenes que no comiencen con '900'.
                         const orderIdStr = String(orderId).trim();
                         if (!orderIdStr.startsWith('900')) {
                             continue;
@@ -1936,7 +1939,6 @@
                         const orderId = getCellValue('A' + rowNum);
                         if (!orderId) continue;
 
-                        // CORRECCIÓN: Filtrar órdenes que no comiencen con '900'.
                         const orderIdStr = String(orderId).trim();
                         if (!orderIdStr.startsWith('900')) {
                             continue;
@@ -1958,7 +1960,6 @@
                 let status = 'incomplete';
                 const finishDateSerial = getCellValue('G' + rowNum);
                 const finishDate = excelSerialToDate(finishDateSerial);
-                // CORRECCIÓN: Formatear la fecha de finalización en la zona horaria de Reynosa para una comparación precisa.
                 const finishDateStringCA = finishDate ? finishDate.toLocaleDateString('en-CA', { timeZone: REYNOSA_TIMEZONE }) : '';
                 
                 if (faltante <= 0) {
