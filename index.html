@@ -1016,14 +1016,29 @@
                 try {
                     const decoded = XLSX.SSF.parse_date_code(serial);
                     if (decoded) {
-                        // CORRECCIÓN: Si una fecha de Excel no tiene componente de tiempo (es medianoche),
-                        // se ajusta a mediodía (12:00 UTC). Esto evita que la conversión a la zona horaria
-                        // local (ej. UTC-5) haga que la fecha retroceda al día anterior.
                         const hours = (decoded.H === 0 && decoded.M === 0 && decoded.S === 0) ? 12 : decoded.H;
                         return new Date(Date.UTC(decoded.y, decoded.m - 1, decoded.d, hours, decoded.M, decoded.S));
                     }
                 } catch(e) { console.error("Error al parsear la fecha serial de Excel:", e); }
                 return null;
+            }
+            
+            // CORRECCIÓN: Nueva función para formatear fechas y horas directamente desde el serial de Excel
+            // sin aplicar conversiones de zona horaria, mostrando los valores literales del archivo.
+            function formatDateTimeFromSerial(serial) {
+                if (typeof serial !== 'number' || isNaN(serial)) return '';
+                try {
+                    const decoded = XLSX.SSF.parse_date_code(serial);
+                    if (decoded) {
+                        const day = String(decoded.d).padStart(2, '0');
+                        const month = String(decoded.m).padStart(2, '0');
+                        const year = decoded.y;
+                        const hours = String(decoded.H).padStart(2, '0');
+                        const minutes = String(decoded.M).padStart(2, '0');
+                        return `${day}/${month}/${year} ${hours}:${minutes}`;
+                    }
+                } catch(e) { console.error("Error al formatear fecha/hora desde serial de Excel:", e); }
+                return '';
             }
 
             function formatDate(date) {
@@ -1562,7 +1577,7 @@
                     serials.forEach(serial => {
                         content += `<li>
                             <span>${serial[serialHeader]}</span>
-                            <span>${formatDateTime(excelSerialToDate(serial[packedDateHeader]))}</span>
+                            <span>${formatDateTimeFromSerial(serial[packedDateHeader])}</span>
                         </li>`;
                     });
                 } else {
@@ -1623,7 +1638,7 @@
                         <tr class="box-row" data-boxid="${boxId}">
                             <td data-label="BoxID">${boxId}</td>
                             <td data-label="Cantidad">${serials.length}</td>
-                            <td data-label="Último Empaque">${formatDateTime(excelSerialToDate(latestSerial[packedDateHeader]))}</td>
+                            <td data-label="Último Empaque">${formatDateTimeFromSerial(latestSerial[packedDateHeader])}</td>
                         </tr>`;
                 }
                 tableHTML += `</tbody>`;
@@ -1660,7 +1675,7 @@
                             'Line': row[TRACKING_KEYS.LINE],
                             'Station': row[TRACKING_KEYS.STATION],
                             'Status': row.status,
-                            'Date Registered': formatDateTime(excelSerialToDate(row[TRACKING_KEYS.DATE_REGISTERED]))
+                            'Date Registered': formatDateTimeFromSerial(row[TRACKING_KEYS.DATE_REGISTERED])
                         };
                     });
                     
@@ -2108,7 +2123,7 @@
             }
 
             function formatCell(value, header, isDateTime = false) {
-                 if (isDateTime) return formatDateTime(excelSerialToDate(value));
+                 if (isDateTime) return formatDateTimeFromSerial(value);
                  if (header && header.toLowerCase().includes('date')) return formatDate(excelSerialToDate(value));
                  return value === undefined || value === null ? '' : value;
             }
