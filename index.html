@@ -643,7 +643,7 @@
                            <div class="stat-item">
                                <h3>Cant. Orden</h3>
                                <div class="stat-value-wrapper">
-                                   <p id="statOrderQty">0</p>
+                                  <p id="statOrderQty">0</p>
                                </div>
                            </div>
                            <div class="stat-item">
@@ -665,7 +665,7 @@
                                </div>
                            </div>
                     </div>
-                     <div id="lastUpdatedContainer" style="text-align: right; font-size: 0.75rem; color: var(--text-dark); margin-top: 12px; height: 1em;"></div>
+                   <div id="lastUpdatedContainer" style="text-align: right; font-size: 0.75rem; color: var(--text-dark); margin-top: 12px; height: 1em;"></div>
                 </section>
         
                 <main class="main-content animated-startup" style="animation-delay: 0.5s;">
@@ -818,6 +818,9 @@
             const TRACKING_KEYS = { SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', DATE_REGISTERED: 'Date Registered', LINE: 'Line', STATION: 'Station' };
             const PACKING_KEYS = { SERIAL: 'Serial Number', EMPLOYEE_ID: 'Employee ID', PACKED_DATE: 'Finish Packed Date', BOX_ID: 'BoxID' };
             
+            // Constante para la zona horaria
+            const REYNOSA_TIMEZONE = 'America/Matamoros';
+
             // Element cache
             const doc = (id) => document.getElementById(id);
             const appTitle = doc('app-title');
@@ -1019,16 +1022,17 @@
 
             function formatDate(date) {
                 if (!(date instanceof Date) || isNaN(date)) return '';
-                return date.toLocaleDateString('es-ES', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
+                // CORRECCIÓN: Usar la zona horaria de Reynosa para formatear la fecha.
+                return date.toLocaleDateString('es-ES', { timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' });
             }
             function formatDateTime(date) {
                 if (!(date instanceof Date) || isNaN(date)) return '';
-                 const day = String(date.getUTCDate()).padStart(2, '0');
-                 const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-                 const year = date.getUTCFullYear();
-                 const hours = String(date.getUTCHours()).padStart(2, '0');
-                 const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-                return `${day}/${month}/${year} ${hours}:${minutes}`;
+                // CORRECCIÓN: Usar toLocaleString con la zona horaria de Reynosa para obtener fecha y hora correctas.
+                return date.toLocaleString('es-ES', {
+                    timeZone: REYNOSA_TIMEZONE,
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit', hour12: false
+                }).replace(',', '');
             }
             function findHeader(headers, keyText) { return headers && headers.find(h => h && h.toLowerCase() === keyText.toLowerCase()); }
             
@@ -1226,7 +1230,7 @@
                     return dateB - dateA;
                 });
                 const todayString = new Date().toLocaleDateString('es-ES', { 
-                    timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' 
+                    timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' 
                 });
                 sortedDates.forEach(dateString => {
                     const orders = groupedByDate.get(dateString);
@@ -1330,7 +1334,7 @@
                 
                 if (activeOrderKey === 'all' || activeOrderKey === null) {
                     const todayString = new Date().toLocaleDateString('es-ES', { 
-                        timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' 
+                        timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' 
                     });
                     ordersToProcess = Array.from(loadedOrders.values()).filter(order => formatDate(order.orderDate) === todayString);
                     
@@ -1376,7 +1380,7 @@
 
             function updateGlobalDashboard() {
                 const todayString = new Date().toLocaleDateString('es-ES', { 
-                    timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' 
+                    timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' 
                 });
                 let todaysOrdersCount = 0; let completedOrdersToday = 0;
                 for (const order of loadedOrders.values()) {
@@ -1545,8 +1549,8 @@
                     const latestSerial = serials.reduce((latest, current) => (current[packedDateHeader] > latest[packedDateHeader]) ? current : latest, serials[0]);
                     const packerId = latestSerial[employeeIdHeader];
                     packerInfo = `<div class="packing-modal-header">
-                                    <span class="packer-info">EMPACADOR: <strong>${packerId || 'N/A'}</strong></span>
-                                  </div>`;
+                                        <span class="packer-info">EMPACADOR: <strong>${packerId || 'N/A'}</strong></span>
+                                    </div>`;
                 }
                 
                 let content = `${packerInfo}<ul class="packing-details-list">`;
@@ -1846,7 +1850,7 @@
 
             async function syncSapOrdersToFwd(sapOrders, areaName) {
                 if (!areaName || sapOrders.length === 0) return;
-            
+                
                 const batch = db.batch();
                 const ordersCollectionRef = db.collection('areas').doc(areaName).collection('orders');
 
@@ -1898,7 +1902,7 @@
                 const getCellValue = (cellAddress) => (worksheet[cellAddress] ? worksheet[cellAddress].v : null);
                 
                 const range = XLSX.utils.decode_range(worksheet['!ref']);
-                const reynosaTodayString = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Matamoros' });
+                const reynosaTodayString = new Date().toLocaleDateString('en-CA', { timeZone: REYNOSA_TIMEZONE });
                 
                 if (isMasterUpload) {
                     const resultsByArea = {};
@@ -1906,6 +1910,12 @@
                         const rowNum = i + 1;
                         const orderId = getCellValue('A' + rowNum);
                         if (!orderId) continue;
+                        
+                        // CORRECCIÓN: Filtrar órdenes que no comiencen con '900'.
+                        const orderIdStr = String(orderId).trim();
+                        if (!orderIdStr.startsWith('900')) {
+                            continue;
+                        }
 
                         const areaCode = getCellValue(workshopConfig.column + rowNum);
                         const areaName = workshopConfig.mapping[areaCode];
@@ -1925,6 +1935,13 @@
                         const rowNum = i + 1;
                         const orderId = getCellValue('A' + rowNum);
                         if (!orderId) continue;
+
+                        // CORRECCIÓN: Filtrar órdenes que no comiencen con '900'.
+                        const orderIdStr = String(orderId).trim();
+                        if (!orderIdStr.startsWith('900')) {
+                            continue;
+                        }
+
                         processedData.push(extractSapRow(worksheet, rowNum, reynosaTodayString));
                     }
                     return processedData;
@@ -1941,7 +1958,8 @@
                 let status = 'incomplete';
                 const finishDateSerial = getCellValue('G' + rowNum);
                 const finishDate = excelSerialToDate(finishDateSerial);
-                const finishDateStringCA = finishDate ? finishDate.toISOString().slice(0, 10) : '';
+                // CORRECCIÓN: Formatear la fecha de finalización en la zona horaria de Reynosa para una comparación precisa.
+                const finishDateStringCA = finishDate ? finishDate.toLocaleDateString('en-CA', { timeZone: REYNOSA_TIMEZONE }) : '';
                 
                 if (faltante <= 0) {
                     status = 'complete';
@@ -1978,7 +1996,7 @@
             
             function isSapOrderForToday(order) {
                 const todayString = new Date().toLocaleDateString('es-ES', { 
-                    timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' 
+                    timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' 
                 });
                 const finishDate = excelSerialToDate(order['Finish']);
                 return finishDate && formatDate(finishDate) === todayString;
@@ -2018,7 +2036,7 @@
                 });
 
                 const todayString = new Date().toLocaleDateString('es-ES', { 
-                    timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' 
+                    timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' 
                 });
                 
                 let html = '';
@@ -2027,10 +2045,10 @@
                     const isToday = dateString === todayString;
                     html += `<div class="date-group">`;
                     html += `<button class="date-header" data-date="${dateString}">
-                                  <span>📅 ${dateString}</span> 
-                                  ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''}
-                                  <span class="collapse-icon">►</span>
-                                 </button>`;
+                                 <span>📅 ${dateString}</span> 
+                                 ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''}
+                                 <span class="collapse-icon">►</span>
+                                </button>`;
                     html += `<div class="orders-for-date">`;
                     orders.forEach(order => {
                         const itemClass = order.status === 'complete' ? 'is-complete' : '';
@@ -2262,8 +2280,8 @@
                         <h3 class="admin-section-header">Configuración de Workshop General</h3>
                         <div class="admin-section-content">
                              <div class="config-item">
-                                <label for="masterColumnInput">Columna de Código de Área:</label>
-                                <input type="text" id="masterColumnInput" value="${workshopConfig.column}">
+                                 <label for="masterColumnInput">Columna de Código de Área:</label>
+                                 <input type="text" id="masterColumnInput" value="${workshopConfig.column}">
                              </div>
                              <h4>Mapeo de Códigos a Áreas</h4>
                              <ul id="areaMappingList" class="area-list"></ul>
@@ -2400,7 +2418,7 @@
                 showModal('Plan del Día', '<h4 style="text-align: center;">Cargando reporte...</h4>');
                 try {
                     const todayString = new Date().toLocaleDateString('es-ES', { 
-                        timeZone: 'America/Matamoros', day: '2-digit', month: '2-digit', year: 'numeric' 
+                        timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' 
                     });
 
                     const areasSnapshot = await db.collection('areas').get();
@@ -2447,10 +2465,10 @@
                     if (totalDailyOrders > 0) {
                          const sortedAreas = Object.keys(dailyOrdersByArea).sort();
                          for (const area of sortedAreas) {
-                            reportHTML += `<li class="plan-area-item">
-                                            <span class="area-name">${area}</span>
-                                            <span class="area-count">${dailyOrdersByArea[area]}</span>
-                                           </li>`;
+                             reportHTML += `<li class="plan-area-item">
+                                                 <span class="area-name">${area}</span>
+                                                 <span class="area-count">${dailyOrdersByArea[area]}</span>
+                                                </li>`;
                          }
                     } else {
                         reportHTML += `<li class="plan-area-item-empty">No hay órdenes programadas para el día de hoy.</li>`;
