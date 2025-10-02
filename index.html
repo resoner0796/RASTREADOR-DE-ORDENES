@@ -166,7 +166,7 @@
             margin: -20px -20px 0 -20px;
             padding: 16px 20px 0 20px;
         }
-        #desktop-controls-container, #sap-controls-header > div {
+        #desktop-controls-container, #sap-controls-header > div:first-child {
              padding-bottom: 16px;
              border-bottom: 1px solid var(--border-color);
         }
@@ -329,6 +329,7 @@
             color: var(--branding-color);
         }
 
+        /* CORRECCIÓN 1: Contenedor de tabla inteligente */
         .table-wrapper { 
             overflow-y: auto;
             flex-grow: 1;
@@ -337,11 +338,11 @@
             border-radius: 12px; 
             border: 1px solid var(--border-color); 
         }
-        #tableCard { 
+        #tableCard, #sap-tableCard { 
             display: flex; 
             flex-direction: column; 
-            flex-grow: 1;
-            min-height: 0;
+            flex-grow: 1; /* FORZAMOS A QUE LA TARJETA CREZCA */
+            min-height: 0; /* EVITAMOS QUE EL CONTENIDO LA DESBORDE */
         }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; font-size: 0.9rem;}
@@ -353,9 +354,6 @@
         .box-row { cursor: pointer; }
         .box-row:hover { background-color: var(--surface-hover-color); }
         
-        /* ========================================================================= */
-        /* === AJUSTE FINAL PARA LA ANIMACIÓN DE BRILLO === */
-        /* ========================================================================= */
         tbody {
             transform: translateZ(0);
         }
@@ -817,9 +815,8 @@
                                    <h3>WorkShop</h3>
                                    <button id="sapResetFilter" class="filter-btn" style="display: none;">Mostrar Hoy/Tarde</button>
                                </div>
+                               <div id="sapLastUpdatedContainer" style="text-align: right; font-size: 0.75rem; color: var(--text-dark); padding-bottom: 10px; height: 1em;"></div>
                            </div>
-                           <!-- NUEVO: Contenedor para mostrar la última actualización de SAP -->
-                           <div id="sapLastUpdatedContainer" style="text-align: right; font-size: 0.75rem; color: var(--text-dark); margin: -10px 0 10px 0; height: 1em;"></div>
                            <div class="table-wrapper">
                                <table id="sapTable"></table>
                                <p id="sapPlaceholderText">Cargue un archivo para ver los datos de SAP.</p>
@@ -860,7 +857,6 @@
             };
             let loadedOrders = new Map();
             let sapData = [];
-            // NUEVO: Variables para guardar la información de la última actualización de SAP
             let sapLastUpdated = null;
             let sapLastUpdatedBy = null;
             let sapDateFilter = 'default';
@@ -881,7 +877,6 @@
             const TRACKING_KEYS = { SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', DATE_REGISTERED: 'Date Registered', LINE: 'Line', STATION: 'Station' };
             const PACKING_KEYS = { SERIAL: 'Serial Number', EMPLOYEE_ID: 'Employee ID', PACKED_DATE: 'Finish Packed Date', BOX_ID: 'BoxID' };
             
-            // Constante para la zona horaria
             const REYNOSA_TIMEZONE = 'America/Matamoros';
 
             // Element cache
@@ -910,7 +905,6 @@
             const dailyPlanContainer = doc('dailyPlanContainer');
             const lastUpdatedContainer = doc('lastUpdatedContainer');
             
-            // Control Containers
             const mobileControls = {
                 status: doc('rastreoStatusFilters'),
                 line: doc('rastreoLineFilters'),
@@ -931,7 +925,7 @@
             const sapTotalOrdersStat = doc('sapTotalOrdersStat');
             const sapCompletedOrdersStat = doc('sapCompletedOrdersStat');
             const sapResetFilterBtn = doc('sapResetFilter');
-            const sapLastUpdatedContainer = doc('sapLastUpdatedContainer'); // NUEVO
+            const sapLastUpdatedContainer = doc('sapLastUpdatedContainer');
             const modeFwd = doc('modeFwd');
             const modeSap = doc('modeSap');
             const modalOverlay = doc('modalOverlay');
@@ -1218,7 +1212,7 @@
                                     empaque: Object.keys(packingRawData[0] || {})
                                 },
                                 lastUpdated: new Date(),
-                                lastUpdatedBy: session.user // NUEVO: Se guarda el usuario
+                                lastUpdatedBy: session.user
                             };
                             resolve({ key: keyToUse, data: orderData });
                         } catch(err) { reject(err); }
@@ -1485,7 +1479,6 @@
                     statOrderNumber.textContent = activeOrderKey;
                     statCatalogNumber.textContent = order.catalogNumber;
                     
-                    // MODIFICADO: Muestra el usuario que actualizó
                     if (order.lastUpdated) {
                         let updatedText = `Última actualización: ${formatDateTime(order.lastUpdated)}`;
                         if (order.lastUpdatedBy) {
@@ -1931,7 +1924,6 @@
             // ========================
             async function saveSapDataToFirebase(data, area) {
                 try {
-                    // MODIFICADO: Se añade el usuario que actualiza
                     const dataToSave = { 
                         orders: data, 
                         lastUpdated: new Date(),
@@ -2030,7 +2022,8 @@
                             rastreoData: [],
                             empaqueData: [],
                             headers: { rastreo: [], empaque: [] },
-                            lastUpdated: new Date()
+                            lastUpdated: new Date(),
+                            lastUpdatedBy: session.user // También se podría añadir aquí
                         };
                         batch.set(orderRef, { ...defaultData, ...masterData });
                     }
@@ -2141,7 +2134,6 @@
                 updateSapTable();
                 sapResetFilterBtn.style.display = (sapDateFilter !== 'default' && sapData.length > 0) ? 'inline-block' : 'none';
                 
-                // NUEVO: Muestra la información de la última actualización
                 if (sapLastUpdated) {
                     let updatedText = `Última actualización: ${formatDateTime(sapLastUpdated)}`;
                     if (sapLastUpdatedBy) {
@@ -2359,10 +2351,23 @@
                         : 'No tienes permisos para esta área';
                 }
                 
-                adminBtn.innerHTML = isAuthenticated ? `⚙️ ${session.user}` : '⚙️';
-                logoutBtn.style.display = isAuthenticated ? 'block' : 'none';
-                dailyPlanContainer.style.display = session.isMaster ? 'block' : 'none';
+                // CORRECCIÓN 3: Lógica para ocultar/mostrar el engrane
+                if (isAuthenticated) {
+                    logoutBtn.style.display = 'block';
+                    if (session.isMaster) {
+                        adminBtn.style.display = 'block';
+                        adminBtn.innerHTML = `⚙️ ${session.user}`;
+                    } else {
+                        adminBtn.style.display = 'none'; // Se oculta para usuarios no-maestros
+                    }
+                } else {
+                    // No autenticado
+                    logoutBtn.style.display = 'none';
+                    adminBtn.style.display = 'block';
+                    adminBtn.innerHTML = '⚙️';
+                }
 
+                dailyPlanContainer.style.display = session.isMaster ? 'block' : 'none';
                 areaSelectBtn.textContent = `Área: ${currentArea}`;
                 
                 updateOrderList(); 
@@ -2803,7 +2808,6 @@
                     if (docRef.exists) {
                         const data = docRef.data();
                         newSapData = data.orders || [];
-                        // NUEVO: Guarda la información de actualización
                         sapLastUpdated = data.lastUpdated ? data.lastUpdated.toDate() : null;
                         sapLastUpdatedBy = data.lastUpdatedBy || null;
                     } else {
