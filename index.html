@@ -144,10 +144,37 @@
         #orderListCard, #sap-orderListCard { display: flex; flex-direction: column; overflow: hidden; }
         #orderList, #sapOrderList { flex-grow: 1; overflow-y: auto; }
         
-        /* Layout General */
+        /* Layout General y Elementos Fijos (Sticky) */
         .global-header { grid-area: global-header; }
         .header { grid-area: header; }
         .main-content { grid-area: main; display: flex; flex-direction: column; gap: 16px; }
+
+        /* CORRECCIÓN: Estilos para hacer fijos los encabezados */
+        #fwdView .header, #sapView .global-header, #table-controls-header {
+            position: -webkit-sticky; /* para Safari */
+            position: sticky;
+            z-index: 20;
+        }
+        #fwdView .header, #sapView .global-header {
+            top: 16px;
+        }
+        #table-controls-header {
+            top: 200px; /* 16px (offset) + ~168px (alto del header) + 16px (gap) */
+            background-color: var(--surface-color);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding-top: 16px;
+            margin: -20px -20px 0 -20px; /* Compensar padding del card padre */
+            padding: 16px 20px 0 20px;
+        }
+        #desktop-controls-container {
+             border-bottom: none; /* Quitar borde que ahora está en el wrapper */
+        }
+        #table-controls-header .filter-group-inline {
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
         
         .card, .modal-content {
             background-color: var(--surface-color);
@@ -559,12 +586,21 @@
             .card.mobile-collapsible h3.mobile-trigger::after { content: '►'; display: inline-block; font-size: 0.7rem; transition: transform 0.2s; color: var(--text-secondary); }
             .card.mobile-collapsible.expanded h3.mobile-trigger::after { transform: rotate(90deg); }
             .top-header-container { padding-left: 0; }
+
+            /* CORRECCIÓN: Desactivar sticky en móvil para evitar problemas de layout */
+            #fwdView .header, #sapView .global-header, #table-controls-header {
+                position: static;
+            }
+            #table-controls-header {
+                margin: 0;
+                padding: 0;
+            }
         }
         
         @media (min-width: 993px) {
             #mainModeSwitcher { margin-left: auto; margin-right: auto; }
             #mobile-controls-row { display: none; }
-            #desktop-controls-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
+            #desktop-controls-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; padding-bottom: 16px; }
             .desktop-filters-group { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; flex-grow: 1; }
             .desktop-actions-group { display: flex; flex-shrink: 0; }
             .filter-group-inline { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
@@ -696,23 +732,26 @@
                             </div>
                         </div>
                         <div class="card" id="tableCard">
-                            <div id="desktop-controls-container">
-                                <div class="desktop-filters-group">
-                                    <div class="filter-group-inline">
-                                        <span class="filter-label">Estado:</span>
-                                        <div id="rastreoStatusFiltersDesktop" class="filter-group"></div>
+                            <!-- CORRECCIÓN: Wrapper para los controles de la tabla para hacerlos fijos -->
+                            <div id="table-controls-header">
+                                <div id="desktop-controls-container">
+                                    <div class="desktop-filters-group">
+                                        <div class="filter-group-inline">
+                                            <span class="filter-label">Estado:</span>
+                                            <div id="rastreoStatusFiltersDesktop" class="filter-group"></div>
+                                        </div>
+                                        <div class="filter-group-inline">
+                                            <span class="filter-label">Línea:</span>
+                                            <div id="rastreoLineFiltersDesktop" class="filter-group"></div>
+                                        </div>
                                     </div>
-                                    <div class="filter-group-inline">
-                                        <span class="filter-label">Línea:</span>
-                                        <div id="rastreoLineFiltersDesktop" class="filter-group"></div>
+                                    <div class="desktop-actions-group">
+                                        <div id="desktop-actions-wrapper" class="filter-group"></div>
                                     </div>
                                 </div>
-                                <div class="desktop-actions-group">
-                                    <div id="desktop-actions-wrapper" class="filter-group"></div>
-                                </div>
+                                <input type="text" id="rastreoFilterInput" placeholder="Buscar en la tabla por serial, status, etc..." style="margin-bottom: 16px;">
+                                <div id="lineCountsContainer"></div>
                             </div>
-                            <input type="text" id="rastreoFilterInput" placeholder="Buscar en la tabla por serial, status, etc..." style="margin-bottom: 16px;">
-                            <div id="lineCountsContainer"></div>
                             <div class="table-wrapper">
                                 <table id="rastreoTable"></table>
                                 <p id="placeholderText">Selecciona una orden de la lista para ver sus detalles.</p>
@@ -951,7 +990,7 @@
             areaSelectBtn.addEventListener('click', showAreaSelector);
             logoutBtn.addEventListener('click', logout);
             showDailyPlanBtn.addEventListener('click', generateDailyPlanReport);
-            
+
             // CORRECCIÓN: Event listener para copiar el número de orden al portapapeles.
             statOrderNumber.addEventListener('click', () => {
                 const orderNumberText = statOrderNumber.textContent;
@@ -1255,7 +1294,7 @@
                         expandedDates.add(group.dataset.date);
                     }
                 });
-                
+
                 orderList.innerHTML = '';
                 if (loadedOrders.size === 0) {
                     orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No hay órdenes cargadas para el área ${currentArea || ''}.</p>`;
@@ -1303,7 +1342,11 @@
                     groupDiv.appendChild(ordersContainer);
                     orderList.appendChild(groupDiv);
                     
-                    headerBtn.addEventListener('click', () => groupDiv.classList.toggle('expanded'));
+                    headerBtn.addEventListener('click', () => {
+                        const isNowExpanded = !groupDiv.classList.contains('expanded');
+                        groupDiv.classList.toggle('expanded');
+                        // No es necesario guardar aquí, ya se lee al principio de la función.
+                    });
 
                     // CORRECCIÓN: Restaurar el estado expandido si corresponde.
                     if (expandedDates.has(dateString)) {
@@ -2076,10 +2119,16 @@
             }
 
             function updateSapOrderList() {
-                 if (sapData.length === 0) {
-                      sapOrderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>`;
-                      return;
-                 }
+                 // Guardar estado expandido
+                const expandedDates = new Set();
+                sapOrderList.querySelectorAll('.date-group.expanded').forEach(group => {
+                    if (group.dataset.date) expandedDates.add(group.dataset.date);
+                });
+
+                if (sapData.length === 0) {
+                    sapOrderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>`;
+                    return;
+                }
                 
                 const groupedByDate = new Map();
                 sapData.forEach(order => {
@@ -2102,11 +2151,14 @@
                 let html = '';
                 sortedDates.forEach(dateString => {
                     const orders = groupedByDate.get(dateString);
+                    const orderCount = orders.length;
                     const isToday = dateString === todayString;
-                    html += `<div class="date-group">`;
-                    html += `<button class="date-header" data-date="${dateString}">
+                    const countText = `${orderCount} ${orderCount === 1 ? 'orden' : 'órdenes'}`;
+
+                    html += `<div class="date-group" data-date="${dateString}">`;
+                    html += `<button class="date-header">
                                  <span>📅 ${dateString}</span> 
-                                 ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''}
+                                 ${isToday ? `<span class="status-indicator">(${countText})</span>` : `<span class="order-count">(${countText})</span>`}
                                  <span class="collapse-icon">►</span>
                                 </button>`;
                     html += `<div class="orders-for-date">`;
@@ -2119,8 +2171,14 @@
                 
                 sapOrderList.innerHTML = html;
                 sapOrderList.querySelectorAll('.date-header').forEach(header => {
+                    const group = header.parentElement;
+                    // Restaurar estado expandido
+                    if (expandedDates.has(group.dataset.date)) {
+                        group.classList.add('expanded');
+                    }
+                    
                     header.addEventListener('click', () => {
-                        header.parentElement.classList.toggle('expanded');
+                        group.classList.toggle('expanded');
                         sapDateFilter = header.dataset.date;
                         renderSapView();
                         sapOrderList.querySelectorAll('.date-header').forEach(h => h.classList.remove('active'));
@@ -2485,7 +2543,6 @@
                     const areasSnapshot = await db.collection('areas').get();
                     const areaDocs = areasSnapshot.docs.filter(doc => doc.id !== 'CONFIG');
                     
-                    // CORRECCIÓN: Obtener datos de SAP en lugar de FWD
                     const promises = areaDocs.map(doc => doc.ref.collection('sap_data').doc('current_data').get());
                     const allSapDataDocs = await Promise.all(promises);
 
@@ -2497,7 +2554,6 @@
                             const areaName = areaDocs[index].id;
                             const sapOrders = sapDoc.data().orders || [];
                             
-                            // CORRECCIÓN: Filtrar órdenes pendientes para hoy
                             const pendingOrdersForToday = sapOrders.filter(order => 
                                 isSapOrderForToday(order) && order.status !== 'complete'
                             );
