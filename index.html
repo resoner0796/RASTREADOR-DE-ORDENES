@@ -728,7 +728,6 @@
                             </div>
                         </div>
                         <div class="card" id="tableCard">
-                            <!-- CORRECCIÓN: Wrapper para los controles de la tabla para hacerlos fijos -->
                             <div id="table-controls-header">
                                 <div id="desktop-controls-container">
                                     <div class="desktop-filters-group">
@@ -793,7 +792,6 @@
                 </header>
                 <main class="main-content animated-startup" style="animation-delay: 0.4s;">
                        <div class="card" id="sap-tableCard">
-                            <!-- CORRECCIÓN: Wrapper para los controles de la tabla SAP -->
                            <div id="sap-controls-header">
                                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                                    <h3>WorkShop</h3>
@@ -1424,6 +1422,7 @@
                 } else if (mainMode === 'sap') {
                     renderSapView();
                 }
+                adjustStickyTops();
             }
 
             function renderSummary() {
@@ -2112,7 +2111,6 @@
             }
 
             function updateSapOrderList() {
-                // CORRECCIÓN: Guardar la fecha activa para restaurarla
                 const activeDate = sapOrderList.querySelector('.date-header.active')?.dataset.date;
                 
                 if (sapData.length === 0) {
@@ -2124,8 +2122,8 @@
                 sapData.forEach(order => {
                     const date = excelSerialToDate(order['Finish']) || new Date(0);
                     const dateString = formatDate(date);
-                    if (!groupedByDate.has(dateString)) groupedByDate.set(dateString, []);
-                    groupedByDate.get(dateString).push(order);
+                    if (!groupedByDate.has(dateString)) groupedByDate.set(dateString, 0);
+                    groupedByDate.set(dateString, groupedByDate.get(dateString) + 1);
                 });
 
                 const sortedDates = Array.from(groupedByDate.keys()).sort((a, b) => {
@@ -2140,12 +2138,10 @@
                 
                 let html = '';
                 sortedDates.forEach(dateString => {
-                    const orders = groupedByDate.get(dateString);
-                    const orderCount = orders.length;
+                    const orderCount = groupedByDate.get(dateString);
                     const isToday = dateString === todayString;
                     const countText = `${orderCount} ${orderCount === 1 ? 'orden' : 'órdenes'}`;
 
-                    // CORRECCIÓN: Se usa .order-item para espaciado consistente, y se elimina el ícono de colapsar.
                     html += `<div class="order-item">`;
                     html += `<button class="date-header" data-date="${dateString}" style="width:100%; justify-content: space-between;">
                                  <span>📅 ${dateString}</span> 
@@ -2600,27 +2596,28 @@
             // CORRECCIÓN: Función para ajustar dinámicamente el 'top' de los headers fijos
             function adjustStickyTops() {
                 requestAnimationFrame(() => {
-                    if (window.innerWidth <= 992) {
-                        doc('table-controls-header').style.top = '';
-                        doc('sap-controls-header').style.top = '';
+                    const isCurrentlyMobile = window.innerWidth <= 992;
+                    
+                    const fwdHeader = document.querySelector('#fwdView .header');
+                    const fwdControls = document.getElementById('table-controls-header');
+                    const sapHeader = document.querySelector('#sapView .global-header');
+                    const sapControls = document.getElementById('sap-controls-header');
+
+                    if (isCurrentlyMobile) {
+                        if (fwdControls) fwdControls.style.top = '';
+                        if (sapControls) sapControls.style.top = '';
                         return;
                     }
                     
-                    // FWD View
-                    const fwdHeader = document.querySelector('#fwdView .header');
-                    const fwdControls = document.getElementById('table-controls-header');
                     if (fwdHeader && fwdControls) {
                         const headerHeight = fwdHeader.offsetHeight;
-                        const topValue = 16 + headerHeight + 16; // 16px top offset + header height + 16px grid gap
+                        const topValue = 16 + headerHeight; 
                         fwdControls.style.top = `${topValue}px`;
                     }
 
-                    // SAP View
-                    const sapHeader = document.querySelector('#sapView .global-header');
-                    const sapControls = document.getElementById('sap-controls-header');
                     if (sapHeader && sapControls) {
                         const headerHeight = sapHeader.offsetHeight;
-                        const topValue = 16 + headerHeight + 16;
+                        const topValue = 16 + headerHeight;
                         sapControls.style.top = `${topValue}px`;
                     }
                 });
@@ -2721,7 +2718,7 @@
                     if (isMobile) setupMobileMode(); else teardownMobileMode();
                     render();
                 }
-                adjustStickyTops(); // CORRECCIÓN: Ajustar en cada cambio de tamaño.
+                adjustStickyTops();
             });
 
             async function initializeApp() {
