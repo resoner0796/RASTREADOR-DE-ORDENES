@@ -147,7 +147,7 @@
         /* Layout General y Elementos Fijos (Sticky) */
         .global-header { grid-area: global-header; }
         .header { grid-area: header; }
-        .main-content { grid-area: main; display: flex; flex-direction: column; gap: 16px; min-height: 0; /* Permite que los hijos flex se contraigan correctamente */ }
+        .main-content { grid-area: main; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
 
         /* CORRECCIÓN: Estilos para hacer fijos los encabezados */
         #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header {
@@ -330,9 +330,9 @@
         }
 
         .table-wrapper { 
-            overflow-y: auto; /* Activamos solo el scroll vertical */
-            flex-grow: 1; /* Permite que este contenedor crezca para llenar el espacio */
-            min-height: 0; /* Necesario para que flex-grow funcione correctamente en todos los navegadores */
+            overflow-y: auto;
+            flex-grow: 1;
+            min-height: 0;
             transition: opacity 0.3s ease-in-out; 
             border-radius: 12px; 
             border: 1px solid var(--border-color); 
@@ -340,8 +340,8 @@
         #tableCard { 
             display: flex; 
             flex-direction: column; 
-            flex-grow: 1; /* Hacemos que la tarjeta de la tabla ocupe el espacio disponible */
-            min-height: 0; /* Evita que la tarjeta se desborde por su contenido */
+            flex-grow: 1;
+            min-height: 0;
         }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; font-size: 0.9rem;}
@@ -423,7 +423,6 @@
         #modalBody input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--surface-color); color: var(--text-primary); margin-top: 10px; box-sizing: border-box;}
         #modalBody .area-list { list-style: none; padding: 0; margin-top: 16px; max-height: 250px; overflow-y: auto;}
         #modalBody .area-list li { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);}
-        
         #modalBody .user-list li { grid-template-columns: 150px 1fr auto; gap: 16px; }
         #modalBody .user-list .permissions-display { font-size: 0.8rem; color: var(--text-dark); word-break: break-word; }
         #modalBody .permissions-list { list-style: none; padding: 0; margin: 10px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
@@ -819,6 +818,8 @@
                                    <button id="sapResetFilter" class="filter-btn" style="display: none;">Mostrar Hoy/Tarde</button>
                                </div>
                            </div>
+                           <!-- NUEVO: Contenedor para mostrar la última actualización de SAP -->
+                           <div id="sapLastUpdatedContainer" style="text-align: right; font-size: 0.75rem; color: var(--text-dark); margin: -10px 0 10px 0; height: 1em;"></div>
                            <div class="table-wrapper">
                                <table id="sapTable"></table>
                                <p id="sapPlaceholderText">Cargue un archivo para ver los datos de SAP.</p>
@@ -859,6 +860,9 @@
             };
             let loadedOrders = new Map();
             let sapData = [];
+            // NUEVO: Variables para guardar la información de la última actualización de SAP
+            let sapLastUpdated = null;
+            let sapLastUpdatedBy = null;
             let sapDateFilter = 'default';
             let activeOrderKey = null;
             let currentMode = 'rastreo';
@@ -927,6 +931,7 @@
             const sapTotalOrdersStat = doc('sapTotalOrdersStat');
             const sapCompletedOrdersStat = doc('sapCompletedOrdersStat');
             const sapResetFilterBtn = doc('sapResetFilter');
+            const sapLastUpdatedContainer = doc('sapLastUpdatedContainer'); // NUEVO
             const modeFwd = doc('modeFwd');
             const modeSap = doc('modeSap');
             const modalOverlay = doc('modalOverlay');
@@ -1212,7 +1217,8 @@
                                     rastreo: Object.keys(rastreoRawData[0] || {}),
                                     empaque: Object.keys(packingRawData[0] || {})
                                 },
-                                lastUpdated: new Date()
+                                lastUpdated: new Date(),
+                                lastUpdatedBy: session.user // NUEVO: Se guarda el usuario
                             };
                             resolve({ key: keyToUse, data: orderData });
                         } catch(err) { reject(err); }
@@ -1478,9 +1484,16 @@
                     const order = ordersToProcess[0];
                     statOrderNumber.textContent = activeOrderKey;
                     statCatalogNumber.textContent = order.catalogNumber;
+                    
+                    // MODIFICADO: Muestra el usuario que actualizó
                     if (order.lastUpdated) {
-                        lastUpdatedContainer.textContent = `Última actualización: ${formatDateTime(order.lastUpdated)}`;
+                        let updatedText = `Última actualización: ${formatDateTime(order.lastUpdated)}`;
+                        if (order.lastUpdatedBy) {
+                            updatedText += ` por: ${order.lastUpdatedBy}`;
+                        }
+                        lastUpdatedContainer.textContent = updatedText;
                     }
+
                 } else if (loadedOrders.size > 0) {
                     setActiveOrder(null);
                     return; 
@@ -1918,7 +1931,12 @@
             // ========================
             async function saveSapDataToFirebase(data, area) {
                 try {
-                    const dataToSave = { orders: data, lastUpdated: new Date() };
+                    // MODIFICADO: Se añade el usuario que actualiza
+                    const dataToSave = { 
+                        orders: data, 
+                        lastUpdated: new Date(),
+                        lastUpdatedBy: session.user 
+                    };
                     await db.collection('areas').doc(area).collection('sap_data').doc('current_data').set(dataToSave);
                 } catch (e) {
                     console.error(`Error al guardar datos SAP en Firebase para ${area}: `, e);
@@ -2115,13 +2133,24 @@
                 if (sapFileDropArea.querySelector('p')) {
                     sapFileDropArea.querySelector('p').textContent = canEdit 
                         ? (session.isMaster ? 'Arrastra un archivo maestro SAP (General o de Área)' : 'Arrastra un archivo maestro SAP (.xlsx)')
-                        : 'Inicia sesión para esta área para cargar archivos';
+                        : 'No tienes permisos para esta área';
                 }
                 sapPlaceholderText.style.display = sapData.length > 0 ? 'none' : 'block';
                 updateSapDashboard();
                 updateSapOrderList();
                 updateSapTable();
                 sapResetFilterBtn.style.display = (sapDateFilter !== 'default' && sapData.length > 0) ? 'inline-block' : 'none';
+                
+                // NUEVO: Muestra la información de la última actualización
+                if (sapLastUpdated) {
+                    let updatedText = `Última actualización: ${formatDateTime(sapLastUpdated)}`;
+                    if (sapLastUpdatedBy) {
+                        updatedText += ` por: ${sapLastUpdatedBy}`;
+                    }
+                    sapLastUpdatedContainer.textContent = updatedText;
+                } else {
+                    sapLastUpdatedContainer.textContent = '';
+                }
             }
             
             function isSapOrderForToday(order) {
@@ -2440,10 +2469,7 @@
 
                 showModal('Panel de Administrador', content);
                 
-                // *** INICIO DE LA CORRECCIÓN ***
-                // Al hacer clic en "Crear Usuario", llamamos a la función createOrUpdateUser sin argumentos.
                 doc('createUserBtn').addEventListener('click', () => createOrUpdateUser(null));
-                // *** FIN DE LA CORRECCIÓN ***
 
                 doc('modalBody').querySelectorAll('.edit-user-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
@@ -2565,7 +2591,7 @@
                     }
 
                     await db.collection('users').doc(username).set(userData, { merge: true });
-                    showAdminPanel(); // Vuelve al panel principal de administración
+                    showAdminPanel();
                 };
             }
             
@@ -2777,6 +2803,12 @@
                     if (docRef.exists) {
                         const data = docRef.data();
                         newSapData = data.orders || [];
+                        // NUEVO: Guarda la información de actualización
+                        sapLastUpdated = data.lastUpdated ? data.lastUpdated.toDate() : null;
+                        sapLastUpdatedBy = data.lastUpdatedBy || null;
+                    } else {
+                        sapLastUpdated = null;
+                        sapLastUpdatedBy = null;
                     }
                     
                     const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
