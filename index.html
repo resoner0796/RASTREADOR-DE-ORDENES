@@ -23,18 +23,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Tinos&display=swap" rel="stylesheet">
     <style>
+        /* CORRECCIÓN: Se revierte el body a su estado original para no bloquear el scroll en móvil */
         html {
-            height: 100%;
+            min-height: 100%;
             background-color: #0a0a0a;
         }
         body {
-            height: 100vh;
-            overflow: hidden; /* Evitamos el scroll en la página principal */
+            min-height: 100vh;
         }
 
-        /* =================================== */
-        /* === REDISEÑO GLASSMORPHISM v3.0 === */
-        /* =================================== */
         :root {
             /* Se definen los temas abajo */
         }
@@ -71,7 +68,7 @@
             --text-secondary: #4B5563;
             --text-dark: #9CA3AF;
             --thead-bg: rgba(229, 231, 235, 0.8);
-            --branding-color: #0055A5; /* Azul corporativo elegante */
+            --branding-color: #0055A5;
         }
 
         @keyframes fadeInUp {
@@ -103,40 +100,39 @@
             opacity: 0;
         }
         
-        /* Contenedores Principales */
+        /* CORRECCIÓN: Se ajusta el contenedor principal para la nueva estructura de altura */
         .app-container { 
             width: 100%; 
             max-width: 1800px; 
             padding: 32px 16px;
-            height: 100%;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
+            height: 100vh;
         }
         
         .top-header-container {
             padding-left: 336px;
-            flex-shrink: 0;
+            flex-shrink: 0; /* Evita que este contenedor se encoja */
         }
         
         .app-header { text-align: center; margin-bottom: 16px; position: relative; }
         .app-branding { font-family: 'Tinos', 'Times New Roman', serif; font-weight: 400; font-size: 2.2rem; color: var(--text-primary); letter-spacing: 2px; margin: 0; transition: color 0.3s ease-in-out; }
-        body.light-theme .app-branding {
-            color: var(--branding-color);
-        }
+        body.light-theme .app-branding { color: var(--branding-color); }
         .app-title { font-size: 1.25rem; font-weight: 600; color: var(--text-secondary); margin: 4px 0 0 0; }
-        
-        /* CORRECCIÓN: El grid ahora ocupa toda la altura disponible */
+
+        /* CORRECCIÓN: Se asegura que las vistas principales ocupen el espacio restante */
         #fwdView, #sapView {
             flex-grow: 1;
-            min-height: 0;
+            min-height: 0; /* Importante para el cálculo de altura en flexbox */
         }
+
         .main-container { 
             width: 100%; 
             height: 100%;
             display: grid; 
             grid-template-columns: 320px 1fr; 
-            grid-template-rows: auto auto 1fr; /* Esta es la clave: la última fila se expande */
+            grid-template-rows: auto auto 1fr; 
             grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; 
             gap: 16px; 
         }
@@ -151,25 +147,34 @@
             display: flex;
             flex-direction: column;
             gap: 16px;
-            min-height: 0;
+            position: sticky;
+            align-self: flex-start;
+            top: 16px;
+            max-height: calc(100vh - 32px);
         }
         .sidebar > h2 { display: none; }
         .sidebar .card h3 { text-align: center; }
         #sapView .sidebar > h2 { text-align: center; }
-        #orderListCard, #sap-orderListCard { display: flex; flex-direction: column; overflow: hidden; }
+        #orderListCard, #sap-orderListCard { display: flex; flex-direction: column; overflow: hidden; flex-grow: 1; }
         #orderList, #sapOrderList { flex-grow: 1; overflow-y: auto; }
         
-        /* Layout General y Elementos Fijos */
         .global-header { grid-area: global-header; }
         .header { grid-area: header; }
         .main-content { grid-area: main; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
 
-        /* CORRECCIÓN: Se elimina el position:sticky que causaba el conflicto de scroll */
+        /* CORRECCIÓN: Se restaura el sticky para la experiencia de escritorio original */
+        #fwdView .header, #sapView .global-header {
+            position: -webkit-sticky;
+            position: sticky;
+            top: 16px;
+            z-index: 20;
+        }
+
         #table-controls-header, #sap-controls-header {
             background-color: var(--surface-color);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            padding: 16px 20px 0 20px;
+            padding-top: 20px;
         }
         #desktop-controls-container, #sap-controls-header > div:first-child {
              padding-bottom: 16px;
@@ -245,11 +250,11 @@
             flex-grow: 1;
             min-width: 0;
             text-align: center;
-            padding: 10px 8px 14px 8px; /* Padding extra abajo para la barra */
+            padding: 10px 8px 14px 8px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            position: relative; /* Contexto para la barra */
+            position: relative;
         }
 
         .order-progress-bar {
@@ -469,7 +474,6 @@
             padding: 16px 0 0 0;
         }
 
-        /* Estilos para Modal Plan del Día */
         .daily-plan-modal {
             text-align: center;
             padding: 10px;
@@ -513,7 +517,7 @@
             letter-spacing: 1px;
             text-transform: uppercase;
             margin-bottom: 16px;
-            text-align: center; /* Centrar este texto */
+            text-align: center;
         }
         .plan-area-list {
             list-style: none;
@@ -575,8 +579,7 @@
         
         /* Media Queries */
         @media (max-width: 992px) {
-            body { overflow: auto; } /* Habilitamos el scroll en la página principal para móvil */
-            .app-container { padding: 8px; height: auto; }
+            .app-container { height: auto; }
             .main-container { display: flex; flex-direction: column; gap: 12px; height: auto; }
             .sidebar { position: static; height: auto; }
             .sidebar, .main-content { display: contents !important; }
@@ -603,12 +606,7 @@
             .top-header-container { padding-left: 0; }
             #modalBody .user-list li { grid-template-columns: 1fr; gap: 8px; }
             #modalBody .user-list li > div { display: flex; gap: 8px; }
-
-
-            #table-controls-header, #sap-controls-header {
-                margin: 0;
-                padding: 0;
-            }
+            #table-controls-header, #sap-controls-header { padding-top: 0; }
         }
         
         @media (min-width: 993px) {
@@ -641,7 +639,7 @@
 
         <div id="fwdView">
             <div class="main-container">
-                <aside class="sidebar">
+                <aside class="sidebar animated-startup" style="animation-delay: 0.2s;">
                     <div class="card" id="uploadCard">
                         <h3>Panel de Control</h3>
                         <div class="card-content">
@@ -669,7 +667,7 @@
                     </div>
                 </aside>
         
-                <header class="global-header card">
+                <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
                     <div class="global-dashboard-card">
                         <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
                         <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
@@ -679,7 +677,7 @@
                     </div>
                 </header>
                 
-                <section class="header card">
+                <section class="header card animated-startup" style="animation-delay: 0.4s;">
                     <div class="mode-switcher">
                         <button id="modeRastreo" class="active">Rastreo</button>
                         <button id="modeEmpaque">Empaque</button>
@@ -720,7 +718,7 @@
                    <div id="lastUpdatedContainer" style="text-align: right; font-size: 0.75rem; color: var(--text-dark); margin-top: 12px; height: 1em;"></div>
                 </section>
         
-                <main class="main-content">
+                <main class="main-content animated-startup" style="animation-delay: 0.5s;">
                     <div id="rastreoView">
                         <div class="card-row" id="mobile-controls-row">
                             <div class="card mobile-collapsible" id="filtersCard">
@@ -785,7 +783,7 @@
 
         <div id="sapView">
             <div class="main-container">
-                <aside class="sidebar">
+                <aside class="sidebar animated-startup" style="animation-delay: 0.2s;">
                     <div class="card" id="sap-uploadCard">
                         <h3>Panel de Control</h3>
                        <div id="sapFileDropArea" class="file-drop-area disabled">
@@ -801,13 +799,13 @@
                         </div>
                     </div>
                 </aside>
-                <header class="global-header card">
+                <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
                        <div class="global-dashboard-card">
                                <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
                                <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
                        </div>
                 </header>
-                <main class="main-content">
+                <main class="main-content animated-startup" style="animation-delay: 0.4s;">
                        <div class="card" id="sap-tableCard">
                            <div id="sap-controls-header">
                                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
