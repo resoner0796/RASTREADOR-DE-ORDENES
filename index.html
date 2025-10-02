@@ -147,7 +147,7 @@
         /* Layout General y Elementos Fijos (Sticky) */
         .global-header { grid-area: global-header; }
         .header { grid-area: header; }
-        .main-content { grid-area: main; display: flex; flex-direction: column; gap: 16px; }
+        .main-content { grid-area: main; display: flex; flex-direction: column; gap: 16px; min-height: 0; /* NUEVO: Permite que los hijos flex se contraigan correctamente */ }
 
         /* CORRECCIÓN: Estilos para hacer fijos los encabezados */
         #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header {
@@ -329,8 +329,21 @@
             color: var(--branding-color);
         }
 
-        .table-wrapper { overflow: auto; flex-grow: 1; transition: opacity 0.3s ease-in-out; border-radius: 12px; border: 1px solid var(--border-color); }
-        #tableCard { display: flex; flex-direction: column; }
+        /* MODIFICADO: Contenedor inteligente de tabla con scroll */
+        .table-wrapper { 
+            overflow-y: auto; /* Activamos solo el scroll vertical */
+            flex-grow: 1; /* Permite que este contenedor crezca para llenar el espacio */
+            min-height: 0; /* Necesario para que flex-grow funcione correctamente en todos los navegadores */
+            transition: opacity 0.3s ease-in-out; 
+            border-radius: 12px; 
+            border: 1px solid var(--border-color); 
+        }
+        #tableCard { 
+            display: flex; 
+            flex-direction: column; 
+            flex-grow: 1; /* Hacemos que la tarjeta de la tabla ocupe el espacio disponible */
+            min-height: 0; /* Evita que la tarjeta se desborde por su contenido */
+        }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; font-size: 0.9rem;}
         thead { position: sticky; top: 0; background-color: var(--thead-bg); backdrop-filter: blur(5px); z-index: 10; }
@@ -411,6 +424,12 @@
         #modalBody input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--surface-color); color: var(--text-primary); margin-top: 10px; box-sizing: border-box;}
         #modalBody .area-list { list-style: none; padding: 0; margin-top: 16px; max-height: 250px; overflow-y: auto;}
         #modalBody .area-list li { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);}
+        /* NUEVO: Estilos para el panel de usuarios */
+        #modalBody .user-list li { grid-template-columns: 150px 1fr auto; gap: 16px; }
+        #modalBody .user-list .permissions-display { font-size: 0.8rem; color: var(--text-dark); word-break: break-word; }
+        #modalBody .permissions-list { list-style: none; padding: 0; margin: 10px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+        #modalBody .permissions-list label { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; }
+        #modalBody .permissions-list input { width: auto; margin: 0; }
         #modalBody .area-list li input { flex-grow: 1; margin: 0; }
         #modalBody .config-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         #modalBody .config-item label { font-weight: 600; color: var(--text-secondary); }
@@ -447,7 +466,7 @@
             padding: 0;
         }
         .admin-section.expanded .admin-section-content {
-            max-height: 600px; /* Ajusta si el contenido es muy alto */
+            max-height: 800px; /* Ajusta si el contenido es muy alto */
             padding: 16px 0 0 0;
         }
 
@@ -582,6 +601,10 @@
             .card.mobile-collapsible h3.mobile-trigger::after { content: '►'; display: inline-block; font-size: 0.7rem; transition: transform 0.2s; color: var(--text-secondary); }
             .card.mobile-collapsible.expanded h3.mobile-trigger::after { transform: rotate(90deg); }
             .top-header-container { padding-left: 0; }
+            /* NUEVO: Estilos responsive para la gestión de usuarios */
+            #modalBody .user-list li { grid-template-columns: 1fr; gap: 8px; }
+            #modalBody .user-list li > div { display: flex; gap: 8px; }
+
 
             /* CORRECCIÓN: Desactivar sticky en móvil para evitar problemas de layout */
             #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header {
@@ -677,7 +700,7 @@
                            <div class="stat-item">
                                <h3>Cant. Orden</h3>
                                <div class="stat-value-wrapper">
-                                  <p id="statOrderQty">0</p>
+                                 <p id="statOrderQty">0</p>
                                </div>
                            </div>
                            <div class="stat-item">
@@ -697,7 +720,7 @@
                                <div class="stat-value-wrapper">
                                    <p id="statScrapQty">0</p>
                                </div>
-                           </div>
+                            </div>
                     </div>
                    <div id="lastUpdatedContainer" style="text-align: right; font-size: 0.75rem; color: var(--text-dark); margin-top: 12px; height: 1em;"></div>
                 </section>
@@ -846,7 +869,8 @@
             let orderToUpdateKey = null;
             let rastreoStatusFilter = 'all';
             let rastreoLineFilter = 'all';
-            let session = { area: null, isMaster: false }; 
+            // MODIFICADO: El objeto de sesión ahora guarda datos del usuario.
+            let session = { user: null, isMaster: false, permissions: [] }; 
             let currentArea = 'MULTIPORT'; 
             let fwdListener = null;
             let sapListener = null;
@@ -977,7 +1001,7 @@
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
             
             adminBtn.addEventListener('click', () => {
-                if (session.area && session.isMaster) {
+                if (session.user && session.isMaster) {
                     showAdminPanel();
                 } else {
                     showLogin();
@@ -1040,7 +1064,7 @@
                              copyReportBtn.textContent = '¡Copiado!';
                              setTimeout(() => copyReportBtn.textContent = 'Copiar al Portapapeles', 2000);
                          }, () => {
-                           showModal('Error', 'No se pudo copiar el reporte.', 'error');
+                            showModal('Error', 'No se pudo copiar el reporte.', 'error');
                          });
                      };
                  }
@@ -1131,6 +1155,13 @@
             }
 
             function handleFiles(files, isUpdate = false) {
+                // MODIFICADO: Se usa la nueva lógica de permisos
+                const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+                if (!canEdit) {
+                    showModal('Acceso Denegado', `No tienes permisos para modificar el área ${currentArea}.`, 'error');
+                    return;
+                }
+
                 const excelFiles = Array.from(files).filter(f => f.name.endsWith('.xlsx') || f.name.endsWith('.xls'));
                 const filePromises = excelFiles.map(file => processFile(file, isUpdate));
 
@@ -1140,7 +1171,7 @@
                         results.forEach(result => {
                             if (result) {
                                 loadedOrders.set(result.key, result.data);
-                                updatePromises.push(saveOrderToFirebase(result.key, result.data, session.area));
+                                updatePromises.push(saveOrderToFirebase(result.key, result.data, currentArea));
                             }
                         });
                         
@@ -1375,7 +1406,9 @@
                 btn.appendChild(progressBar);
                 item.appendChild(btn);
 
-                const canManageThisArea = session.area && (session.area === currentArea || session.isMaster);
+                // MODIFICADO: Se usa la nueva lógica de permisos
+                const canManageThisArea = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+
                 if (key !== 'all' && canManageThisArea) {
                     const updateBtn = document.createElement('button');
                     updateBtn.className = 'icon-btn';
@@ -1921,6 +1954,14 @@
 
             async function handleSapFile(file) {
                 if (!file) return;
+
+                // MODIFICADO: Se usa la nueva lógica de permisos
+                const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+                 if (!canEdit) {
+                    showModal('Acceso Denegado', `No tienes permisos para modificar el área ${currentArea}.`, 'error');
+                    return;
+                }
+
                 const reader = new FileReader();
                 reader.onload = async (e) => {
                     try {
@@ -1930,11 +1971,11 @@
                         if (session.isMaster && processedData.isMultiArea) {
                             await syncMultiAreaSapData(processedData.data);
                         } else {
-                            const orders = processedData.isMultiArea ? processedData.data[session.area] || [] : processedData;
-                            await saveSapDataToFirebase(orders, session.area); 
-                            await syncSapOrdersToFwd(orders, session.area);
-                            initialSyncDoneForArea[session.area] = true;
-                            showModal('Éxito', `Archivo SAP cargado para el área ${session.area}. Se han creado/actualizado ${orders.length} órdenes.`, 'success');
+                            const orders = processedData.isMultiArea ? processedData.data[currentArea] || [] : processedData;
+                            await saveSapDataToFirebase(orders, currentArea); 
+                            await syncSapOrdersToFwd(orders, currentArea);
+                            initialSyncDoneForArea[currentArea] = true;
+                            showModal('Éxito', `Archivo SAP cargado para el área ${currentArea}. Se han creado/actualizado ${orders.length} órdenes.`, 'success');
                         }
                         sapDateFilter = 'default';
                     } catch (err) {
@@ -2075,7 +2116,8 @@
             }
 
             function renderSapView() {
-                const canEdit = session.area && (session.isMaster || session.area === currentArea);
+                // MODIFICADO: Se usa la nueva lógica de permisos
+                const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
                 sapFileDropArea.classList.toggle('disabled', !canEdit);
                 if (sapFileDropArea.querySelector('p')) {
                     sapFileDropArea.querySelector('p').textContent = canEdit 
@@ -2226,50 +2268,47 @@
             }
 
             // ===================================
-            // === AUTH & AREA FUNCTIONS ===
+            // === AUTH & AREA FUNCTIONS (NUEVO Y MODIFICADO) ===
             // ===================================
             function showLogin() {
+                // MODIFICADO: El modal ahora pide usuario y contraseña.
                 let content = `
-                    <p>Introduce tus credenciales para acceder al área.</p>
-                    <input type="text" id="areaInput" placeholder="Área" style="text-transform:uppercase">
+                    <p>Introduce tus credenciales para acceder.</p>
+                    <input type="text" id="userInput" placeholder="Usuario" style="text-transform:uppercase">
                     <input type="password" id="passwordInput" placeholder="Contraseña">
                     <button id="loginBtn" class="btn" style="margin-top: 16px;">Autenticar</button>
                 `;
-                showModal('Acceso de Área', content);
+                showModal('Inicio de Sesión', content);
                 doc('loginBtn').addEventListener('click', checkCredentials);
                 doc('passwordInput').addEventListener('keyup', (e) => { if (e.key === 'Enter') checkCredentials(); });
-                doc('areaInput').addEventListener('keyup', (e) => { if (e.key === 'Enter') checkCredentials(); });
+                doc('userInput').addEventListener('keyup', (e) => { if (e.key === 'Enter') checkCredentials(); });
             }
 
             async function checkCredentials() {
-                const areaInput = doc('areaInput').value.trim().toUpperCase();
+                // MODIFICADO: Lógica completamente nueva para autenticar usuarios.
+                const userInput = doc('userInput').value.trim().toUpperCase();
                 const passwordInput = doc('passwordInput').value;
-                if (!areaInput || !passwordInput) {
-                    showModal('Error', 'Debes ingresar el área y la contraseña.', 'error');
+                if (!userInput || !passwordInput) {
+                    showModal('Error', 'Debes ingresar el usuario y la contraseña.', 'error');
                     return;
                 }
 
                 try {
-                    const areaDoc = await db.collection('areas').doc(areaInput).get();
-                    if (!areaDoc.exists) {
-                        showModal('Error', 'El área no existe.', 'error');
+                    const userDoc = await db.collection('users').doc(userInput).get();
+                    if (!userDoc.exists) {
+                        showModal('Error', 'El usuario no existe.', 'error');
                         return;
                     }
 
-                    const areaData = areaDoc.data();
-                    if (areaData.password === passwordInput) {
-                        session = { area: areaDoc.id, isMaster: areaData.isMaster || false };
+                    const userData = userDoc.data();
+                    if (userData.password === passwordInput) {
+                        session = { 
+                            user: userData.username, 
+                            isMaster: userData.isMaster || false, 
+                            permissions: userData.permissions || [] 
+                        };
                         sessionStorage.setItem('appSession', JSON.stringify(session)); 
                         hideModal();
-                        
-                        if (currentArea !== session.area) {
-                            currentArea = session.area;
-                            localStorage.setItem('currentArea', currentArea);
-                            setupListenersForArea(currentArea);
-                        } else {
-                           initialSyncDoneForArea[currentArea] = false;
-                           setupListenersForArea(currentArea);
-                        }
                         updateUIAfterAuth();
                     } else {
                         showModal('Error', 'Contraseña incorrecta.', 'error');
@@ -2281,39 +2320,35 @@
             }
             
             function logout() {
-                session = { area: null, isMaster: false };
+                // MODIFICADO: Reinicia la sesión del usuario.
+                session = { user: null, isMaster: false, permissions: [] };
                 sessionStorage.removeItem('appSession');
-                initialSyncDoneForArea[currentArea] = false;
-                currentArea = 'MULTIPORT';
-                localStorage.setItem('currentArea', currentArea);
-                setupListenersForArea(currentArea);
                 updateUIAfterAuth();
             }
 
             function updateUIAfterAuth() {
-                const isAuthenticated = !!session.area;
-                const canEdit = isAuthenticated && (session.isMaster || session.area === currentArea);
+                // MODIFICADO: Actualiza la UI basado en la sesión del usuario.
+                const isAuthenticated = !!session.user;
+                const canEditCurrentArea = isAuthenticated && (session.isMaster || (session.permissions && session.permissions.includes(currentArea)));
 
-                fileDropArea.classList.toggle('disabled', !canEdit);
-                fileDropArea.querySelector('p').textContent = canEdit ? 'Arrastra archivos de detalle (.xlsx)' : 'Inicia sesión para esta área para cargar archivos';
+                fileDropArea.classList.toggle('disabled', !canEditCurrentArea);
+                fileDropArea.querySelector('p').textContent = canEditCurrentArea ? 'Arrastra archivos de detalle (.xlsx)' : 'No tienes permisos para esta área';
                 
-                sapFileDropArea.classList.toggle('disabled', !canEdit);
+                sapFileDropArea.classList.toggle('disabled', !canEditCurrentArea);
                 if(sapFileDropArea.querySelector('p')) {
-                    sapFileDropArea.querySelector('p').textContent = canEdit 
+                    sapFileDropArea.querySelector('p').textContent = canEditCurrentArea 
                         ? (session.isMaster ? 'Arrastra un archivo maestro SAP (General o de Área)' : 'Arrastra un archivo maestro SAP (.xlsx)')
-                        : 'Inicia sesión para esta área para cargar archivos';
+                        : 'No tienes permisos para esta área';
                 }
                 
-                adminBtn.style.display = (isAuthenticated && !session.isMaster) ? 'none' : 'block';
+                adminBtn.innerHTML = isAuthenticated ? `⚙️ ${session.user}` : '⚙️';
                 logoutBtn.style.display = isAuthenticated ? 'block' : 'none';
                 dailyPlanContainer.style.display = session.isMaster ? 'block' : 'none';
 
                 areaSelectBtn.textContent = `Área: ${currentArea}`;
                 
-                if (!isAuthenticated) {
-                    if (fwdListener) setupListenersForArea(currentArea);
-                }
-                updateOrderList();
+                updateOrderList(); // Para mostrar/ocultar los botones de editar/borrar
+                render(); // Para re-renderizar la vista actual con los permisos correctos
             }
 
             async function showAreaSelector() {
@@ -2322,8 +2357,9 @@
                 areasSnapshot.forEach(doc => {
                     if(doc.id !== 'CONFIG') areas.push({ id: doc.id, ...doc.data() })
                 });
+                areas.sort((a,b) => a.id.localeCompare(b.id));
 
-                let content = '<h3>Selecciona un Área para Visualizar</h3><ul class="area-list">';
+                let content = '<h3>Selecciona un Área para Visualizar</h3><ul class="area-list" style="grid-template-columns: 1fr auto;">';
                 areas.forEach(area => {
                     content += `<li><span>${area.name}</span> <button class="btn select-area-btn" data-area="${area.id}" style="width: auto; padding: 5px 10px;">Seleccionar</button></li>`;
                 });
@@ -2338,76 +2374,127 @@
                             localStorage.setItem('currentArea', currentArea);
                             areaSelectBtn.textContent = `Área: ${currentArea}`;
                             setupListenersForArea(currentArea);
-                            updateUIAfterAuth();
                         }
+                        updateUIAfterAuth();
                         hideModal();
                     });
                 });
             }
 
+            // MODIFICADO: Panel de admin ahora gestiona usuarios y áreas.
             async function showAdminPanel() {
-                const areasSnapshot = await db.collection('areas').get();
+                const [areasSnapshot, usersSnapshot] = await Promise.all([
+                    db.collection('areas').get(),
+                    db.collection('users').get()
+                ]);
+
                 let areas = [];
                 areasSnapshot.forEach(doc => {
                      if(doc.id !== 'CONFIG') areas.push({ id: doc.id, ...doc.data() })
                 });
+                areas.sort((a,b) => a.id.localeCompare(b.id));
 
+                let users = [];
+                usersSnapshot.forEach(doc => users.push({ id: doc.id, ...doc.data() }));
+
+                // NUEVO: Panel de gestión de usuarios.
                 let content = `
-                    <div class="admin-section">
-                        <h3 class="admin-section-header">Gestionar Áreas y Contraseñas</h3>
-                        <div class="admin-section-content">
-                            <ul class="area-list">
-                                ${areas.map(area => `<li>
-                                    <input type="text" class="area-name-input" data-id="${area.id}" value="${area.name}" disabled>
-                                    <input type="text" class="area-password-input" data-id="${area.id}" value="${area.password || ''}"> 
-                                    <div>
-                                        <button class="btn save-area-btn" data-id="${area.id}" style="width: auto; padding: 5px 10px;">Guardar</button>
-                                        <button class="btn btn-danger delete-area-btn" data-id="${area.id}" style="width: auto; padding: 5px 10px; margin-left: 5px;">Eliminar</button>
-                                    </div>
-                                </li>`).join('')}
-                            </ul>
-                            <h4 style="margin-top: 20px;">Crear Nueva Área</h4>
-                            <input type="text" id="newAreaInput" placeholder="Nombre de Área (ej. ENSAMBLE)" style="text-transform:uppercase">
-                            <input type="text" id="newPasswordInput" placeholder="Contraseña para la nueva área">
-                            <button id="createAreaBtn" class="btn" style="margin-top: 10px;">Crear Área</button>
+                <div class="admin-section">
+                    <h3 class="admin-section-header">Gestionar Usuarios</h3>
+                    <div class="admin-section-content">
+                        <ul class="area-list user-list">
+                            ${users.map(user => `<li>
+                                <span style="font-weight: bold;">${user.username}</span>
+                                <div class="permissions-display">${(user.permissions || []).join(', ')}</div>
+                                <div>
+                                    <button class="btn edit-user-btn" data-id="${user.id}" style="width: auto; padding: 5px 10px;">Editar</button>
+                                    ${!user.isMaster ? `<button class="btn btn-danger delete-user-btn" data-id="${user.id}" style="width: auto; padding: 5px 10px; margin-left: 5px;">Eliminar</button>` : ''}
+                                </div>
+                            </li>`).join('')}
+                        </ul>
+                        <h4 style="margin-top: 20px;">Crear Nuevo Usuario</h4>
+                        <input type="text" id="newUserInput" placeholder="Nombre de Usuario (ej. LUNAU2)" style="text-transform:uppercase">
+                        <input type="text" id="newUserPasswordInput" placeholder="Contraseña para el nuevo usuario">
+                        <h5 style="margin-top:16px; margin-bottom: 8px;">Permisos de Área:</h5>
+                        <div id="newUserPermissions" class="permissions-list">
+                            ${areas.map(area => `<label><input type="checkbox" value="${area.id}">${area.name}</label>`).join('')}
                         </div>
+                        <button id="createUserBtn" class="btn" style="margin-top: 10px;">Crear Usuario</button>
                     </div>
-                    
-                    <div id="masterConfigSection" class="admin-section" style="display: none;">
-                        <h3 class="admin-section-header">Configuración de Workshop General</h3>
-                        <div class="admin-section-content">
-                             <div class="config-item">
-                                 <label for="masterColumnInput">Columna de Código de Área:</label>
-                                 <input type="text" id="masterColumnInput" value="${workshopConfig.column}">
-                             </div>
-                             <h4>Mapeo de Códigos a Áreas</h4>
-                             <ul id="areaMappingList" class="area-list"></ul>
-                             <button id="addMappingBtn" class="btn" style="width: auto; padding: 5px 10px; margin-top: 10px;">Añadir Mapeo</button>
-                             <button id="saveWorkshopConfigBtn" class="btn" style="margin-top: 20px;">Guardar Configuración General</button>
-                        </div>
-                    </div>`;
+                </div>
+
+                <div class="admin-section">
+                    <h3 class="admin-section-header">Gestionar Áreas y Contraseñas</h3>
+                    <div class="admin-section-content">
+                        <ul class="area-list">
+                            ${areas.map(area => `<li>
+                                <input type="text" class="area-name-input" data-id="${area.id}" value="${area.name}" disabled>
+                                <input type="text" class="area-password-input" data-id="${area.id}" value="${area.password || ''}"> 
+                                <div>
+                                    <button class="btn save-area-btn" data-id="${area.id}" style="width: auto; padding: 5px 10px;">Guardar</button>
+                                    ${!area.isMaster ? `<button class="btn btn-danger delete-area-btn" data-id="${area.id}" style="width: auto; padding: 5px 10px; margin-left: 5px;">Eliminar</button>` : ''}
+                                </div>
+                            </li>`).join('')}
+                        </ul>
+                        <h4 style="margin-top: 20px;">Crear Nueva Área</h4>
+                        <input type="text" id="newAreaInput" placeholder="Nombre de Área (ej. ENSAMBLE)" style="text-transform:uppercase">
+                        <input type="text" id="newPasswordInput" placeholder="Contraseña para la nueva área">
+                        <button id="createAreaBtn" class="btn" style="margin-top: 10px;">Crear Área</button>
+                    </div>
+                </div>
+                
+                <div id="masterConfigSection" class="admin-section" style="display: block;">
+                    <h3 class="admin-section-header">Configuración de Workshop General</h3>
+                    <div class="admin-section-content">
+                         <div class="config-item">
+                             <label for="masterColumnInput">Columna de Código de Área:</label>
+                             <input type="text" id="masterColumnInput" value="${workshopConfig.column}">
+                         </div>
+                         <h4>Mapeo de Códigos a Áreas</h4>
+                         <ul id="areaMappingList" class="area-list"></ul>
+                         <button id="addMappingBtn" class="btn" style="width: auto; padding: 5px 10px; margin-top: 10px;">Añadir Mapeo</button>
+                         <button id="saveWorkshopConfigBtn" class="btn" style="margin-top: 20px;">Guardar Configuración General</button>
+                    </div>
+                </div>`;
 
                 showModal('Panel de Administrador', content);
                 
+                // Event listeners para la gestión de usuarios
+                doc('createUserBtn').addEventListener('click', createOrUpdateUser);
+                doc('modalBody').querySelectorAll('.edit-user-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const userId = e.target.dataset.id;
+                        const user = users.find(u => u.id === userId);
+                        createOrUpdateUser(user);
+                    });
+                });
+                 doc('modalBody').querySelectorAll('.delete-user-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const userId = e.target.dataset.id;
+                         showConfirmationModal(`¿Seguro que quieres eliminar al usuario "${userId}"?`, async () => {
+                             await db.collection('users').doc(userId).delete();
+                             showAdminPanel();
+                         });
+                    });
+                });
+
+                // Lógica y listeners existentes para áreas y config...
                 doc('modalBody').querySelectorAll('.admin-section-header').forEach(header => {
                     header.addEventListener('click', () => {
                         header.parentElement.classList.toggle('expanded');
                     });
                 });
 
-                if(session.isMaster){
-                    doc('masterConfigSection').style.display = 'block';
-                    const mappingList = doc('areaMappingList');
-                    mappingList.innerHTML = '';
-                    for (const code in workshopConfig.mapping) {
-                        const areaName = workshopConfig.mapping[code];
-                        mappingList.appendChild(createMappingItem(code, areaName));
-                    }
-                    doc('addMappingBtn').addEventListener('click', () => {
-                        mappingList.appendChild(createMappingItem('', ''));
-                    });
-                    doc('saveWorkshopConfigBtn').addEventListener('click', saveWorkshopConfig);
+                const mappingList = doc('areaMappingList');
+                mappingList.innerHTML = '';
+                for (const code in workshopConfig.mapping) {
+                    const areaName = workshopConfig.mapping[code];
+                    mappingList.appendChild(createMappingItem(code, areaName));
                 }
+                doc('addMappingBtn').addEventListener('click', () => {
+                    mappingList.appendChild(createMappingItem('', ''));
+                });
+                doc('saveWorkshopConfigBtn').addEventListener('click', saveWorkshopConfig);
 
                 doc('createAreaBtn').addEventListener('click', async () => {
                     const newAreaName = doc('newAreaInput').value.trim().toUpperCase();
@@ -2437,18 +2524,69 @@
                 });
 
                 doc('modalBody').querySelectorAll('.delete-area-btn').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
+                    btn.addEventListener('click', (e) => {
                          const areaId = e.target.dataset.id;
-                         const areaData = areas.find(a => a.id === areaId);
-                         if (areaData.isMaster) {
-                             showModal('Acción no permitida', 'No puedes eliminar el área maestra.', 'warning');
-                             return;
-                         }
-                         showConfirmationModal(`¿Estás seguro de que quieres eliminar el área "${areaId}" y todos sus datos? Esta acción no se puede deshacer.`, async () => {
+                         showConfirmationModal(`¿Seguro que quieres eliminar el área "${areaId}" y todos sus datos?`, async () => {
                              await deleteAreaAndSubcollections(areaId);
                              showAdminPanel();
                          });
                     });
+                });
+            }
+
+            // NUEVO: Función para el modal de creación/edición de usuarios
+            function createOrUpdateUser(userToEdit = null) {
+                const isEditing = userToEdit !== null;
+                const title = isEditing ? `Editar Usuario: ${userToEdit.username}` : 'Crear Nuevo Usuario';
+
+                // Reutilizamos la misma lógica de obtener áreas
+                db.collection('areas').get().then(areasSnapshot => {
+                    let areas = [];
+                    areasSnapshot.forEach(doc => { if (doc.id !== 'CONFIG') areas.push({ id: doc.id, ...doc.data() }); });
+                    areas.sort((a,b) => a.id.localeCompare(b.id));
+
+                    let modalContent = `
+                        <input type="text" id="modalUserInput" placeholder="Nombre de Usuario" style="text-transform:uppercase" value="${isEditing ? userToEdit.username : ''}" ${isEditing ? 'disabled' : ''}>
+                        <input type="text" id="modalPasswordInput" placeholder="${isEditing ? 'Nueva contraseña (dejar en blanco para no cambiar)' : 'Contraseña'}">
+                        <h5 style="margin-top:16px; margin-bottom: 8px;">Permisos de Área:</h5>
+                        <div id="modalPermissions" class="permissions-list">
+                            ${areas.map(area => {
+                                const isChecked = isEditing && userToEdit.permissions && userToEdit.permissions.includes(area.id);
+                                return `<label><input type="checkbox" value="${area.id}" ${isChecked ? 'checked' : ''}>${area.name}</label>`;
+                            }).join('')}
+                        </div>
+                        <button id="saveUserBtn" class="btn" style="margin-top: 10px;">${isEditing ? 'Guardar Cambios' : 'Crear Usuario'}</button>
+                    `;
+                    showModal(title, modalContent);
+
+                    doc('saveUserBtn').onclick = async () => {
+                        const username = doc('modalUserInput').value.trim().toUpperCase();
+                        const password = doc('modalPasswordInput').value.trim();
+                        
+                        if (!username || (!isEditing && !password)) {
+                            showModal('Error', 'El nombre de usuario y la contraseña son obligatorios.', 'error');
+                            return;
+                        }
+
+                        const permissions = Array.from(doc('modalPermissions').querySelectorAll('input:checked')).map(cb => cb.value);
+                        
+                        const userData = {
+                            username: username,
+                            permissions: permissions
+                        };
+
+                        if (password) {
+                            userData.password = password;
+                        }
+                        
+                        // Si es un usuario nuevo, definimos isMaster como false.
+                        if (!isEditing) {
+                            userData.isMaster = false;
+                        }
+
+                        await db.collection('users').doc(username).set(userData, { merge: true });
+                        showAdminPanel();
+                    };
                 });
             }
             
@@ -2562,13 +2700,13 @@
                     `;
 
                     if (totalDailyOrders > 0) {
-                         const sortedAreas = Object.keys(dailyOrdersByArea).sort();
-                         for (const area of sortedAreas) {
-                             reportHTML += `<li class="plan-area-item">
+                        const sortedAreas = Object.keys(dailyOrdersByArea).sort();
+                        for (const area of sortedAreas) {
+                            reportHTML += `<li class="plan-area-item">
                                                  <span class="area-name">${area}</span>
                                                  <span class="area-count">${dailyOrdersByArea[area]}</span>
-                                                </li>`;
-                         }
+                                             </li>`;
+                        }
                     } else {
                         reportHTML += `<li class="plan-area-item-empty">No hay órdenes pendientes para el día de hoy.</li>`;
                     }
@@ -2662,8 +2800,10 @@
                         const data = docRef.data();
                         newSapData = data.orders || [];
                     }
-
-                    if (newSapData.length > 0 && session.area && !initialSyncDoneForArea[area]) {
+                    
+                    // MODIFICADO: Se usa la nueva lógica de permisos
+                    const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+                    if (newSapData.length > 0 && canEdit && !initialSyncDoneForArea[area]) {
                         console.log(`Datos de SAP cargados para el área ${area}, iniciando sincronización inicial con FWD...`);
                         await syncSapOrdersToFwd(newSapData, area);
                         initialSyncDoneForArea[area] = true;
@@ -2724,13 +2864,29 @@
             async function initializeApp() {
                 await loadWorkshopConfig();
 
-                const masterAreaRef = db.collection('areas').doc('MULTIPORT');
-                await masterAreaRef.set({
-                    name: 'MULTIPORT',
-                    password: 'CORNING25',
-                    isMaster: true
-                }, { merge: true });
-                console.log("Área maestra 'MULTIPORT' verificada y asegurada.");
+                // NUEVO: Asegura que el usuario maestro y las áreas/usuarios existan.
+                const masterUserRef = db.collection('users').doc('MULTIPORT');
+                const masterUserDoc = await masterUserRef.get();
+                if (!masterUserDoc.exists) {
+                    await masterUserRef.set({
+                        username: 'MULTIPORT',
+                        password: 'CORNING25',
+                        isMaster: true,
+                        permissions: []
+                    });
+                    console.log("Usuario maestro 'MULTIPORT' creado.");
+                }
+                 const masterAreaRef = db.collection('areas').doc('MULTIPORT');
+                 const masterAreaDoc = await masterAreaRef.get();
+                if (!masterAreaDoc.exists) {
+                    await masterAreaRef.set({
+                        name: 'MULTIPORT',
+                        password: 'CORNING25',
+                        isMaster: true
+                    }, { merge: true });
+                     console.log("Área maestra 'MULTIPORT' verificada y asegurada.");
+                }
+
 
                 mainMode = localStorage.getItem('mainMode') || 'fwd';
                 currentArea = localStorage.getItem('currentArea') || 'MULTIPORT';
