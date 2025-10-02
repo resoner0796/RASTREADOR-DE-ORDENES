@@ -276,7 +276,8 @@
         .stat-item h3 { margin-bottom: 8px; font-size: 0.9rem; font-weight: 500; }
         .stat-item .stat-value-wrapper { margin-top: auto; }
         .stat-item p { margin: 0; font-size: 1.75rem; font-weight: 700; }
-        #statOrderNumber { color: var(--text-secondary); }
+        #statOrderNumber { color: var(--text-secondary); cursor: pointer; transition: color 0.2s ease-in-out; }
+        #statOrderNumber:hover { color: var(--primary-color); }
         #statCatalogNumber { font-size: 1rem; color: var(--text-primary); font-weight: 500; margin-top: 4px; height: auto; }
         #statPackedQty, #sapCompletedOrdersStat, #completedOrdersStat { color: var(--success-color); }
         #statRemainingQty, #sapTotalOrdersStat, #totalOrdersStat { color: var(--warning-color); } 
@@ -524,7 +525,8 @@
         .date-header { width: 100%; background-color: transparent; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer; display: flex; justify-content: space-between; align-items: center; text-align: left; }
         .date-header:hover { background-color: var(--surface-hover-color); }
         .date-header.active { background-color: var(--surface-hover-color); color: var(--text-primary); }
-        .date-header .status-indicator { font-weight: 400; font-size: 0.8rem; color: var(--success-color); }
+        .date-header .status-indicator { font-weight: 700; font-size: 0.8rem; color: var(--success-color); }
+        .date-header .order-count { color: var(--text-dark); font-weight: 500; font-size: 0.8rem; }
         .date-header .collapse-icon { transition: transform 0.2s; }
         .date-group.expanded .date-header .collapse-icon { transform: rotate(90deg); }
         .orders-for-date { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding-left: 12px; margin-top: 0; }
@@ -949,6 +951,23 @@
             areaSelectBtn.addEventListener('click', showAreaSelector);
             logoutBtn.addEventListener('click', logout);
             showDailyPlanBtn.addEventListener('click', generateDailyPlanReport);
+            
+            // CORRECCIÓN: Event listener para copiar el número de orden al portapapeles.
+            statOrderNumber.addEventListener('click', () => {
+                const orderNumberText = statOrderNumber.textContent;
+                if (orderNumberText && orderNumberText !== 'N/A' && orderNumberText !== 'Órdenes del Día') {
+                    navigator.clipboard.writeText(orderNumberText).then(() => {
+                        const originalText = statOrderNumber.textContent;
+                        statOrderNumber.textContent = '¡Copiado!';
+                        setTimeout(() => {
+                            statOrderNumber.textContent = originalText;
+                        }, 1500);
+                    }).catch(err => {
+                        console.error('Error al copiar: ', err);
+                        showModal('Error', 'No se pudo copiar el texto.', 'error');
+                    });
+                }
+            });
 
             // ===================================
             // === CORE APP CONTROL & UTILITIES ===
@@ -1229,6 +1248,14 @@
             }
 
             function updateOrderList() {
+                // CORRECCIÓN: Guardar el estado de los grupos expandidos antes de redibujar.
+                const expandedDates = new Set();
+                orderList.querySelectorAll('.date-group.expanded').forEach(group => {
+                    if (group.dataset.date) {
+                        expandedDates.add(group.dataset.date);
+                    }
+                });
+                
                 orderList.innerHTML = '';
                 if (loadedOrders.size === 0) {
                     orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No hay órdenes cargadas para el área ${currentArea || ''}.</p>`;
@@ -1251,19 +1278,37 @@
                 });
                 sortedDates.forEach(dateString => {
                     const orders = groupedByDate.get(dateString);
+                    const orderCount = orders.length;
                     const isToday = dateString === todayString;
                     const groupDiv = document.createElement('div');
                     groupDiv.className = 'date-group';
+                    groupDiv.dataset.date = dateString; // ID para preservar estado
+                    
                     const headerBtn = document.createElement('button');
                     headerBtn.className = 'date-header';
-                    headerBtn.innerHTML = `<span>📅 ${dateString}</span> ${isToday ? '<span class="status-indicator">(Órdenes del Día)</span>' : ''} <span class="collapse-icon">►</span>`;
+                    
+                    // CORRECCIÓN: Mostrar el conteo de órdenes y manejar el caso de "hoy".
+                    const countText = `${orderCount} ${orderCount === 1 ? 'orden' : 'órdenes'}`;
+                    if (isToday) {
+                        headerBtn.innerHTML = `<span>📅 ${dateString}</span> <span class="status-indicator">(${countText})</span> <span class="collapse-icon">►</span>`;
+                    } else {
+                        headerBtn.innerHTML = `<span>📅 ${dateString}</span> <span class="order-count">(${countText})</span> <span class="collapse-icon">►</span>`;
+                    }
+                    
                     const ordersContainer = document.createElement('div');
                     ordersContainer.className = 'orders-for-date';
                     orders.forEach(order => ordersContainer.appendChild(createOrderButton(order.key, order)));
+                    
                     groupDiv.appendChild(headerBtn);
                     groupDiv.appendChild(ordersContainer);
                     orderList.appendChild(groupDiv);
+                    
                     headerBtn.addEventListener('click', () => groupDiv.classList.toggle('expanded'));
+
+                    // CORRECCIÓN: Restaurar el estado expandido si corresponde.
+                    if (expandedDates.has(dateString)) {
+                        groupDiv.classList.add('expanded');
+                    }
                 });
                 setActiveOrder(activeOrderKey);
             }
@@ -2103,7 +2148,6 @@
                     return;
                 }
 
-                // CORRECCIÓN: Se añade "Material" a los encabezados de la tabla SAP.
                 const headers = ['Orden', 'Catalogo', 'Material', 'Special Stock', 'Finish', 'Total orden', 'Total confirmado', 'Faltante'];
                 table.innerHTML = `
                     <thead><tr>${headers.map(h => `<th>${h.replace(/_/g, ' ')}</th>`).join('')}</tr></thead>
