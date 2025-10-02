@@ -24,11 +24,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Tinos&display=swap" rel="stylesheet">
     <style>
         html {
-            min-height: 100%;
-            background-color: #0a0a0a; /* Color base oscuro del tema */
+            height: 100%;
+            background-color: #0a0a0a;
         }
         body {
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden; /* Evitamos el scroll en la página principal */
         }
 
         /* =================================== */
@@ -107,10 +108,15 @@
             width: 100%; 
             max-width: 1800px; 
             padding: 32px 16px;
+            height: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
         }
         
         .top-header-container {
             padding-left: 336px;
+            flex-shrink: 0;
         }
         
         .app-header { text-align: center; margin-bottom: 16px; position: relative; }
@@ -119,58 +125,56 @@
             color: var(--branding-color);
         }
         .app-title { font-size: 1.25rem; font-weight: 600; color: var(--text-secondary); margin: 4px 0 0 0; }
-
-        .main-container { width: 100%; display: grid; grid-template-columns: 320px 1fr; grid-template-rows: auto auto 1fr; grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; gap: 16px; }
-        #sapView .main-container { grid-template-columns: 320px 1fr; grid-template-rows: auto 1fr; grid-template-areas: "sidebar global-header" "sidebar main"; }
+        
+        /* CORRECCIÓN: El grid ahora ocupa toda la altura disponible */
+        #fwdView, #sapView {
+            flex-grow: 1;
+            min-height: 0;
+        }
+        .main-container { 
+            width: 100%; 
+            height: 100%;
+            display: grid; 
+            grid-template-columns: 320px 1fr; 
+            grid-template-rows: auto auto 1fr; /* Esta es la clave: la última fila se expande */
+            grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; 
+            gap: 16px; 
+        }
+        #sapView .main-container { 
+            grid-template-rows: auto 1fr; 
+            grid-template-areas: "sidebar global-header" "sidebar main"; 
+        }
         
         /* Barra Lateral */
         .sidebar {
             grid-area: sidebar;
-            background-color: transparent;
-            border-radius: 12px;
-            padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 16px;
-            position: sticky;
-            align-self: start;
-            top: 16px;
-            height: calc(100vh - 48px);
+            min-height: 0;
         }
         .sidebar > h2 { display: none; }
         .sidebar .card h3 { text-align: center; }
         #sapView .sidebar > h2 { text-align: center; }
-        #sapView .sidebar { height: calc(100vh - 48px); }
         #orderListCard, #sap-orderListCard { display: flex; flex-direction: column; overflow: hidden; }
         #orderList, #sapOrderList { flex-grow: 1; overflow-y: auto; }
         
-        /* Layout General y Elementos Fijos (Sticky) */
+        /* Layout General y Elementos Fijos */
         .global-header { grid-area: global-header; }
         .header { grid-area: header; }
         .main-content { grid-area: main; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
 
-        /* CORRECCIÓN: Estilos para hacer fijos los encabezados */
-        #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header {
-            position: -webkit-sticky;
-            position: sticky;
-            z-index: 20;
-        }
-        #fwdView .header, #sapView .global-header {
-            top: 16px;
-        }
+        /* CORRECCIÓN: Se elimina el position:sticky que causaba el conflicto de scroll */
         #table-controls-header, #sap-controls-header {
-            z-index: 19; /* Ligeramente por debajo del header principal */
             background-color: var(--surface-color);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            margin: -20px -20px 0 -20px;
             padding: 16px 20px 0 20px;
         }
         #desktop-controls-container, #sap-controls-header > div:first-child {
              padding-bottom: 16px;
              border-bottom: 1px solid var(--border-color);
         }
-
         
         .card, .modal-content {
             background-color: var(--surface-color);
@@ -329,7 +333,6 @@
             color: var(--branding-color);
         }
 
-        /* CORRECCIÓN 1: Contenedor de tabla inteligente */
         .table-wrapper { 
             overflow-y: auto;
             flex-grow: 1;
@@ -341,8 +344,8 @@
         #tableCard, #sap-tableCard { 
             display: flex; 
             flex-direction: column; 
-            flex-grow: 1; /* FORZAMOS A QUE LA TARJETA CREZCA */
-            min-height: 0; /* EVITAMOS QUE EL CONTENIDO LA DESBORDE */
+            flex-grow: 1; 
+            min-height: 0;
         }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; font-size: 0.9rem;}
@@ -572,8 +575,9 @@
         
         /* Media Queries */
         @media (max-width: 992px) {
-            .app-container { padding: 8px; }
-            .main-container { display: flex; flex-direction: column; gap: 12px; }
+            body { overflow: auto; } /* Habilitamos el scroll en la página principal para móvil */
+            .app-container { padding: 8px; height: auto; }
+            .main-container { display: flex; flex-direction: column; gap: 12px; height: auto; }
             .sidebar { position: static; height: auto; }
             .sidebar, .main-content { display: contents !important; }
             #sap-uploadCard { display: none; }
@@ -601,10 +605,6 @@
             #modalBody .user-list li > div { display: flex; gap: 8px; }
 
 
-            /* CORRECCIÓN: Desactivar sticky en móvil para evitar problemas de layout */
-            #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header {
-                position: static;
-            }
             #table-controls-header, #sap-controls-header {
                 margin: 0;
                 padding: 0;
@@ -641,17 +641,7 @@
 
         <div id="fwdView">
             <div class="main-container">
-                <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
-                    <div class="global-dashboard-card">
-                        <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
-                        <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
-                        <div class="daily-plan-container" id="dailyPlanContainer" style="display: none;">
-                            <button id="showDailyPlanBtn" class="btn">Ver Plan del Día</button>
-                        </div>
-                    </div>
-                </header>
-                <aside class="sidebar animated-startup" style="animation-delay: 0.2s;">
-                    <h2>Panel de Control</h2>
+                <aside class="sidebar">
                     <div class="card" id="uploadCard">
                         <h3>Panel de Control</h3>
                         <div class="card-content">
@@ -671,7 +661,7 @@
                             <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
                         </div>
                     </div>
-                    <div class="card" style="flex-grow: 1;" id="orderListCard">
+                    <div class="card" id="orderListCard">
                         <h3>Órdenes Cargadas</h3>
                         <div id="orderList" class="card-content">
                             <p class="text-dark" style="font-size:0.9rem;">Cargando órdenes...</p>
@@ -679,11 +669,21 @@
                     </div>
                 </aside>
         
-                <section class="header card animated-startup" style="animation-delay: 0.4s;">
-                        <div class="mode-switcher">
-                            <button id="modeRastreo" class="active">Rastreo</button>
-                            <button id="modeEmpaque">Empaque</button>
+                <header class="global-header card">
+                    <div class="global-dashboard-card">
+                        <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
+                        <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
+                        <div class="daily-plan-container" id="dailyPlanContainer" style="display: none;">
+                            <button id="showDailyPlanBtn" class="btn">Ver Plan del Día</button>
                         </div>
+                    </div>
+                </header>
+                
+                <section class="header card">
+                    <div class="mode-switcher">
+                        <button id="modeRastreo" class="active">Rastreo</button>
+                        <button id="modeEmpaque">Empaque</button>
+                    </div>
                     <div id="summaryCard" class="summary-card">
                            <div class="stat-item">
                                 <h3>Orden</h3>
@@ -720,7 +720,7 @@
                    <div id="lastUpdatedContainer" style="text-align: right; font-size: 0.75rem; color: var(--text-dark); margin-top: 12px; height: 1em;"></div>
                 </section>
         
-                <main class="main-content animated-startup" style="animation-delay: 0.5s;">
+                <main class="main-content">
                     <div id="rastreoView">
                         <div class="card-row" id="mobile-controls-row">
                             <div class="card mobile-collapsible" id="filtersCard">
@@ -762,7 +762,7 @@
                                         <div id="desktop-actions-wrapper" class="filter-group"></div>
                                     </div>
                                 </div>
-                                <input type="text" id="rastreoFilterInput" placeholder="Buscar en la tabla por serial, status, etc..." style="margin-bottom: 16px;">
+                                <input type="text" id="rastreoFilterInput" placeholder="Buscar en la tabla por serial, status, etc..." style="margin-top: 16px; margin-bottom: 16px;">
                                 <div id="lineCountsContainer"></div>
                             </div>
                             <div class="table-wrapper">
@@ -785,8 +785,7 @@
 
         <div id="sapView">
             <div class="main-container">
-                <aside class="sidebar animated-startup" style="animation-delay: 0.2s;">
-                    <h2>Panel SAP</h2>
+                <aside class="sidebar">
                     <div class="card" id="sap-uploadCard">
                         <h3>Panel de Control</h3>
                        <div id="sapFileDropArea" class="file-drop-area disabled">
@@ -795,20 +794,20 @@
                        </div>
                         <input type="file" id="sapFileInput" accept=".xlsx, .xls" style="display: none;">
                     </div>
-                    <div class="card" style="flex-grow: 1;" id="sap-orderListCard">
+                    <div class="card" id="sap-orderListCard">
                         <h3>Órdenes Cargadas</h3>
                         <div id="sapOrderList" class="card-content">
                            <p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>
                         </div>
                     </div>
                 </aside>
-                <header class="global-header card animated-startup" style="animation-delay: 0.3s;">
+                <header class="global-header card">
                        <div class="global-dashboard-card">
                                <div class="stat-item"><h3>Órdenes del Día</h3><p id="sapTotalOrdersStat">0</p></div>
                                <div class="stat-item"><h3>Órdenes Confirmadas</h3><p id="sapCompletedOrdersStat">0</p></div>
                        </div>
                 </header>
-                <main class="main-content animated-startup" style="animation-delay: 0.4s;">
+                <main class="main-content">
                        <div class="card" id="sap-tableCard">
                            <div id="sap-controls-header">
                                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -1450,7 +1449,6 @@
                 } else if (mainMode === 'sap') {
                     renderSapView();
                 }
-                adjustStickyTops();
             }
 
             function renderSummary() {
@@ -2023,7 +2021,7 @@
                             empaqueData: [],
                             headers: { rastreo: [], empaque: [] },
                             lastUpdated: new Date(),
-                            lastUpdatedBy: session.user // También se podría añadir aquí
+                            lastUpdatedBy: session.user
                         };
                         batch.set(orderRef, { ...defaultData, ...masterData });
                     }
@@ -2351,17 +2349,15 @@
                         : 'No tienes permisos para esta área';
                 }
                 
-                // CORRECCIÓN 3: Lógica para ocultar/mostrar el engrane
                 if (isAuthenticated) {
                     logoutBtn.style.display = 'block';
                     if (session.isMaster) {
                         adminBtn.style.display = 'block';
                         adminBtn.innerHTML = `⚙️ ${session.user}`;
                     } else {
-                        adminBtn.style.display = 'none'; // Se oculta para usuarios no-maestros
+                        adminBtn.style.display = 'none';
                     }
                 } else {
-                    // No autenticado
                     logoutBtn.style.display = 'none';
                     adminBtn.style.display = 'block';
                     adminBtn.innerHTML = '⚙️';
@@ -2741,35 +2737,6 @@
                 themeToggleBtn.textContent = theme === 'light' ? '🌙' : '☀️';
             }
 
-            function adjustStickyTops() {
-                requestAnimationFrame(() => {
-                    const isCurrentlyMobile = window.innerWidth <= 992;
-                    
-                    const fwdHeader = document.querySelector('#fwdView .header');
-                    const fwdControls = document.getElementById('table-controls-header');
-                    const sapHeader = document.querySelector('#sapView .global-header');
-                    const sapControls = document.getElementById('sap-controls-header');
-
-                    if (isCurrentlyMobile) {
-                        if (fwdControls) fwdControls.style.top = '';
-                        if (sapControls) sapControls.style.top = '';
-                        return;
-                    }
-                    
-                    if (fwdHeader && fwdControls) {
-                        const headerHeight = fwdHeader.offsetHeight;
-                        const topValue = 16 + headerHeight; 
-                        fwdControls.style.top = `${topValue}px`;
-                    }
-
-                    if (sapHeader && sapControls) {
-                        const headerHeight = sapHeader.offsetHeight;
-                        const topValue = 16 + headerHeight;
-                        sapControls.style.top = `${topValue}px`;
-                    }
-                });
-            }
-
             themeToggleBtn.addEventListener('click', () => {
                 currentTheme = currentTheme === 'light' ? 'dark' : 'light';
                 localStorage.setItem('theme', currentTheme);
@@ -2871,7 +2838,6 @@
                     if (isMobile) setupMobileMode(); else teardownMobileMode();
                     render();
                 }
-                adjustStickyTops();
             });
 
             async function initializeApp() {
@@ -2918,8 +2884,6 @@
 
                 updateUIAfterAuth();
                 setupListenersForArea(currentArea);
-
-                setTimeout(adjustStickyTops, 500);
             }
 
             // === INICIO DE LA APP ===
