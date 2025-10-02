@@ -150,29 +150,25 @@
         .main-content { grid-area: main; display: flex; flex-direction: column; gap: 16px; }
 
         /* CORRECCIÓN: Estilos para hacer fijos los encabezados */
-        #fwdView .header, #sapView .global-header, #table-controls-header {
-            position: -webkit-sticky; /* para Safari */
+        #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header {
+            position: -webkit-sticky;
             position: sticky;
             z-index: 20;
         }
         #fwdView .header, #sapView .global-header {
             top: 16px;
         }
-        #table-controls-header {
-            top: 200px; /* 16px (offset) + ~168px (alto del header) + 16px (gap) */
+        #table-controls-header, #sap-controls-header {
+            z-index: 19; /* Ligeramente por debajo del header principal */
             background-color: var(--surface-color);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            padding-top: 16px;
-            margin: -20px -20px 0 -20px; /* Compensar padding del card padre */
+            margin: -20px -20px 0 -20px;
             padding: 16px 20px 0 20px;
         }
-        #desktop-controls-container {
-             border-bottom: none; /* Quitar borde que ahora está en el wrapper */
-        }
-        #table-controls-header .filter-group-inline {
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border-color);
+        #desktop-controls-container, #sap-controls-header > div {
+             padding-bottom: 16px;
+             border-bottom: 1px solid var(--border-color);
         }
 
         
@@ -588,10 +584,10 @@
             .top-header-container { padding-left: 0; }
 
             /* CORRECCIÓN: Desactivar sticky en móvil para evitar problemas de layout */
-            #fwdView .header, #sapView .global-header, #table-controls-header {
+            #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header {
                 position: static;
             }
-            #table-controls-header {
+            #table-controls-header, #sap-controls-header {
                 margin: 0;
                 padding: 0;
             }
@@ -600,7 +596,7 @@
         @media (min-width: 993px) {
             #mainModeSwitcher { margin-left: auto; margin-right: auto; }
             #mobile-controls-row { display: none; }
-            #desktop-controls-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; padding-bottom: 16px; }
+            #desktop-controls-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
             .desktop-filters-group { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; flex-grow: 1; }
             .desktop-actions-group { display: flex; flex-shrink: 0; }
             .filter-group-inline { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
@@ -797,9 +793,12 @@
                 </header>
                 <main class="main-content animated-startup" style="animation-delay: 0.4s;">
                        <div class="card" id="sap-tableCard">
-                           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
-                               <h3>WorkShop</h3>
-                               <button id="sapResetFilter" class="filter-btn" style="display: none;">Mostrar Hoy/Tarde</button>
+                            <!-- CORRECCIÓN: Wrapper para los controles de la tabla SAP -->
+                           <div id="sap-controls-header">
+                               <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                   <h3>WorkShop</h3>
+                                   <button id="sapResetFilter" class="filter-btn" style="display: none;">Mostrar Hoy/Tarde</button>
+                               </div>
                            </div>
                            <div class="table-wrapper">
                                <table id="sapTable"></table>
@@ -991,7 +990,6 @@
             logoutBtn.addEventListener('click', logout);
             showDailyPlanBtn.addEventListener('click', generateDailyPlanReport);
 
-            // CORRECCIÓN: Event listener para copiar el número de orden al portapapeles.
             statOrderNumber.addEventListener('click', () => {
                 const orderNumberText = statOrderNumber.textContent;
                 if (orderNumberText && orderNumberText !== 'N/A' && orderNumberText !== 'Órdenes del Día') {
@@ -1287,14 +1285,13 @@
             }
 
             function updateOrderList() {
-                // CORRECCIÓN: Guardar el estado de los grupos expandidos antes de redibujar.
                 const expandedDates = new Set();
                 orderList.querySelectorAll('.date-group.expanded').forEach(group => {
                     if (group.dataset.date) {
                         expandedDates.add(group.dataset.date);
                     }
                 });
-
+                
                 orderList.innerHTML = '';
                 if (loadedOrders.size === 0) {
                     orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No hay órdenes cargadas para el área ${currentArea || ''}.</p>`;
@@ -1321,12 +1318,11 @@
                     const isToday = dateString === todayString;
                     const groupDiv = document.createElement('div');
                     groupDiv.className = 'date-group';
-                    groupDiv.dataset.date = dateString; // ID para preservar estado
+                    groupDiv.dataset.date = dateString; 
                     
                     const headerBtn = document.createElement('button');
                     headerBtn.className = 'date-header';
                     
-                    // CORRECCIÓN: Mostrar el conteo de órdenes y manejar el caso de "hoy".
                     const countText = `${orderCount} ${orderCount === 1 ? 'orden' : 'órdenes'}`;
                     if (isToday) {
                         headerBtn.innerHTML = `<span>📅 ${dateString}</span> <span class="status-indicator">(${countText})</span> <span class="collapse-icon">►</span>`;
@@ -1343,12 +1339,9 @@
                     orderList.appendChild(groupDiv);
                     
                     headerBtn.addEventListener('click', () => {
-                        const isNowExpanded = !groupDiv.classList.contains('expanded');
                         groupDiv.classList.toggle('expanded');
-                        // No es necesario guardar aquí, ya se lee al principio de la función.
                     });
 
-                    // CORRECCIÓN: Restaurar el estado expandido si corresponde.
                     if (expandedDates.has(dateString)) {
                         groupDiv.classList.add('expanded');
                     }
@@ -2072,7 +2065,7 @@
                 return {
                     'Orden': getCellValue('A' + rowNum),
                     'Catalogo': getCellValue('D' + rowNum) || null,
-                    'Material': getCellValue('C' + rowNum) || null, // CORRECCIÓN: Se añade el campo Material
+                    'Material': getCellValue('C' + rowNum) || null,
                     'Special Stock': [stock1, stock2].filter(Boolean).join(' / ') || null,
                     'Finish': finishDateSerial,
                     'Total orden': total,
@@ -2119,12 +2112,9 @@
             }
 
             function updateSapOrderList() {
-                 // Guardar estado expandido
-                const expandedDates = new Set();
-                sapOrderList.querySelectorAll('.date-group.expanded').forEach(group => {
-                    if (group.dataset.date) expandedDates.add(group.dataset.date);
-                });
-
+                // CORRECCIÓN: Guardar la fecha activa para restaurarla
+                const activeDate = sapOrderList.querySelector('.date-header.active')?.dataset.date;
+                
                 if (sapData.length === 0) {
                     sapOrderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>`;
                     return;
@@ -2155,34 +2145,26 @@
                     const isToday = dateString === todayString;
                     const countText = `${orderCount} ${orderCount === 1 ? 'orden' : 'órdenes'}`;
 
-                    html += `<div class="date-group" data-date="${dateString}">`;
-                    html += `<button class="date-header">
+                    // CORRECCIÓN: Se usa .order-item para espaciado consistente, y se elimina el ícono de colapsar.
+                    html += `<div class="order-item">`;
+                    html += `<button class="date-header" data-date="${dateString}" style="width:100%; justify-content: space-between;">
                                  <span>📅 ${dateString}</span> 
                                  ${isToday ? `<span class="status-indicator">(${countText})</span>` : `<span class="order-count">(${countText})</span>`}
-                                 <span class="collapse-icon">►</span>
-                                </button>`;
-                    html += `<div class="orders-for-date">`;
-                    orders.forEach(order => {
-                        const itemClass = order.status === 'complete' ? 'is-complete' : '';
-                        html += `<div class="order-item"><button class="order-btn ${itemClass}" disabled>${order['Orden']}</button></div>`;
-                    });
-                    html += `</div></div>`;
+                             </button>`;
+                    html += `</div>`;
                 });
                 
                 sapOrderList.innerHTML = html;
                 sapOrderList.querySelectorAll('.date-header').forEach(header => {
-                    const group = header.parentElement;
-                    // Restaurar estado expandido
-                    if (expandedDates.has(group.dataset.date)) {
-                        group.classList.add('expanded');
+                    if(header.dataset.date === activeDate) {
+                        header.classList.add('active');
                     }
                     
                     header.addEventListener('click', () => {
-                        group.classList.toggle('expanded');
-                        sapDateFilter = header.dataset.date;
-                        renderSapView();
                         sapOrderList.querySelectorAll('.date-header').forEach(h => h.classList.remove('active'));
                         header.classList.add('active');
+                        sapDateFilter = header.dataset.date;
+                        renderSapView();
                     });
                 });
             }
@@ -2615,6 +2597,35 @@
                 themeToggleBtn.textContent = theme === 'light' ? '🌙' : '☀️';
             }
 
+            // CORRECCIÓN: Función para ajustar dinámicamente el 'top' de los headers fijos
+            function adjustStickyTops() {
+                requestAnimationFrame(() => {
+                    if (window.innerWidth <= 992) {
+                        doc('table-controls-header').style.top = '';
+                        doc('sap-controls-header').style.top = '';
+                        return;
+                    }
+                    
+                    // FWD View
+                    const fwdHeader = document.querySelector('#fwdView .header');
+                    const fwdControls = document.getElementById('table-controls-header');
+                    if (fwdHeader && fwdControls) {
+                        const headerHeight = fwdHeader.offsetHeight;
+                        const topValue = 16 + headerHeight + 16; // 16px top offset + header height + 16px grid gap
+                        fwdControls.style.top = `${topValue}px`;
+                    }
+
+                    // SAP View
+                    const sapHeader = document.querySelector('#sapView .global-header');
+                    const sapControls = document.getElementById('sap-controls-header');
+                    if (sapHeader && sapControls) {
+                        const headerHeight = sapHeader.offsetHeight;
+                        const topValue = 16 + headerHeight + 16;
+                        sapControls.style.top = `${topValue}px`;
+                    }
+                });
+            }
+
             themeToggleBtn.addEventListener('click', () => {
                 currentTheme = currentTheme === 'light' ? 'dark' : 'light';
                 localStorage.setItem('theme', currentTheme);
@@ -2710,6 +2721,7 @@
                     if (isMobile) setupMobileMode(); else teardownMobileMode();
                     render();
                 }
+                adjustStickyTops(); // CORRECCIÓN: Ajustar en cada cambio de tamaño.
             });
 
             async function initializeApp() {
@@ -2741,6 +2753,8 @@
 
                 updateUIAfterAuth();
                 setupListenersForArea(currentArea);
+
+                setTimeout(adjustStickyTops, 500);
             }
 
             // === INICIO DE LA APP ===
