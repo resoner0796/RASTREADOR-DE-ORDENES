@@ -48,7 +48,6 @@
             --text-secondary: #94A3B8;
             --text-dark: #64748B;
             --thead-bg: rgba(55, 65, 81, 0.8);
-            /* NUEVO: Color de fondo sólido para elementos sticky */
             --sticky-bg: #1d2025;
         }
 
@@ -68,7 +67,6 @@
             --text-dark: #9CA3AF;
             --thead-bg: rgba(229, 231, 235, 0.8);
             --branding-color: #0055A5;
-            /* NUEVO: Color de fondo sólido para elementos sticky */
             --sticky-bg: #f8fafc;
         }
 
@@ -116,8 +114,8 @@
         body.light-theme .app-branding { color: var(--branding-color); }
         .app-title { font-size: 1.25rem; font-weight: 600; color: var(--text-secondary); margin: 4px 0 0 0; }
 
-        .main-container { width: 100%; display: grid; grid-template-columns: 320px 1fr; grid-template-rows: auto auto 1fr; grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; gap: 16px; }
-        #sapView .main-container { grid-template-columns: 320px 1fr; grid-template-rows: auto 1fr; grid-template-areas: "sidebar global-header" "sidebar main"; }
+        .main-container { width: 100%; display: grid; grid-template-columns: 320px 1fr; grid-template-rows: auto auto auto 1fr; grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; gap: 16px; }
+        #sapView .main-container { grid-template-columns: 320px 1fr; grid-template-rows: auto auto 1fr; grid-template-areas: "sidebar global-header" "sidebar main" "sidebar main"; }
         
         .sidebar {
             grid-area: sidebar;
@@ -139,7 +137,6 @@
         .header { grid-area: header; }
         .main-content { grid-area: main; display: flex; flex-direction: column; gap: 16px; }
 
-        /* CORRECCIÓN: Se ajusta el fondo de los elementos sticky para evitar transparencias indeseadas */
         #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header {
             position: -webkit-sticky;
             position: sticky;
@@ -147,16 +144,29 @@
         }
         #fwdView .header, #sapView .global-header {
             top: 16px;
-            background-color: var(--sticky-bg) !important;
         }
         #table-controls-header, #sap-controls-header {
             z-index: 19;
-            background-color: var(--sticky-bg) !important;
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             margin: -20px -20px 0 -20px;
             padding: 16px 20px 0 20px;
         }
+
+        /* CORRECCIÓN: Solución definitiva para el desbordamiento visual con efecto vidrio */
+        #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header {
+            isolation: isolate; /* Crea un contexto de apilamiento para que z-index:-1 funcione bien */
+            position: relative;
+        }
+        #fwdView .header::before, #sapView .global-header::before, #table-controls-header::before, #sap-controls-header::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background-color: var(--sticky-bg); /* Capa de fondo sólida */
+            border-radius: 16px; /* Coincide con el radio de la tarjeta */
+            z-index: -1; /* Se posiciona detrás del contenido de la tarjeta */
+        }
+        
         #desktop-controls-container, #sap-controls-header > div:first-child {
              padding-bottom: 16px;
              border-bottom: 1px solid var(--border-color);
@@ -321,6 +331,7 @@
 
         .table-wrapper { 
             overflow: auto;
+            flex-grow: 1;
             transition: opacity 0.3s ease-in-out; 
             border-radius: 12px; 
             border: 1px solid var(--border-color); 
@@ -531,6 +542,7 @@
             #modalBody .user-list li > div { display: flex; gap: 8px; }
             #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header { position: static; }
             #table-controls-header, #sap-controls-header { margin: 0; padding: 0; background-color: transparent !important; }
+            #fwdView .header::before, #sapView .global-header::before, #table-controls-header::before, #sap-controls-header::before { display: none; }
         }
         
         @media (min-width: 993px) {
@@ -556,7 +568,7 @@
             </header>
 
             <div id="mainModeSwitcher" class="mode-switcher card animated-startup" style="animation-delay: 0.1s;">
-                <button id="modeFwd" class="active">FWD</button>
+                <button id="modeFwd">FWD</button>
                 <button id="modeSap">SAP</button>
             </div>
         </div>
@@ -2666,7 +2678,6 @@
                 themeToggleBtn.textContent = theme === 'light' ? '🌙' : '☀️';
             }
             
-            // CORRECCIÓN: Se reintroduce la función para que los encabezados se peguen correctamente
             function adjustStickyTops() {
                 requestAnimationFrame(() => {
                     const isCurrentlyMobile = window.innerWidth <= 992;
@@ -2826,7 +2837,6 @@
                 currentArea = localStorage.getItem('currentArea') || 'MULTIPORT';
                 applyTheme(currentTheme);
                 
-                // CORRECCIÓN: Asegura que el switch visual coincida con el estado inicial
                 modeFwd.classList.toggle('active', mainMode === 'fwd');
                 modeSap.classList.toggle('active', mainMode === 'sap');
 
