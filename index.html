@@ -121,7 +121,7 @@
         body.light-theme .app-branding { color: var(--branding-color); }
         .app-title { font-size: 1.25rem; font-weight: 600; color: var(--text-secondary); margin: 4px 0 0 0; }
 
-        .main-container { width: 100%; display: grid; grid-template-columns: 320px 1fr; grid-template-rows: auto auto auto 1fr; grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; gap: 16px; }
+        .main-container { width: 100%; display: grid; grid-template-columns: 320px 1fr; grid-template-rows: auto auto 1fr; grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; gap: 16px; }
         #sapView .main-container { grid-template-columns: 320px 1fr; grid-template-rows: auto 1fr; grid-template-areas: "sidebar global-header" "sidebar main"; }
         
         .sidebar {
@@ -168,11 +168,11 @@
             padding: 16px 20px 0 20px;
         }
 
-        #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header {
+        #fwdView .header, #sapView .global-header {
             isolation: isolate;
             position: relative;
         }
-        #fwdView .header::before, #sapView .global-header::before, #table-controls-header::before, #sap-controls-header::before {
+        #fwdView .header::before, #sapView .global-header::before {
             content: '';
             position: absolute;
             inset: 0;
