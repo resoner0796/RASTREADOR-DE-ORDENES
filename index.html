@@ -74,6 +74,7 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        /* CORRECCIÓN: Se quita 'infinite' para mejorar rendimiento */
         @keyframes shine-green {
             0% { transform: translateX(-100%); }
             100% { transform: translateX(100%); }
@@ -92,6 +93,11 @@
             justify-content: center;
             transition: background 0.3s ease-in-out;
             background-attachment: fixed;
+        }
+        
+        /* NUEVO: Máscara para evitar desbordamiento visual superior */
+        #scroll-mask {
+            display: none;
         }
 
         .animated-startup {
@@ -256,7 +262,7 @@
             background-color: rgba(52, 211, 153, 0.1); color: var(--success-color); border-color: var(--success-color); position: relative; overflow: hidden;
         }
         .order-item .order-btn.is-complete::after {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); transform: translateX(-100%); animation: shine-green 4s infinite linear;
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); transform: translateX(-100%); animation: shine-green 4s linear;
         }
         .order-item .order-btn.is-complete:hover { background-color: rgba(52, 211, 153, 0.2); }
         .order-item .order-btn.is-complete.active { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.4); }
@@ -281,10 +287,22 @@
             gap: 16px;
             text-align: center;
         }
+        /* CORRECCIÓN: Estabiliza la altura y centra el contenido del panel de órdenes */
+        .global-header .stat-item {
+            justify-content: center;
+            min-height: 90px;
+        }
+        .header.card {
+            min-height: 180px;
+        }
         .stat-item { display: flex; flex-direction: column; justify-content: flex-start; }
         .stat-item h3 { margin-bottom: 8px; font-size: 0.9rem; font-weight: 500; }
         .stat-item .stat-value-wrapper { margin-top: auto; }
         .stat-item p { margin: 0; font-size: 1.75rem; font-weight: 700; }
+        /* CORRECCIÓN: Aumenta el tamaño de la fuente para los contadores principales */
+        .global-dashboard-card .stat-item p {
+            font-size: 2.25rem;
+        }
         #statOrderNumber { color: var(--text-secondary); cursor: pointer; transition: color 0.2s ease-in-out; }
         #statOrderNumber:hover { color: var(--primary-color); }
         #statCatalogNumber { font-size: 1rem; color: var(--text-primary); font-weight: 500; margin-top: 4px; height: auto; }
@@ -317,7 +335,6 @@
 
         .table-wrapper { 
             overflow: auto;
-            flex-grow: 1;
             transition: opacity 0.3s ease-in-out; 
             border-radius: 12px; 
             border: 1px solid var(--border-color); 
@@ -336,8 +353,10 @@
         .box-row { cursor: pointer; }
         .box-row:hover { background-color: var(--surface-hover-color); }
         
+        /* CORRECCIÓN: Se contiene el desbordamiento de las animaciones de brillo */
         tbody {
             transform: translateZ(0);
+            overflow-x: hidden;
         }
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
@@ -355,7 +374,7 @@
             height: 100%; 
             background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(249, 115, 22, 0.15) 50%, rgba(255,255,255,0) 80%); 
             transform: translateX(100%); 
-            animation: shine-orange-reverse 3s infinite linear; 
+            animation: shine-orange-reverse 3s linear;
         }
         tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
@@ -374,7 +393,7 @@
             height: 100%; 
             background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); 
             transform: translateX(-100%); 
-            animation: shine-green 4s infinite linear; 
+            animation: shine-green 4s linear; 
             animation-delay: 1.5s; 
         }
         tbody tr.is-today td, tbody tr.is-complete-sap td { color: var(--success-color) !important; }
@@ -496,6 +515,7 @@
         .orders-for-date { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding-left: 12px; margin-top: 0; }
         .date-group.expanded .orders-for-date { max-height: 5000px; }
         
+        /* Media Queries */
         @media (max-width: 992px) {
             .app-container { height: auto; padding: 8px; }
             .main-container { display: flex; flex-direction: column; gap: 12px; height: auto; }
@@ -525,10 +545,20 @@
             #modalBody .user-list li { grid-template-columns: 1fr; gap: 8px; }
             #modalBody .user-list li > div { display: flex; gap: 8px; }
             #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header { position: static; }
-            #table-controls-header, #sap-controls-header { margin: 0; padding: 0; background-color: transparent !important; }
+            #table-controls-header, #sap-controls-header { margin: 0; padding: 0; }
         }
         
         @media (min-width: 993px) {
+            #scroll-mask {
+                display: block;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 16px; /* Coincide con el 'top' del primer elemento sticky */
+                background: var(--sticky-bg);
+                z-index: 18; /* Debe estar por debajo de los headers (19 y 20) */
+            }
             #mainModeSwitcher { margin-left: auto; margin-right: auto; }
             #mobile-controls-row { display: none; }
             #desktop-controls-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
@@ -2672,7 +2702,6 @@
                     const sapHeader = document.querySelector('#sapView .global-header');
                     const sapControls = document.getElementById('sap-controls-header');
                     
-                    // CORRECCIÓN: Se elimina el espacio extra para que los paneles se junten
                     if (fwdHeader && fwdControls) {
                         const headerHeight = fwdHeader.offsetHeight;
                         const topValue = 16 + headerHeight; 
