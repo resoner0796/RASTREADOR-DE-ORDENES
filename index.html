@@ -48,7 +48,7 @@
             --text-secondary: #94A3B8;
             --text-dark: #64748B;
             --thead-bg: rgba(55, 65, 81, 0.8);
-            --sticky-bg: #1d2025;
+            --sticky-bg: #0a0a0a;
         }
 
         body.light-theme {
@@ -67,7 +67,7 @@
             --text-dark: #9CA3AF;
             --thead-bg: rgba(229, 231, 235, 0.8);
             --branding-color: #0055A5;
-            --sticky-bg: #f8fafc;
+            --sticky-bg: #e5e7eb;
         }
 
         @keyframes fadeInUp {
@@ -151,20 +151,6 @@
             -webkit-backdrop-filter: blur(20px);
             margin: -20px -20px 0 -20px;
             padding: 16px 20px 0 20px;
-        }
-
-        /* CORRECCIÓN: Solución definitiva para el desbordamiento visual con efecto vidrio */
-        #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header {
-            isolation: isolate; /* Crea un contexto de apilamiento para que z-index:-1 funcione bien */
-            position: relative;
-        }
-        #fwdView .header::before, #sapView .global-header::before, #table-controls-header::before, #sap-controls-header::before {
-            content: '';
-            position: absolute;
-            top: 0; right: 0; bottom: 0; left: 0;
-            background-color: var(--sticky-bg); /* Capa de fondo sólida */
-            border-radius: 16px; /* Coincide con el radio de la tarjeta */
-            z-index: -1; /* Se posiciona detrás del contenido de la tarjeta */
         }
         
         #desktop-controls-container, #sap-controls-header > div:first-child {
@@ -495,7 +481,6 @@
         #modalBody .packing-details-list li span:first-child { font-weight: 600; color: var(--text-primary); }
         #modalBody .packing-details-list li span:last-child { color: var(--text-secondary); }
 
-        /* Transiciones de Vista */
         #fwdView, #sapView { transition: opacity 0.3s ease-in-out; }
         body.mode-fwd #sapView, body.mode-sap #fwdView { display: none; }
         #empaqueView { display: none; }
@@ -511,7 +496,6 @@
         .orders-for-date { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding-left: 12px; margin-top: 0; }
         .date-group.expanded .orders-for-date { max-height: 5000px; }
         
-        /* Media Queries */
         @media (max-width: 992px) {
             .app-container { height: auto; padding: 8px; }
             .main-container { display: flex; flex-direction: column; gap: 12px; height: auto; }
@@ -542,7 +526,6 @@
             #modalBody .user-list li > div { display: flex; gap: 8px; }
             #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header { position: static; }
             #table-controls-header, #sap-controls-header { margin: 0; padding: 0; background-color: transparent !important; }
-            #fwdView .header::before, #sapView .global-header::before, #table-controls-header::before, #sap-controls-header::before { display: none; }
         }
         
         @media (min-width: 993px) {
@@ -559,6 +542,7 @@
     </style>
 </head>
 <body class="dark-theme">
+    <div id="scroll-mask"></div>
     <div class="app-container">
 
         <div class="top-header-container">
