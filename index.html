@@ -75,11 +75,16 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        /* CORRECCIÓN: Nueva animación de brillo que no causa desbordamiento */
-        @keyframes shine-gradient {
-            0% { background-position: 150% 0; }
-            100% { background-position: -150% 0; }
+        /* CORRECCIÓN: Se crean dos animaciones, una para cada dirección */
+        @keyframes shine-ltr { /* Izquierda a Derecha */
+            from { background-position: -150% 0; }
+            to { background-position: 150% 0; }
         }
+        @keyframes shine-rtl { /* Derecha a Izquierda */
+            from { background-position: 150% 0; }
+            to { background-position: -150% 0; }
+        }
+
 
         body {
             font-family: 'Inter', sans-serif; 
@@ -154,6 +159,19 @@
             -webkit-backdrop-filter: blur(20px);
             margin: -20px -20px 0 -20px;
             padding: 16px 20px 0 20px;
+        }
+
+        #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header {
+            isolation: isolate;
+            position: relative;
+        }
+        #fwdView .header::before, #sapView .global-header::before, #table-controls-header::before, #sap-controls-header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-color: var(--sticky-bg);
+            border-radius: 16px;
+            z-index: -1;
         }
         
         #desktop-controls-container, #sap-controls-header > div:first-child {
@@ -264,8 +282,8 @@
             inset: 0;
             background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%);
             background-size: 200% 100%;
-            background-position: 150% 0;
-            animation: shine-gradient 3s linear 6;
+            background-position: -150% 0;
+            animation: shine-ltr 3s linear 6;
         }
         .order-item .order-btn.is-complete:hover { background-color: rgba(52, 211, 153, 0.2); }
         .order-item .order-btn.is-complete.active { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.4); }
@@ -286,7 +304,8 @@
         .global-header.card {
             min-height: 120px;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            justify-content: center;
         }
         .header.card {
             min-height: 180px;
@@ -318,7 +337,7 @@
         #statScrapQty { color: var(--danger-color); }
 
         .daily-plan-container {
-            grid-column: 1 / -1;
+            /* Se quita grid-column para que el flexbox del padre lo posicione */
             margin-top: 16px;
             display: flex;
             justify-content: center;
@@ -377,7 +396,7 @@
             background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(249, 115, 22, 0.15) 50%, rgba(255,255,255,0) 80%); 
             background-size: 200% 100%;
             background-position: 150% 0;
-            animation: shine-gradient 3s linear 6;
+            animation: shine-rtl 3s linear 6;
         }
         tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
@@ -393,8 +412,8 @@
             inset: 0; 
             background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); 
             background-size: 200% 100%;
-            background-position: 150% 0;
-            animation: shine-gradient 3s linear 6;
+            background-position: -150% 0;
+            animation: shine-ltr 3s linear 6; 
             animation-delay: 1.5s; 
         }
         tbody tr.is-today td, tbody tr.is-complete-sap td { color: var(--success-color) !important; }
@@ -516,7 +535,6 @@
         .orders-for-date { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding-left: 12px; margin-top: 0; }
         .date-group.expanded .orders-for-date { max-height: 5000px; }
         
-        /* Media Queries */
         @media (max-width: 992px) {
             .app-container { height: auto; padding: 8px; }
             .main-container { display: flex; flex-direction: column; gap: 12px; height: auto; }
@@ -547,6 +565,7 @@
             #modalBody .user-list li > div { display: flex; gap: 8px; }
             #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header { position: static; }
             #table-controls-header, #sap-controls-header { margin: 0; padding: 0; }
+            #fwdView .header::before, #sapView .global-header::before, #table-controls-header::before, #sap-controls-header::before { display: none; }
         }
         
         @media (min-width: 993px) {
@@ -557,7 +576,7 @@
                 left: 0;
                 right: 0;
                 height: 16px;
-                background: transparent;
+                background: var(--sticky-bg);
                 z-index: 18;
             }
             #mainModeSwitcher { margin-left: auto; margin-right: auto; }
@@ -622,9 +641,9 @@
                     <div class="global-dashboard-card">
                         <div class="stat-item"><h3>Órdenes del Día</h3><p id="totalOrdersStat">0</p></div>
                         <div class="stat-item"><h3>Órdenes Terminadas</h3><p id="completedOrdersStat">0</p></div>
-                        <div class="daily-plan-container" id="dailyPlanContainer" style="display: none;">
-                            <button id="showDailyPlanBtn" class="btn">Ver Plan del Día</button>
-                        </div>
+                    </div>
+                    <div class="daily-plan-container" id="dailyPlanContainer" style="display: none;">
+                        <button id="showDailyPlanBtn" class="btn">Ver Plan del Día</button>
                     </div>
                 </header>
                 
@@ -1855,7 +1874,7 @@
                         `;
                 });
                 reportHTML += `</div>`;
-                showModal(`Reporte de Órdenes Incompletas`, reportHTML, 'info', true);
+                showModal('Plan del Día', reportHTML, 'info', true);
             }
             
             // ========================
@@ -2665,8 +2684,7 @@
                     }
                     
                     reportHTML += `</ul></div>`;
-                    showModal('Plan del Día (Pendientes SAP)', reportHTML);
-
+                    showModal('Plan del Día', reportHTML);
                 } catch (e) {
                     console.error("Error al generar el reporte del plan diario:", e);
                     showModal('Error', 'No se pudo generar el reporte del plan diario.', 'error');
