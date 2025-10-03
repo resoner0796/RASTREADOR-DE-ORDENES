@@ -74,7 +74,6 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        /* CORRECCIÓN: Se quita 'infinite' para mejorar rendimiento */
         @keyframes shine-green {
             0% { transform: translateX(-100%); }
             100% { transform: translateX(100%); }
@@ -95,7 +94,6 @@
             background-attachment: fixed;
         }
         
-        /* NUEVO: Máscara para evitar desbordamiento visual superior */
         #scroll-mask {
             display: none;
         }
@@ -120,8 +118,8 @@
         body.light-theme .app-branding { color: var(--branding-color); }
         .app-title { font-size: 1.25rem; font-weight: 600; color: var(--text-secondary); margin: 4px 0 0 0; }
 
-        .main-container { width: 100%; display: grid; grid-template-columns: 320px 1fr; grid-template-rows: auto auto auto 1fr; grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; gap: 16px; }
-        #sapView .main-container { grid-template-columns: 320px 1fr; grid-template-rows: auto auto 1fr; grid-template-areas: "sidebar global-header" "sidebar main" "sidebar main"; }
+        .main-container { width: 100%; display: grid; grid-template-columns: 320px 1fr; grid-template-rows: auto auto 1fr; grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; gap: 16px; }
+        #sapView .main-container { grid-template-columns: 320px 1fr; grid-template-rows: auto 1fr; grid-template-areas: "sidebar global-header" "sidebar main"; }
         
         .sidebar {
             grid-area: sidebar;
@@ -132,6 +130,7 @@
             flex-direction: column;
             gap: 16px;
             max-height: calc(100vh - 32px);
+            z-index: 25; /* CORRECCIÓN: Se asegura que esté por encima de la máscara */
         }
         .sidebar > h2 { display: none; }
         .sidebar .card h3 { text-align: center; }
@@ -157,6 +156,19 @@
             -webkit-backdrop-filter: blur(20px);
             margin: -20px -20px 0 -20px;
             padding: 16px 20px 0 20px;
+        }
+
+        #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header {
+            isolation: isolate;
+            position: relative;
+        }
+        #fwdView .header::before, #sapView .global-header::before, #table-controls-header::before, #sap-controls-header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-color: var(--sticky-bg);
+            border-radius: 16px;
+            z-index: -1;
         }
         
         #desktop-controls-container, #sap-controls-header > div:first-child {
@@ -262,7 +274,7 @@
             background-color: rgba(52, 211, 153, 0.1); color: var(--success-color); border-color: var(--success-color); position: relative; overflow: hidden;
         }
         .order-item .order-btn.is-complete::after {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); transform: translateX(-100%); animation: shine-green 4s linear;
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); transform: translateX(-100%); animation: shine-green 4s linear 6;
         }
         .order-item .order-btn.is-complete:hover { background-color: rgba(52, 211, 153, 0.2); }
         .order-item .order-btn.is-complete.active { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.4); }
@@ -280,28 +292,33 @@
         body.light-theme .mode-switcher button.active { color: var(--primary-text-color); background-color: var(--branding-color); border-color: var(--branding-color); }
         .header > .mode-switcher { margin-bottom: 20px; }
         
+        /* CORRECCIÓN: Se estabiliza la altura de los paneles superiores */
+        .global-header.card {
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+        }
+        .header.card {
+            min-height: 180px;
+        }
+
         .summary-card { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; text-align: center; }
         .global-dashboard-card {
+            width: 100%;
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 16px;
             text-align: center;
         }
-        /* CORRECCIÓN: Estabiliza la altura y centra el contenido del panel de órdenes */
-        .global-header .stat-item {
-            justify-content: center;
-            min-height: 90px;
-        }
-        .header.card {
-            min-height: 180px;
-        }
         .stat-item { display: flex; flex-direction: column; justify-content: flex-start; }
         .stat-item h3 { margin-bottom: 8px; font-size: 0.9rem; font-weight: 500; }
         .stat-item .stat-value-wrapper { margin-top: auto; }
         .stat-item p { margin: 0; font-size: 1.75rem; font-weight: 700; }
-        /* CORRECCIÓN: Aumenta el tamaño de la fuente para los contadores principales */
+        .global-dashboard-card .stat-item {
+            justify-content: center; /* Centrado vertical */
+        }
         .global-dashboard-card .stat-item p {
-            font-size: 2.25rem;
+            font-size: 2.5rem; /* Tamaño de fuente aumentado */
         }
         #statOrderNumber { color: var(--text-secondary); cursor: pointer; transition: color 0.2s ease-in-out; }
         #statOrderNumber:hover { color: var(--primary-color); }
@@ -353,11 +370,20 @@
         .box-row { cursor: pointer; }
         .box-row:hover { background-color: var(--surface-hover-color); }
         
-        /* CORRECCIÓN: Se contiene el desbordamiento de las animaciones de brillo */
+        /* CORRECCIÓN: Se cambia a display:block para que overflow-x:hidden funcione correctamente */
         tbody {
             transform: translateZ(0);
             overflow-x: hidden;
+            display: block;
+            width: 100%;
         }
+        /* Para que las columnas mantengan su alineación con el nuevo display:block del tbody */
+        tbody tr, thead tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
         tbody tr.is-very_delayed { 
@@ -374,7 +400,7 @@
             height: 100%; 
             background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(249, 115, 22, 0.15) 50%, rgba(255,255,255,0) 80%); 
             transform: translateX(100%); 
-            animation: shine-orange-reverse 3s linear;
+            animation: shine-orange-reverse 3s linear 6;
         }
         tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
@@ -393,7 +419,7 @@
             height: 100%; 
             background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); 
             transform: translateX(-100%); 
-            animation: shine-green 4s linear; 
+            animation: shine-green 4s linear 6; 
             animation-delay: 1.5s; 
         }
         tbody tr.is-today td, tbody tr.is-complete-sap td { color: var(--success-color) !important; }
@@ -545,7 +571,8 @@
             #modalBody .user-list li { grid-template-columns: 1fr; gap: 8px; }
             #modalBody .user-list li > div { display: flex; gap: 8px; }
             #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header { position: static; }
-            #table-controls-header, #sap-controls-header { margin: 0; padding: 0; }
+            #table-controls-header, #sap-controls-header { margin: 0; padding: 0; background-color: transparent !important; }
+            #fwdView .header::before, #sapView .global-header::before, #table-controls-header::before, #sap-controls-header::before { display: none; }
         }
         
         @media (min-width: 993px) {
@@ -555,9 +582,9 @@
                 top: 0;
                 left: 0;
                 right: 0;
-                height: 16px; /* Coincide con el 'top' del primer elemento sticky */
+                height: 16px;
                 background: var(--sticky-bg);
-                z-index: 18; /* Debe estar por debajo de los headers (19 y 20) */
+                z-index: 18;
             }
             #mainModeSwitcher { margin-left: auto; margin-right: auto; }
             #mobile-controls-row { display: none; }
@@ -1350,27 +1377,19 @@
                 item.appendChild(btn);
 
                 const canManageThisArea = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
-
-                if (key !== 'all' && canManageThisArea) {
-                    const updateBtn = document.createElement('button');
-                    updateBtn.className = 'icon-btn';
-                    updateBtn.title = 'Actualizar orden con archivo de detalle';
-                    updateBtn.innerHTML = `✏️`;
-                    updateBtn.onclick = () => { orderToUpdateKey = key; updateFileInput.value = ''; updateFileInput.click(); };
-                    item.appendChild(updateBtn);
-                    
-                    if(session.isMaster){ 
-                        const deleteBtn = document.createElement('button');
-                        deleteBtn.className = 'icon-btn';
-                        deleteBtn.title = 'Eliminar orden';
-                        deleteBtn.innerHTML = `🗑️`;
-                        deleteBtn.onclick = () => {
-                            showConfirmationModal(`¿Estás seguro de que quieres eliminar la orden ${key}?`, async () => {
-                                await deleteOrderFromFirebase(key);
-                            });
-                        };
-                        item.appendChild(deleteBtn);
-                    }
+                
+                // CORRECCIÓN: Se elimina el botón de actualizar (lápiz)
+                if (key !== 'all' && canManageThisArea && session.isMaster) {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'icon-btn';
+                    deleteBtn.title = 'Eliminar orden';
+                    deleteBtn.innerHTML = `🗑️`;
+                    deleteBtn.onclick = () => {
+                        showConfirmationModal(`¿Estás seguro de que quieres eliminar la orden ${key}?`, async () => {
+                            await deleteOrderFromFirebase(key);
+                        });
+                    };
+                    item.appendChild(deleteBtn);
                 }
                 return item;
             }
