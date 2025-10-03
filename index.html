@@ -23,7 +23,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Tinos&display=swap" rel="stylesheet">
     <style>
-        /* CORRECCIÓN: Se revierte el body a su estado original para no bloquear el scroll en móvil */
         html {
             min-height: 100%;
             background-color: #0a0a0a;
@@ -32,9 +31,7 @@
             min-height: 100vh;
         }
 
-        :root {
-            /* Se definen los temas abajo */
-        }
+        :root { }
 
         body.dark-theme {
             --bg-gradient: radial-gradient(ellipse at center top, #22252a 0%, #0a0a0a 70%);
@@ -100,20 +97,14 @@
             opacity: 0;
         }
         
-        /* CORRECCIÓN: Se ajusta el contenedor principal para la nueva estructura de altura */
         .app-container { 
             width: 100%; 
             max-width: 1800px; 
             padding: 32px 16px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
         }
         
         .top-header-container {
             padding-left: 336px;
-            flex-shrink: 0; /* Evita que este contenedor se encoja */
         }
         
         .app-header { text-align: center; margin-bottom: 16px; position: relative; }
@@ -121,35 +112,18 @@
         body.light-theme .app-branding { color: var(--branding-color); }
         .app-title { font-size: 1.25rem; font-weight: 600; color: var(--text-secondary); margin: 4px 0 0 0; }
 
-        /* CORRECCIÓN: Se asegura que las vistas principales ocupen el espacio restante */
-        #fwdView, #sapView {
-            flex-grow: 1;
-            min-height: 0; /* Importante para el cálculo de altura en flexbox */
-        }
-
-        .main-container { 
-            width: 100%; 
-            height: 100%;
-            display: grid; 
-            grid-template-columns: 320px 1fr; 
-            grid-template-rows: auto auto 1fr; 
-            grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; 
-            gap: 16px; 
-        }
-        #sapView .main-container { 
-            grid-template-rows: auto 1fr; 
-            grid-template-areas: "sidebar global-header" "sidebar main"; 
-        }
+        .main-container { width: 100%; display: grid; grid-template-columns: 320px 1fr; grid-template-rows: auto auto 1fr; grid-template-areas: "sidebar global-header" "sidebar header" "sidebar main"; gap: 16px; }
+        #sapView .main-container { grid-template-columns: 320px 1fr; grid-template-rows: auto 1fr; grid-template-areas: "sidebar global-header" "sidebar main"; }
         
-        /* Barra Lateral */
+        /* CORRECCIÓN: Se asegura que la barra lateral sea sticky */
         .sidebar {
             grid-area: sidebar;
+            position: sticky;
+            align-self: start;
+            top: 16px;
             display: flex;
             flex-direction: column;
             gap: 16px;
-            position: sticky;
-            align-self: flex-start;
-            top: 16px;
             max-height: calc(100vh - 32px);
         }
         .sidebar > h2 { display: none; }
@@ -160,21 +134,24 @@
         
         .global-header { grid-area: global-header; }
         .header { grid-area: header; }
-        .main-content { grid-area: main; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+        .main-content { grid-area: main; display: flex; flex-direction: column; gap: 16px; }
 
-        /* CORRECCIÓN: Se restaura el sticky para la experiencia de escritorio original */
-        #fwdView .header, #sapView .global-header {
+        /* CORRECCIÓN: Se reestablece el comportamiento STICKY original */
+        #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header {
             position: -webkit-sticky;
             position: sticky;
-            top: 16px;
             z-index: 20;
         }
-
+        #fwdView .header, #sapView .global-header {
+            top: 16px;
+        }
         #table-controls-header, #sap-controls-header {
+            z-index: 19; /* Ligeramente por debajo del header principal */
             background-color: var(--surface-color);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            padding-top: 20px;
+            margin: -20px -20px 0 -20px;
+            padding: 16px 20px 0 20px;
         }
         #desktop-controls-container, #sap-controls-header > div:first-child {
              padding-bottom: 16px;
@@ -339,18 +316,15 @@
         }
 
         .table-wrapper { 
-            overflow-y: auto;
+            overflow: auto; /* Revertido a auto para scroll horizontal */
             flex-grow: 1;
-            min-height: 0;
             transition: opacity 0.3s ease-in-out; 
             border-radius: 12px; 
             border: 1px solid var(--border-color); 
         }
         #tableCard, #sap-tableCard { 
             display: flex; 
-            flex-direction: column; 
-            flex-grow: 1; 
-            min-height: 0;
+            flex-direction: column;
         }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; font-size: 0.9rem;}
@@ -441,7 +415,6 @@
         #modalBody .mapping-item { grid-template-columns: 1fr 1fr auto; }
         #modalBody .mapping-item input { text-transform: uppercase; }
 
-        /* Estilos para Admin Panel Desplegable */
         .admin-section-header {
             cursor: pointer;
             user-select: none;
@@ -452,17 +425,13 @@
             border-bottom: 1px solid var(--border-color);
             margin-bottom: 0;
         }
-        .admin-section-header:hover {
-            color: var(--text-primary);
-        }
+        .admin-section-header:hover { color: var(--text-primary); }
         .admin-section-header::after {
             content: '►';
             font-size: 0.8rem;
             transition: transform 0.2s ease-in-out;
         }
-        .admin-section.expanded .admin-section-header::after {
-            transform: rotate(90deg);
-        }
+        .admin-section.expanded .admin-section-header::after { transform: rotate(90deg); }
         .admin-section-content {
             max-height: 0;
             overflow: hidden;
@@ -470,14 +439,11 @@
             padding: 0;
         }
         .admin-section.expanded .admin-section-content {
-            max-height: 800px; /* Ajusta si el contenido es muy alto */
+            max-height: 800px;
             padding: 16px 0 0 0;
         }
 
-        .daily-plan-modal {
-            text-align: center;
-            padding: 10px;
-        }
+        .daily-plan-modal { text-align: center; padding: 10px; }
         .plan-header {
             display: flex;
             justify-content: space-around;
@@ -486,44 +452,13 @@
             padding-bottom: 24px;
             border-bottom: 1px solid var(--border-color);
         }
-        .plan-stat, .plan-date {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .plan-header span {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-        .plan-header p {
-            margin: 0;
-            font-size: 2.5rem;
-            font-weight: 700;
-            line-height: 1;
-        }
-        .plan-stat p {
-             color: var(--warning-color);
-        }
-        .plan-date p {
-            font-size: 1.2rem;
-            color: var(--text-primary);
-        }
-        .plan-title-separator {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--text-dark);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin-bottom: 16px;
-            text-align: center;
-        }
-        .plan-area-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
+        .plan-stat, .plan-date { display: flex; flex-direction: column; align-items: center; }
+        .plan-header span { font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+        .plan-header p { margin: 0; font-size: 2.5rem; font-weight: 700; line-height: 1; }
+        .plan-stat p { color: var(--warning-color); }
+        .plan-date p { font-size: 1.2rem; color: var(--text-primary); }
+        .plan-title-separator { font-size: 0.75rem; font-weight: 700; color: var(--text-dark); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px; text-align: center; }
+        .plan-area-list { list-style: none; padding: 0; margin: 0; }
         .plan-area-item {
             display: flex;
             justify-content: space-between;
@@ -533,23 +468,9 @@
             margin-bottom: 8px;
             background-color: rgba(255,255,255,0.03);
         }
-        .plan-area-item .area-name {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        .plan-area-item .area-count {
-            font-weight: 700;
-            font-size: 1.2rem;
-            color: var(--success-color);
-            background-color: var(--surface-hover-color);
-            padding: 4px 12px;
-            border-radius: 20px;
-        }
-        .plan-area-item-empty {
-            padding: 20px;
-            color: var(--text-dark);
-            text-align: center;
-        }
+        .plan-area-item .area-name { font-weight: 600; color: var(--text-primary); }
+        .plan-area-item .area-count { font-weight: 700; font-size: 1.2rem; color: var(--success-color); background-color: var(--surface-hover-color); padding: 4px 12px; border-radius: 20px; }
+        .plan-area-item-empty { padding: 20px; color: var(--text-dark); text-align: center; }
 
 
         .packing-modal-header { text-align: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
@@ -579,9 +500,9 @@
         
         /* Media Queries */
         @media (max-width: 992px) {
-            .app-container { height: auto; }
+            .app-container { height: auto; padding: 8px; }
             .main-container { display: flex; flex-direction: column; gap: 12px; height: auto; }
-            .sidebar { position: static; height: auto; }
+            .sidebar { position: static; height: auto; max-height: none; }
             .sidebar, .main-content { display: contents !important; }
             #sap-uploadCard { display: none; }
             .sidebar > h2 { display: none; }
@@ -606,7 +527,8 @@
             .top-header-container { padding-left: 0; }
             #modalBody .user-list li { grid-template-columns: 1fr; gap: 8px; }
             #modalBody .user-list li > div { display: flex; gap: 8px; }
-            #table-controls-header, #sap-controls-header { padding-top: 0; }
+            #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header { position: static; }
+            #table-controls-header, #sap-controls-header { margin: 0; padding: 0; }
         }
         
         @media (min-width: 993px) {
@@ -1037,8 +959,6 @@
                     requestAnimationFrame(() => { newView.style.opacity = 1; });
                     mainMode = mode;
                     localStorage.setItem('mainMode', mode);
-                    modeFwd.classList.toggle('active', mode === 'fwd');
-                    modeSap.classList.toggle('active', mode === 'sap');
                     appTitle.textContent = mode === 'fwd' ? 'Centro de Rastreo de Órdenes' : 'Análisis de Órdenes SAP';
                     render();
                 }, 300);
@@ -1447,6 +1367,7 @@
                 } else if (mainMode === 'sap') {
                     renderSapView();
                 }
+                adjustStickyTops();
             }
 
             function renderSummary() {
@@ -2420,11 +2341,13 @@
                     <div class="admin-section-content">
                         <ul class="area-list user-list">
                             ${users.map(user => `<li>
-                                <span style="font-weight: bold;">${user.username}</span>
+                                <span style="font-weight: bold;">${user.username} ${user.isMaster ? ' (Admin)' : ''}</span>
                                 <div class="permissions-display">${(user.permissions || []).join(', ')}</div>
                                 <div>
+                                    ${user.username !== 'MULTIPORT' ? `
                                     <button class="btn edit-user-btn" data-id="${user.id}" style="width: auto; padding: 5px 10px;">Editar</button>
-                                    ${!user.isMaster ? `<button class="btn btn-danger delete-user-btn" data-id="${user.id}" style="width: auto; padding: 5px 10px; margin-left: 5px;">Eliminar</button>` : ''}
+                                    <button class="btn btn-danger delete-user-btn" data-id="${user.id}" style="width: auto; padding: 5px 10px; margin-left: 5px;">Eliminar</button>
+                                    ` : ''}
                                 </div>
                             </li>`).join('')}
                         </ul>
@@ -2542,6 +2465,7 @@
                 });
             }
             
+            // NUEVO: Implementación de checkbox para permisos de Admin
             async function createOrUpdateUser(userToEdit = null) {
                 const isEditing = userToEdit !== null;
                 const title = isEditing ? `Editar Usuario: ${userToEdit.username}` : 'Crear Nuevo Usuario';
@@ -2561,7 +2485,13 @@
                             return `<label><input type="checkbox" value="${area.id}" ${isChecked ? 'checked' : ''}>${area.name}</label>`;
                         }).join('')}
                     </div>
-                    <button id="saveUserBtn" class="btn" style="margin-top: 10px;">${isEditing ? 'Guardar Cambios' : 'Crear Usuario'}</button>
+                    <div style="margin-top: 16px;">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="modalIsMasterInput" style="width: auto; margin: 0;" ${isEditing && userToEdit.isMaster ? 'checked' : ''}>
+                            Asignar permisos de Administrador
+                        </label>
+                    </div>
+                    <button id="saveUserBtn" class="btn" style="margin-top: 20px;">${isEditing ? 'Guardar Cambios' : 'Crear Usuario'}</button>
                 `;
                 showModal(title, modalContent);
 
@@ -2575,18 +2505,16 @@
                     }
 
                     const permissions = Array.from(doc('modalPermissions').querySelectorAll('input:checked')).map(cb => cb.value);
+                    const isMaster = doc('modalIsMasterInput').checked;
                     
                     const userData = {
                         username: username,
-                        permissions: permissions
+                        permissions: permissions,
+                        isMaster: isMaster
                     };
 
                     if (password) {
                         userData.password = password;
-                    }
-                    
-                    if (!isEditing) {
-                        userData.isMaster = false;
                     }
 
                     await db.collection('users').doc(username).set(userData, { merge: true });
@@ -2735,6 +2663,31 @@
                 themeToggleBtn.textContent = theme === 'light' ? '🌙' : '☀️';
             }
 
+            // CORRECCIÓN: Se reintroduce la función para que los encabezados se peguen correctamente
+            function adjustStickyTops() {
+                requestAnimationFrame(() => {
+                    const isCurrentlyMobile = window.innerWidth <= 992;
+                    if (isCurrentlyMobile) return; // No hacer nada en móvil
+
+                    const fwdHeader = document.querySelector('#fwdView .header');
+                    const fwdControls = document.getElementById('table-controls-header');
+                    const sapHeader = document.querySelector('#sapView .global-header');
+                    const sapControls = document.getElementById('sap-controls-header');
+
+                    if (fwdHeader && fwdControls) {
+                        const headerHeight = fwdHeader.offsetHeight;
+                        const topValue = 16 + headerHeight + 16; // 16px del top del header + su altura + 16px de gap
+                        fwdControls.style.top = `${topValue}px`;
+                    }
+
+                    if (sapHeader && sapControls) {
+                        const headerHeight = sapHeader.offsetHeight;
+                        const topValue = 16 + headerHeight + 16;
+                        sapControls.style.top = `${topValue}px`;
+                    }
+                });
+            }
+
             themeToggleBtn.addEventListener('click', () => {
                 currentTheme = currentTheme === 'light' ? 'dark' : 'light';
                 localStorage.setItem('theme', currentTheme);
@@ -2836,6 +2789,7 @@
                     if (isMobile) setupMobileMode(); else teardownMobileMode();
                     render();
                 }
+                adjustStickyTops(); // Se vuelve a llamar en resize
             });
 
             async function initializeApp() {
@@ -2882,6 +2836,8 @@
 
                 updateUIAfterAuth();
                 setupListenersForArea(currentArea);
+
+                setTimeout(adjustStickyTops, 500); // Se vuelve a llamar en el inicio
             }
 
             // === INICIO DE LA APP ===
