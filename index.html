@@ -74,13 +74,11 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes shine-green {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-        @keyframes shine-orange-reverse {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
+        
+        /* CORRECCIÓN: Nueva animación de brillo que no causa desbordamiento */
+        @keyframes shine-gradient {
+            0% { background-position: 150% 0; }
+            100% { background-position: -150% 0; }
         }
 
         body {
@@ -130,7 +128,7 @@
             flex-direction: column;
             gap: 16px;
             max-height: calc(100vh - 32px);
-            z-index: 25; /* CORRECCIÓN: Se asegura que esté por encima de la máscara */
+            z-index: 25;
         }
         .sidebar > h2 { display: none; }
         .sidebar .card h3 { text-align: center; }
@@ -156,19 +154,6 @@
             -webkit-backdrop-filter: blur(20px);
             margin: -20px -20px 0 -20px;
             padding: 16px 20px 0 20px;
-        }
-
-        #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header {
-            isolation: isolate;
-            position: relative;
-        }
-        #fwdView .header::before, #sapView .global-header::before, #table-controls-header::before, #sap-controls-header::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-color: var(--sticky-bg);
-            border-radius: 16px;
-            z-index: -1;
         }
         
         #desktop-controls-container, #sap-controls-header > div:first-child {
@@ -274,7 +259,13 @@
             background-color: rgba(52, 211, 153, 0.1); color: var(--success-color); border-color: var(--success-color); position: relative; overflow: hidden;
         }
         .order-item .order-btn.is-complete::after {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); transform: translateX(-100%); animation: shine-green 4s linear 6;
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%);
+            background-size: 200% 100%;
+            background-position: 150% 0;
+            animation: shine-gradient 3s linear 6;
         }
         .order-item .order-btn.is-complete:hover { background-color: rgba(52, 211, 153, 0.2); }
         .order-item .order-btn.is-complete.active { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.4); }
@@ -292,7 +283,6 @@
         body.light-theme .mode-switcher button.active { color: var(--primary-text-color); background-color: var(--branding-color); border-color: var(--branding-color); }
         .header > .mode-switcher { margin-bottom: 20px; }
         
-        /* CORRECCIÓN: Se estabiliza la altura de los paneles superiores */
         .global-header.card {
             min-height: 120px;
             display: flex;
@@ -315,10 +305,10 @@
         .stat-item .stat-value-wrapper { margin-top: auto; }
         .stat-item p { margin: 0; font-size: 1.75rem; font-weight: 700; }
         .global-dashboard-card .stat-item {
-            justify-content: center; /* Centrado vertical */
+            justify-content: center;
         }
         .global-dashboard-card .stat-item p {
-            font-size: 2.5rem; /* Tamaño de fuente aumentado */
+            font-size: 2.5rem;
         }
         #statOrderNumber { color: var(--text-secondary); cursor: pointer; transition: color 0.2s ease-in-out; }
         #statOrderNumber:hover { color: var(--primary-color); }
@@ -370,20 +360,9 @@
         .box-row { cursor: pointer; }
         .box-row:hover { background-color: var(--surface-hover-color); }
         
-        /* CORRECCIÓN: Se cambia a display:block para que overflow-x:hidden funcione correctamente */
         tbody {
             transform: translateZ(0);
-            overflow-x: hidden;
-            display: block;
-            width: 100%;
         }
-        /* Para que las columnas mantengan su alineación con el nuevo display:block del tbody */
-        tbody tr, thead tr {
-            display: table;
-            width: 100%;
-            table-layout: fixed;
-        }
-
         tbody tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
         tbody tr.is-scrap td { color: var(--danger-color) !important; }
         tbody tr.is-very_delayed { 
@@ -394,13 +373,11 @@
         tbody tr.is-very_delayed::after { 
             content: ''; 
             position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
+            inset: 0; 
             background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(249, 115, 22, 0.15) 50%, rgba(255,255,255,0) 80%); 
-            transform: translateX(100%); 
-            animation: shine-orange-reverse 3s linear 6;
+            background-size: 200% 100%;
+            background-position: 150% 0;
+            animation: shine-gradient 3s linear 6;
         }
         tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
@@ -413,13 +390,11 @@
         tbody tr.is-today::after, tbody tr.is-complete-sap::after { 
             content: ''; 
             position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
+            inset: 0; 
             background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 80%); 
-            transform: translateX(-100%); 
-            animation: shine-green 4s linear 6; 
+            background-size: 200% 100%;
+            background-position: 150% 0;
+            animation: shine-gradient 3s linear 6;
             animation-delay: 1.5s; 
         }
         tbody tr.is-today td, tbody tr.is-complete-sap td { color: var(--success-color) !important; }
@@ -571,8 +546,7 @@
             #modalBody .user-list li { grid-template-columns: 1fr; gap: 8px; }
             #modalBody .user-list li > div { display: flex; gap: 8px; }
             #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header { position: static; }
-            #table-controls-header, #sap-controls-header { margin: 0; padding: 0; background-color: transparent !important; }
-            #fwdView .header::before, #sapView .global-header::before, #table-controls-header::before, #sap-controls-header::before { display: none; }
+            #table-controls-header, #sap-controls-header { margin: 0; padding: 0; }
         }
         
         @media (min-width: 993px) {
@@ -583,7 +557,7 @@
                 left: 0;
                 right: 0;
                 height: 16px;
-                background: var(--sticky-bg);
+                background: transparent;
                 z-index: 18;
             }
             #mainModeSwitcher { margin-left: auto; margin-right: auto; }
@@ -1378,7 +1352,6 @@
 
                 const canManageThisArea = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
                 
-                // CORRECCIÓN: Se elimina el botón de actualizar (lápiz)
                 if (key !== 'all' && canManageThisArea && session.isMaster) {
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = 'icon-btn';
