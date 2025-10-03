@@ -49,6 +49,7 @@
             --text-dark: #64748B;
             --thead-bg: rgba(55, 65, 81, 0.8);
             --sticky-bg: #0a0a0a;
+            --page-bg-top: #22252a; /* Color superior del gradiente */
         }
 
         body.light-theme {
@@ -68,6 +69,7 @@
             --thead-bg: rgba(229, 231, 235, 0.8);
             --branding-color: #0055A5;
             --sticky-bg: #e5e7eb;
+            --page-bg-top: #f9fafb; /* Color superior del gradiente */
         }
 
         @keyframes fadeInUp {
@@ -75,7 +77,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        /* CORRECCIÓN: Se crean dos animaciones, una para cada dirección */
+        /* CORRECCIÓN: Animaciones con dirección correcta */
         @keyframes shine-ltr { /* Izquierda a Derecha */
             from { background-position: -150% 0; }
             to { background-position: 150% 0; }
@@ -84,7 +86,6 @@
             from { background-position: 150% 0; }
             to { background-position: -150% 0; }
         }
-
 
         body {
             font-family: 'Inter', sans-serif; 
@@ -301,6 +302,7 @@
         body.light-theme .mode-switcher button.active { color: var(--primary-text-color); background-color: var(--branding-color); border-color: var(--branding-color); }
         .header > .mode-switcher { margin-bottom: 20px; }
         
+        /* CORRECCIÓN: Se estabiliza y centra el panel de cabecera */
         .global-header.card {
             min-height: 120px;
             display: flex;
@@ -337,7 +339,7 @@
         #statScrapQty { color: var(--danger-color); }
 
         .daily-plan-container {
-            /* Se quita grid-column para que el flexbox del padre lo posicione */
+            width: 100%; /* Asegura que el contenedor ocupe todo el ancho */
             margin-top: 16px;
             display: flex;
             justify-content: center;
@@ -576,7 +578,7 @@
                 left: 0;
                 right: 0;
                 height: 16px;
-                background: var(--sticky-bg);
+                background: var(--page-bg-top);
                 z-index: 18;
             }
             #mainModeSwitcher { margin-left: auto; margin-right: auto; }
