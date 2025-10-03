@@ -1003,22 +1003,18 @@
             // ===================================
             function switchMainMode(mode) {
                 if (mainMode === mode) return;
-                const oldView = doc(`${mainMode}View`);
-                const newView = doc(`${mode}View`);
-                oldView.style.opacity = 0;
-                setTimeout(() => {
-                    oldView.style.display = 'none';
-                    document.body.classList.remove('mode-fwd', 'mode-sap');
-                    newView.style.display = 'block';
-                    document.body.classList.add(`mode-${mode}`);
-                    requestAnimationFrame(() => { newView.style.opacity = 1; });
-                    mainMode = mode;
-                    localStorage.setItem('mainMode', mode);
-                    modeFwd.classList.toggle('active', mode === 'fwd');
-                    modeSap.classList.toggle('active', mode === 'sap');
-                    appTitle.textContent = mode === 'fwd' ? 'Centro de Rastreo de Órdenes' : 'Análisis de Órdenes SAP';
-                    render();
-                }, 300);
+                mainMode = mode;
+                localStorage.setItem('mainMode', mode);
+                
+                doc('fwdView').style.display = 'none';
+                doc('sapView').style.display = 'none';
+                doc(`${mode}View`).style.display = 'block';
+
+                modeFwd.classList.toggle('active', mode === 'fwd');
+                modeSap.classList.toggle('active', mode === 'sap');
+                
+                appTitle.textContent = mode === 'fwd' ? 'Centro de Rastreo de Órdenes' : 'Análisis de Órdenes SAP';
+                render();
             }
             
             function showModal(title, content, type = 'info', showCopyBtn = false) {
@@ -2721,13 +2717,13 @@
                     
                     if (fwdHeader && fwdControls) {
                         const headerHeight = fwdHeader.offsetHeight;
-                        const topValue = 16 + headerHeight; 
+                        const topValue = 16 + headerHeight - 1; // 1px overlap
                         fwdControls.style.top = `${topValue}px`;
                     }
 
                     if (sapHeader && sapControls) {
                         const headerHeight = sapHeader.offsetHeight;
-                        const topValue = 16 + headerHeight;
+                        const topValue = 16 + headerHeight - 1; // 1px overlap
                         sapControls.style.top = `${topValue}px`;
                     }
                 });
