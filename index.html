@@ -79,6 +79,11 @@
             0% { background-position: 150% 0; }
             100% { background-position: -150% 0; }
         }
+        
+        @keyframes shine-gradient-reverse {
+            0% { background-position: -150% 0; }
+            100% { background-position: 150% 0; }
+        }
 
         body {
             font-family: 'Inter', sans-serif; 
@@ -384,7 +389,7 @@
             background: linear-gradient(100deg, rgba(255,255,255,0) 20%, rgba(249, 115, 22, 0.15) 50%, rgba(255,255,255,0) 80%); 
             background-size: 200% 100%;
             background-position: 150% 0;
-            animation: shine-gradient 3s linear 6;
+            animation: shine-gradient-reverse 3s linear infinite;
         }
         tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
@@ -512,6 +517,35 @@
         body.mode-fwd #sapView, body.mode-sap #fwdView { display: none; }
         #empaqueView { display: none; }
         
+        .month-group { margin-bottom: 8px; }
+        .month-header {
+            width: 100%;
+            background-color: rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+            margin-bottom: 8px;
+        }
+        .month-header:hover { background-color: var(--surface-hover-color); }
+        .month-header .collapse-icon { transition: transform 0.2s; }
+        .month-group.expanded .month-header .collapse-icon { transform: rotate(90deg); }
+        .dates-for-month {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+            padding-left: 16px;
+            margin-top: 0;
+        }
+        .month-group.expanded .dates-for-month { max-height: 10000px; }
+
         .date-group { margin-bottom: 8px; }
         .date-header { width: 100%; background-color: transparent; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer; display: flex; justify-content: space-between; align-items: center; text-align: left; }
         .date-header:hover { background-color: var(--surface-hover-color); }
@@ -1301,67 +1335,119 @@
             }
 
             function updateOrderList() {
+                const expandedMonths = new Set();
+                orderList.querySelectorAll('.month-group.expanded').forEach(group => {
+                    if (group.dataset.month) expandedMonths.add(group.dataset.month);
+                });
                 const expandedDates = new Set();
                 orderList.querySelectorAll('.date-group.expanded').forEach(group => {
-                    if (group.dataset.date) {
-                        expandedDates.add(group.dataset.date);
-                    }
+                    if (group.dataset.date) expandedDates.add(group.dataset.date);
                 });
-                
+
                 orderList.innerHTML = '';
                 if (loadedOrders.size === 0) {
                     orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No hay órdenes cargadas para el área ${currentArea || ''}.</p>`;
                     return;
                 }
-                const groupedByDate = new Map();
+
+                const MONTH_NAMES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+                const groupedByMonth = new Map();
+
                 for (const [key, order] of loadedOrders.entries()) {
                     const date = order.orderDate || new Date(0);
-                    const dateString = formatDate(date);
-                    if (!groupedByDate.has(dateString)) groupedByDate.set(dateString, []);
-                    groupedByDate.get(dateString).push({ key, ...order });
+                    const monthYearKey = `${date.getMonth()}-${date.getFullYear()}`;
+                    if (!groupedByMonth.has(monthYearKey)) groupedByMonth.set(monthYearKey, []);
+                    groupedByMonth.get(monthYearKey).push({ key, ...order });
                 }
-                const sortedDates = Array.from(groupedByDate.keys()).sort((a, b) => {
-                    const dateA = new Date(a.split('/').reverse().join('-'));
-                    const dateB = new Date(b.split('/').reverse().join('-'));
-                    return dateB - dateA;
+
+                const sortedMonths = Array.from(groupedByMonth.keys()).sort((a, b) => {
+                    const [monthA, yearA] = a.split('-').map(Number);
+                    const [monthB, yearB] = b.split('-').map(Number);
+                    if (yearA !== yearB) return yearB - yearA;
+                    return monthB - monthA;
                 });
+                
                 const todayString = new Date().toLocaleDateString('es-ES', { 
                     timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' 
                 });
-                sortedDates.forEach(dateString => {
-                    const orders = groupedByDate.get(dateString);
-                    const orderCount = orders.length;
-                    const isToday = dateString === todayString;
-                    const groupDiv = document.createElement('div');
-                    groupDiv.className = 'date-group';
-                    groupDiv.dataset.date = dateString; 
-                    
-                    const headerBtn = document.createElement('button');
-                    headerBtn.className = 'date-header';
-                    
-                    const countText = `${orderCount} ${orderCount === 1 ? 'orden' : 'órdenes'}`;
-                    if (isToday) {
-                        headerBtn.innerHTML = `<span>📅 ${dateString}</span> <span class="status-indicator">(${countText})</span> <span class="collapse-icon">►</span>`;
-                    } else {
-                        headerBtn.innerHTML = `<span>📅 ${dateString}</span> <span class="order-count">(${countText})</span> <span class="collapse-icon">►</span>`;
-                    }
-                    
-                    const ordersContainer = document.createElement('div');
-                    ordersContainer.className = 'orders-for-date';
-                    orders.forEach(order => ordersContainer.appendChild(createOrderButton(order.key, order)));
-                    
-                    groupDiv.appendChild(headerBtn);
-                    groupDiv.appendChild(ordersContainer);
-                    orderList.appendChild(groupDiv);
-                    
-                    headerBtn.addEventListener('click', () => {
-                        groupDiv.classList.toggle('expanded');
+
+                sortedMonths.forEach(monthYearKey => {
+                    const [monthIndex, year] = monthYearKey.split('-').map(Number);
+                    const monthName = `${MONTH_NAMES[monthIndex]} ${year}`;
+                    const ordersInMonth = groupedByMonth.get(monthYearKey);
+
+                    const monthGroupDiv = document.createElement('div');
+                    monthGroupDiv.className = 'month-group';
+                    monthGroupDiv.dataset.month = monthYearKey;
+
+                    const monthHeaderBtn = document.createElement('button');
+                    monthHeaderBtn.className = 'month-header';
+                    monthHeaderBtn.innerHTML = `<span>${monthName}</span> <span class="collapse-icon">►</span>`;
+
+                    const datesContainer = document.createElement('div');
+                    datesContainer.className = 'dates-for-month';
+
+                    const groupedByDate = new Map();
+                    ordersInMonth.forEach(order => {
+                        const date = order.orderDate || new Date(0);
+                        const dateString = formatDate(date);
+                        if (!groupedByDate.has(dateString)) groupedByDate.set(dateString, []);
+                        groupedByDate.get(dateString).push(order);
                     });
 
-                    if (expandedDates.has(dateString)) {
-                        groupDiv.classList.add('expanded');
+                    const sortedDates = Array.from(groupedByDate.keys()).sort((a, b) => {
+                        const dateA = new Date(a.split('/').reverse().join('-'));
+                        const dateB = new Date(b.split('/').reverse().join('-'));
+                        return dateB - dateA;
+                    });
+
+                    sortedDates.forEach(dateString => {
+                        const ordersOnDate = groupedByDate.get(dateString);
+                        const orderCount = ordersOnDate.length;
+                        const isToday = dateString === todayString;
+
+                        const dateGroupDiv = document.createElement('div');
+                        dateGroupDiv.className = 'date-group';
+                        dateGroupDiv.dataset.date = dateString;
+
+                        const dateHeaderBtn = document.createElement('button');
+                        dateHeaderBtn.className = 'date-header';
+                        
+                        const countText = `${orderCount} ${orderCount === 1 ? 'orden' : 'órdenes'}`;
+                        dateHeaderBtn.innerHTML = `
+                            <span>📅 ${dateString}</span> 
+                            ${isToday ? `<span class="status-indicator">(${countText})</span>` : `<span class="order-count">(${countText})</span>`}
+                            <span class="collapse-icon">►</span>
+                        `;
+
+                        const ordersContainer = document.createElement('div');
+                        ordersContainer.className = 'orders-for-date';
+                        ordersOnDate.forEach(order => ordersContainer.appendChild(createOrderButton(order.key, order)));
+
+                        dateGroupDiv.appendChild(dateHeaderBtn);
+                        dateGroupDiv.appendChild(ordersContainer);
+                        datesContainer.appendChild(dateGroupDiv);
+
+                        dateHeaderBtn.addEventListener('click', () => {
+                            dateGroupDiv.classList.toggle('expanded');
+                        });
+                        if (expandedDates.has(dateString)) {
+                            dateGroupDiv.classList.add('expanded');
+                        }
+                    });
+
+                    monthGroupDiv.appendChild(monthHeaderBtn);
+                    monthGroupDiv.appendChild(datesContainer);
+                    orderList.appendChild(monthGroupDiv);
+                    
+                    monthHeaderBtn.addEventListener('click', () => {
+                        monthGroupDiv.classList.toggle('expanded');
+                    });
+                    if (expandedMonths.has(monthYearKey)) {
+                        monthGroupDiv.classList.add('expanded');
                     }
                 });
+                
                 setActiveOrder(activeOrderKey);
             }
 
@@ -1409,7 +1495,6 @@
                 }
                 return item;
             }
-
 
             function setActiveOrder(key) {
                 activeOrderKey = key;
@@ -2863,7 +2948,6 @@
                 adjustStickyTops();
             });
 
-            // Nueva función para copiar el número de serie
             window.copySerialNumber = function(element, serial) {
                 if (!serial) return;
                 const serialToCopy = serial.startsWith('S#') ? serial.substring(2) : serial;
