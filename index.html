@@ -79,7 +79,7 @@
             0% { background-position: 150% 0; }
             100% { background-position: -150% 0; }
         }
-        
+
         @keyframes shine-gradient-reverse {
             0% { background-position: -150% 0; }
             100% { background-position: 150% 0; }
@@ -390,6 +390,7 @@
             background-size: 200% 100%;
             background-position: 150% 0;
             animation: shine-gradient-reverse 3s linear infinite;
+            pointer-events: none;
         }
         tbody tr.is-very_delayed td { color: var(--orange-color) !important; }
         tbody tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
@@ -431,6 +432,9 @@
         #modalBody .status-report h4 { font-size: 1.1rem; color: var(--primary-color); margin: 16px 0 8px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;}
         #modalBody .status-report p { margin: 4px 0; }
         #modalBody .status-report strong { color: var(--text-secondary); }
+        #modalBody .status-report ul { list-style-type: none; padding-left: 10px; }
+        #modalBody .status-report li { margin-bottom: 4px; }
+        #modalBody .status-report .order-progress-bar { position: relative; margin-top: 8px; }
         #modalBody input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--surface-color); color: var(--text-primary); margin-top: 10px; box-sizing: border-box;}
         #modalBody .area-list { list-style: none; padding: 0; margin-top: 16px; max-height: 250px; overflow-y: auto;}
         #modalBody .area-list li { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);}
@@ -1604,20 +1608,16 @@
                 desktopControls.status.innerHTML = statusHTML;
 
                 const actionsHTML = `
-                    <button class="btn" id="exportViewButtonMobile" ${!hasOrders ? 'disabled' : ''}>Exportar reimpresión</button>
                     <button class="btn" id="exportImageButtonMobile" ${!hasOrders ? 'disabled' : ''}>Exportar Captura</button>
                     <button class="btn" id="exportStatusButtonMobile" ${!hasOrders ? 'disabled' : ''}>Reporte de Estatus</button>
                 `;
                  const desktopActionsHTML = `
-                    <button class="btn" id="exportViewButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Reimpresión</button>
                     <button class="btn" id="exportImageButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Captura</button>
                     <button class="btn" id="exportStatusButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Reporte</button>
                 `;
                 mobileControls.actions.innerHTML = actionsHTML;
                 desktopControls.actions.innerHTML = desktopActionsHTML;
 
-                doc('exportViewButtonMobile').addEventListener('click', handleReprintExport);
-                doc('exportViewButtonDesktop').addEventListener('click', handleReprintExport);
                 doc('exportImageButtonMobile').addEventListener('click', handleImageExport);
                 doc('exportImageButtonDesktop').addEventListener('click', handleImageExport);
                 doc('exportStatusButtonMobile').addEventListener('click', handleStatusReport);
@@ -1843,39 +1843,6 @@
                 });
                 tableWrapper.style.opacity = '1';
             }
-
-            function handleReprintExport() {
-                if (!currentVisibleData || currentVisibleData.length === 0) {
-                    showModal('Exportar Reimpresión', 'No hay datos en la vista actual para exportar.', 'warning');
-                    return;
-                }
-                try {
-                    const lineHeader = findHeader(Object.keys(currentVisibleData[0]), TRACKING_KEYS.LINE);
-                    const lineInfo = lineHeader && rastreoLineFilter !== 'all' ? rastreoLineFilter : 'Multiples_Lineas';
-                    
-                    const dataToExport = currentVisibleData.map(row => {
-                        const serial = row[TRACKING_KEYS.SERIAL] || '';
-                        return {
-                            'Product Serial Number': serial.startsWith('S#') ? serial.substring(2) : serial,
-                            'Line': row[TRACKING_KEYS.LINE],
-                            'Station': row[TRACKING_KEYS.STATION],
-                            'Status': row.status,
-                            'Date Registered': formatDateTimeFromSerial(row[TRACKING_KEYS.DATE_REGISTERED])
-                        };
-                    });
-                    
-                    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-                    const workbook = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(workbook, worksheet, 'Reimpresión');
-                    
-                    const orderName = (activeOrderKey && activeOrderKey !== 'all') ? activeOrderKey : 'Multiples_Ordenes';
-                    const dateStamp = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
-                    XLSX.writeFile(workbook, `Reimpresion_${orderName}_Linea_${lineInfo}_${dateStamp}.xlsx`);
-                } catch(e) {
-                    console.error("Error al exportar para reimpresión:", e);
-                    showModal('Error', 'Ocurrió un error al generar el archivo de reimpresión.', 'error');
-                }
-            }
             
             async function handleImageExport(event) {
                  if (!currentVisibleData || currentVisibleData.length === 0) {
@@ -1960,11 +1927,14 @@
 
             function handleStatusReport() {
                 const incompleteOrders = Array.from(loadedOrders.entries())
-                    .filter(([key, order]) => (order.orderQty > order.packedQty))
+                    .filter(([key, order]) => 
+                        (order.orderQty > order.packedQty) && 
+                        (order.rastreoData && order.rastreoData.length > 0)
+                    )
                     .map(([key, order]) => ({ key, ...order }));
 
                 if (incompleteOrders.length === 0) {
-                    showModal('Reporte de Estatus', '✅ ¡Felicidades! Todas las órdenes han sido completadas.', 'success');
+                    showModal('Reporte de Estatus', `✅ No hay órdenes incompletas con seriales cargados en el área ${currentArea}.`, 'success');
                     return;
                 }
 
@@ -1972,24 +1942,61 @@
                 reportHTML += `<p><strong>Fecha del Reporte:</strong> ${new Date().toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'short' })}</p>`;
 
                 incompleteOrders.forEach(order => {
-                    const data = order.rastreoData || [];
-                    const remaining = (order.orderQty || 0) - (order.packedQty || 0);
-                    const today = data.filter(r => r.status === 'today').length;
-                    const delayed = data.filter(r => r.status === 'delayed' || r.status === 'very_delayed').length;
-                    const scrap = data.filter(r => r.status === 'scrap').length;
+                    const packedSerials = new Set();
+                    if (order.empaqueData) {
+                        order.empaqueData.forEach(serialsInBox => {
+                            serialsInBox.forEach(serialData => {
+                                const serialHeader = findHeader(Object.keys(serialData), PACKING_KEYS.SERIAL);
+                                if(serialHeader) packedSerials.add(serialData[serialHeader]);
+                            });
+                        });
+                    }
+
+                    const serialHeader = findHeader(order.headers.rastreo, TRACKING_KEYS.SERIAL);
+                    const stationHeader = findHeader(order.headers.rastreo, TRACKING_KEYS.STATION);
+
+                    const pendingSerials = serialHeader ? order.rastreoData.filter(rastreoItem => 
+                        !packedSerials.has(rastreoItem[serialHeader]) && rastreoItem.status !== 'scrap'
+                    ) : [];
+
+                    const delayedSerials = pendingSerials.filter(s => s.status === 'delayed' || s.status === 'very_delayed');
+                    const inProgressSerials = pendingSerials.filter(s => s.status === 'today');
+                    
+                    const percentage = (order.orderQty > 0) ? (order.packedQty / order.orderQty) * 100 : 0;
+                    let progressBarColor = 'var(--success-color)';
+                    if (percentage < 30) progressBarColor = 'var(--danger-color)';
+                    else if (percentage < 70) progressBarColor = 'var(--warning-color)';
 
                     reportHTML += `
-                            <h4>📦 Orden: ${order.key}</h4>
-                            <p><strong>📝 Catálogo:</strong> ${order.catalogNumber || 'N/A'}</p>
-                            <p><strong>📊 Progreso:</strong> ${order.packedQty || 0} / ${order.orderQty || 0} Unidades</p>
-                            <p><strong>📉 Restantes:</strong> ${remaining} Unidades</p>
-                            <p style="margin-top: 10px;"><strong>✅ En Movimiento (Hoy):</strong> ${today}</p>
-                            <p><strong>⚠️ Sin Movimiento (Retraso):</strong> ${delayed}</p>
-                            <p><strong>🗑️ En Scrap:</strong> ${scrap}</p>
-                        `;
+                        <h4>📦 Orden: ${order.key} (${order.packedQty || 0}/${order.orderQty || 0})</h4>
+                        <div class="order-progress-bar" style="height: 8px;">
+                            <div class="order-progress-bar-inner" style="width: ${Math.min(percentage, 100)}%; background-color: ${progressBarColor};"></div>
+                        </div>
+                    `;
+
+                    if (delayedSerials.length > 0) {
+                        reportHTML += `<p style="margin-top: 15px;"><strong>⚠️ Sin Movimiento (${delayedSerials.length}):</strong></p><ul>`;
+                        delayedSerials.forEach(serial => {
+                            reportHTML += `<li>${serial[serialHeader]} - (Estación: ${serial[stationHeader] || 'N/A'})</li>`;
+                        });
+                        reportHTML += `</ul>`;
+                    }
+                    
+                    if (inProgressSerials.length > 0) {
+                        reportHTML += `<p><strong>✅ En Proceso (${inProgressSerials.length}):</strong></p><ul>`;
+                        inProgressSerials.forEach(serial => {
+                             reportHTML += `<li>${serial[serialHeader]} - (Estación: ${serial[stationHeader] || 'N/A'})</li>`;
+                        });
+                        reportHTML += `</ul>`;
+                    }
+
+                    if(pendingSerials.length === 0){
+                         reportHTML += `<p style="margin-top: 15px;">No hay seriales pendientes de empacar para esta orden.</p>`;
+                    }
                 });
+
                 reportHTML += `</div>`;
-                showModal(`Reporte de Órdenes Incompletas`, reportHTML, 'info', true);
+                showModal(`Reporte de Estatus: ${currentArea}`, reportHTML, 'info', true);
             }
             
             // ========================
