@@ -1210,45 +1210,63 @@
             }
 
             function processFile(file, isUpdate) {
-                 return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        try {
-                            const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-                            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                            const orderNumber = String(worksheet['B3']?.v || `Archivo_${file.name.slice(0,10)}`);
-                            
-                            if (!loadedOrders.has(orderNumber)) {
-                                reject(new Error(`La orden ${orderNumber} no existe. Por favor, cárguela primero desde el archivo maestro de SAP.`));
-                                return;
-                            }
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const orderNumber = String(worksheet['B3']?.v || `Archivo_${file.name.slice(0,10)}`);
+                        
+                        // MODIFICACIÓN: Lógica para manejar órdenes nuevas o existentes.
+                        const keyToUse = isUpdate ? orderToUpdateKey : orderNumber;
+                        let existingOrderData;
 
-                            const keyToUse = isUpdate ? orderToUpdateKey : orderNumber;
-                            const TRACKING_COLS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
-                            const PACKING_COLS = ['AE', 'AF', 'AK', 'AO'];
-                            const rastreoRawData = extractTableData(worksheet, TRACKING_COLS, 20);
-                            const packingRawData = extractTableData(worksheet, PACKING_COLS, 20);
-                            
-                            const existingOrderData = loadedOrders.get(keyToUse) || {};
-
-                            const orderData = {
-                                ...existingOrderData, 
-                                packedQty: parseInt(worksheet['U3']?.v || existingOrderData.packedQty || 0),
-                                rastreoData: processRastreoData(rastreoRawData),
-                                empaqueData: groupEmpaqueData(packingRawData),
-                                headers: {
-                                    rastreo: Object.keys(rastreoRawData[0] || {}),
-                                    empaque: Object.keys(packingRawData[0] || {})
-                                },
-                                lastUpdated: new Date(),
-                                lastUpdatedBy: session.user
+                        if (loadedOrders.has(keyToUse)) {
+                            // CASO 1: La orden ya existe (cargada por SAP), la tomamos para actualizarla.
+                            existingOrderData = loadedOrders.get(keyToUse);
+                        } else {
+                            // CASO 2: La orden es nueva. Creamos una estructura base para ella.
+                            console.log(`La orden ${orderNumber} no fue cargada por SAP. Creando nueva entrada.`);
+                            existingOrderData = {
+                                // Intentamos obtener datos básicos del archivo de seriales, con valores por defecto.
+                                orderQty: parseInt(worksheet['G3']?.v || 0), // Cantidad de la Orden (asumiendo celda G3)
+                                catalogNumber: String(worksheet['N3']?.v || 'N/A'), // Número de Catálogo (asumiendo celda N3)
+                                orderDate: new Date(), // Asignamos la fecha de hoy por defecto para que aparezca
+                                packedQty: 0,
+                                rastreoData: [],
+                                empaqueData: new Map(), // Iniciamos como un Map vacío para consistencia
+                                headers: { rastreo: [], empaque: [] }
                             };
-                            resolve({ key: keyToUse, data: orderData });
-                        } catch(err) { reject(err); }
-                    };
-                    reader.readAsArrayBuffer(file);
-                });
-            }
+                        }
+
+                        // El resto de la lógica extrae los datos del archivo y los combina con la data existente (o la nueva que acabamos de crear)
+                        const TRACKING_COLS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
+                        const PACKING_COLS = ['AE', 'AF', 'AK', 'AO'];
+                        const rastreoRawData = extractTableData(worksheet, TRACKING_COLS, 20);
+                        const packingRawData = extractTableData(worksheet, PACKING_COLS, 20);
+                        
+                        const orderData = {
+                            ...existingOrderData, 
+                            packedQty: parseInt(worksheet['U3']?.v || existingOrderData.packedQty || 0),
+                            rastreoData: processRastreoData(rastreoRawData),
+                            empaqueData: groupEmpaqueData(packingRawData),
+                            headers: {
+                                rastreo: Object.keys(rastreoRawData[0] || {}),
+                                empaque: Object.keys(packingRawData[0] || {})
+                            },
+                            lastUpdated: new Date(),
+                            lastUpdatedBy: session.user
+                        };
+                        resolve({ key: keyToUse, data: orderData });
+                    } catch(err) { 
+                        console.error("Error detallado en processFile:", err);
+                        reject(err); 
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        }
 
             function extractTableData(worksheet, cols, startRow) {
                 const headers = {};
