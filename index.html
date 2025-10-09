@@ -550,8 +550,21 @@
         }
         .month-group.expanded .dates-for-month { max-height: 10000px; }
 
-  .date-group { margin-bottom: 8px; }
-        .date-header { width: 100%; background-color: transparent; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer; display: flex; justify-content: space-between; align-items: center; text-align: left; }
+.date-group { margin-bottom: 8px; }
+        .date-header { 
+            width: 100%; 
+            background-color: transparent; 
+            border: 1px solid var(--border-color); 
+            border-radius: 6px; 
+            padding: 6px 12px; /* AJUSTE: Reducimos el padding vertical de 10px a 6px */
+            font-weight: 600; 
+            color: var(--text-secondary); 
+            cursor: pointer; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            text-align: left; 
+        }
         .date-header:hover { background-color: var(--surface-hover-color); }
         .date-header.active { background-color: var(--surface-hover-color); color: var(--text-primary); }
         .date-header .status-indicator { font-weight: 700; font-size: 0.8rem; color: var(--success-color); }
@@ -1380,150 +1393,136 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
                 render();
             }
 
-            function updateOrderList() {
-                // --- NUEVO: Lógica para el buscador ---
-                const searchInput = doc('orderSearchInput');
-                const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+      function updateOrderList() {
+            // CORRECCIÓN: Capturamos el estado de los desplegables ANTES de borrar la lista.
+            const expandedMonths = new Set();
+            orderList.querySelectorAll('.month-group.expanded').forEach(group => {
+                if (group.dataset.month) expandedMonths.add(group.dataset.month);
+            });
+            const expandedDates = new Set();
+            orderList.querySelectorAll('.date-group.expanded').forEach(group => {
+                if (group.dataset.date) expandedDates.add(group.dataset.date);
+            });
 
-                orderList.innerHTML = ''; // Limpiamos la lista antes de volver a dibujarla
+            const searchInput = doc('orderSearchInput');
+            const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
-                if (loadedOrders.size === 0) {
-                    orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No hay órdenes cargadas para el área ${currentArea || ''}.</p>`;
-                    return;
-                }
+            orderList.innerHTML = ''; // Ahora sí, borramos la lista
 
-                // --- MODO DE BÚSQUEDA ---
-                if (searchTerm) {
-                    const filteredOrders = Array.from(loadedOrders.entries()).filter(([key, order]) => 
-                        key.toLowerCase().includes(searchTerm)
-                    );
+            if (loadedOrders.size === 0) {
+                orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No hay órdenes cargadas.</p>`;
+                return;
+            }
 
-                    if (filteredOrders.length === 0) {
-                        orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No se encontraron órdenes.</p>`;
-                    } else {
-                        filteredOrders
-                        	.sort((a, b) => (b[1].orderDate || 0) - (a[1].orderDate || 0)) // Ordenar por fecha descendente
-                        	.forEach(([key, order]) => {
-                            	orderList.appendChild(createOrderButton(key, order));
-                        	});
-                    }
-                    setActiveOrder(activeOrderKey); // Mantiene la selección activa si está en los resultados
-                    return; // Terminamos aquí si estamos en modo búsqueda
-                }
+            if (searchTerm) {
+                const filteredOrders = Array.from(loadedOrders.entries()).filter(([key, order]) => 
+                    key.toLowerCase().includes(searchTerm)
+                );
 
-                // --- MODO NORMAL (agrupado por fecha, si no hay búsqueda) ---
-                const expandedMonths = new Set();
-                orderList.querySelectorAll('.month-group.expanded').forEach(group => {
-                    if (group.dataset.month) expandedMonths.add(group.dataset.month);
-                });
-                const expandedDates = new Set();
-                orderList.querySelectorAll('.date-group.expanded').forEach(group => {
-                    if (group.dataset.date) expandedDates.add(group.dataset.date);
-                });
-                // Limpieza del orderList ya se hizo al inicio de la función
+                if (filteredOrders.length === 0) {
+                    orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No se encontraron órdenes.</p>`;
+                } else {
+                    filteredOrders
+                        .sort((a, b) => (b[1].orderDate || 0) - (a[1].orderDate || 0))
+                        .forEach(([key, order]) => {
+                            orderList.appendChild(createOrderButton(key, order));
+                        });
+                }
+                setActiveOrder(activeOrderKey);
+                return;
+            }
+            
+            // --- MODO NORMAL (código original de agrupación, ahora funcionando con el estado guardado) ---
+            const MONTH_NAMES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+            const groupedByMonth = new Map();
 
-                const MONTH_NAMES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
-                const groupedByMonth = new Map();
+            for (const [key, order] of loadedOrders.entries()) {
+                const date = order.orderDate || new Date(0);
+                const monthYearKey = `${date.getMonth()}-${date.getFullYear()}`;
+                if (!groupedByMonth.has(monthYearKey)) groupedByMonth.set(monthYearKey, []);
+                groupedByMonth.get(monthYearKey).push({ key, ...order });
+            }
 
-                for (const [key, order] of loadedOrders.entries()) {
-                    const date = order.orderDate || new Date(0);
-                    const monthYearKey = `${date.getMonth()}-${date.getFullYear()}`;
-                    if (!groupedByMonth.has(monthYearKey)) groupedByMonth.set(monthYearKey, []);
-                    groupedByMonth.get(monthYearKey).push({ key, ...order });
-                }
+            const sortedMonths = Array.from(groupedByMonth.keys()).sort((a, b) => {
+                const [monthA, yearA] = a.split('-').map(Number);
+                const [monthB, yearB] = b.split('-').map(Number);
+                if (yearA !== yearB) return yearB - yearA;
+                return monthB - monthA;
+            });
+            
+            const todayString = new Date().toLocaleDateString('es-ES', { 
+                timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' 
+            });
 
-                const sortedMonths = Array.from(groupedByMonth.keys()).sort((a, b) => {
-                    const [monthA, yearA] = a.split('-').map(Number);
-                    const [monthB, yearB] = b.split('-').map(Number);
-                    if (yearA !== yearB) return yearB - yearA;
-                    return monthB - monthA;
-                });
-                
-                const todayString = new Date().toLocaleDateString('es-ES', { 
-                    timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' 
-                });
+            sortedMonths.forEach(monthYearKey => {
+                const [monthIndex, year] = monthYearKey.split('-').map(Number);
+                const monthName = `${MONTH_NAMES[monthIndex]} ${year}`;
+                const ordersInMonth = groupedByMonth.get(monthYearKey);
 
-                sortedMonths.forEach(monthYearKey => {
-                    // ... (el resto de la lógica de agrupación por mes y día sigue aquí, sin cambios)
-                    // ... [El código original de agrupación que ya tenías]
-                    const [monthIndex, year] = monthYearKey.split('-').map(Number);
-                    const monthName = `${MONTH_NAMES[monthIndex]} ${year}`;
-                    const ordersInMonth = groupedByMonth.get(monthYearKey);
+                const monthGroupDiv = document.createElement('div');
+                monthGroupDiv.className = 'month-group';
+                monthGroupDiv.dataset.month = monthYearKey;
 
-                    const monthGroupDiv = document.createElement('div');
-                    monthGroupDiv.className = 'month-group';
-                    monthGroupDiv.dataset.month = monthYearKey;
+                const monthHeaderBtn = document.createElement('button');
+                monthHeaderBtn.className = 'month-header';
+                monthHeaderBtn.innerHTML = `<span>${monthName}</span> <span class="collapse-icon">►</span>`;
 
-                    const monthHeaderBtn = document.createElement('button');
-                    monthHeaderBtn.className = 'month-header';
-                    monthHeaderBtn.innerHTML = `<span>${monthName}</span> <span class="collapse-icon">►</span>`;
+                const datesContainer = document.createElement('div');
+                datesContainer.className = 'dates-for-month';
 
-                    const datesContainer = document.createElement('div');
-                    datesContainer.className = 'dates-for-month';
+                const groupedByDate = new Map();
+                ordersInMonth.forEach(order => {
+                    const date = order.orderDate || new Date(0);
+                    const dateString = formatDate(date);
+                    if (!groupedByDate.has(dateString)) groupedByDate.set(dateString, []);
+                    groupedByDate.get(dateString).push(order);
+                });
 
-                    const groupedByDate = new Map();
-                    ordersInMonth.forEach(order => {
-                        const date = order.orderDate || new Date(0);
-                        const dateString = formatDate(date);
-                        if (!groupedByDate.has(dateString)) groupedByDate.set(dateString, []);
-                        groupedByDate.get(dateString).push(order);
-                    });
+                const sortedDates = Array.from(groupedByDate.keys()).sort((a, b) => {
+                    const dateA = new Date(a.split('/').reverse().join('-'));
+                    const dateB = new Date(b.split('/').reverse().join('-'));
+                    return dateB - dateA;
+                });
 
-                    const sortedDates = Array.from(groupedByDate.keys()).sort((a, b) => {
-                        const dateA = new Date(a.split('/').reverse().join('-'));
-                        const dateB = new Date(b.split('/').reverse().join('-'));
-                        return dateB - dateA;
-                    });
+                sortedDates.forEach(dateString => {
+                    const ordersOnDate = groupedByDate.get(dateString);
+                    const orderCount = ordersOnDate.length;
+                    const isToday = dateString === todayString;
+                    const dateGroupDiv = document.createElement('div');
+                    dateGroupDiv.className = 'date-group';
+                    dateGroupDiv.dataset.date = dateString;
+                    const dateHeaderBtn = document.createElement('button');
+                    dateHeaderBtn.className = 'date-header';
+                    const countText = `${orderCount} ${orderCount === 1 ? 'orden' : 'órdenes'}`;
+                    dateHeaderBtn.innerHTML = `<span>📅 ${dateString}</span> ${isToday ? `<span class="status-indicator">(${countText})</span>` : `<span class="order-count">(${countText})</span>`} <span class="collapse-icon">►</span>`;
+                    const ordersContainer = document.createElement('div');
+                    ordersContainer.className = 'orders-for-date';
+                    ordersOnDate.forEach(order => ordersContainer.appendChild(createOrderButton(order.key, order)));
+                    dateGroupDiv.appendChild(dateHeaderBtn);
+                    dateGroupDiv.appendChild(ordersContainer);
+                    datesContainer.appendChild(dateGroupDiv);
+                    dateHeaderBtn.addEventListener('click', () => {
+                        dateGroupDiv.classList.toggle('expanded');
+                    });
+                    if (expandedDates.has(dateString)) { // Se re-aplica el estado guardado
+                        dateGroupDiv.classList.add('expanded');
+                    }
+                });
 
-                    sortedDates.forEach(dateString => {
-                        const ordersOnDate = groupedByDate.get(dateString);
-                        const orderCount = ordersOnDate.length;
-                        const isToday = dateString === todayString;
-
-                        const dateGroupDiv = document.createElement('div');
-                        dateGroupDiv.className = 'date-group';
-                        dateGroupDiv.dataset.date = dateString;
-
-                        const dateHeaderBtn = document.createElement('button');
-                        dateHeaderBtn.className = 'date-header';
-                        
-                        const countText = `${orderCount} ${orderCount === 1 ? 'orden' : 'órdenes'}`;
-                        dateHeaderBtn.innerHTML = `
-                            <span>📅 ${dateString}</span> 
-                            ${isToday ? `<span class="status-indicator">(${countText})</span>` : `<span class="order-count">(${countText})</span>`}
-                            <span class="collapse-icon">►</span>
-                        `;
-
-                        const ordersContainer = document.createElement('div');
-                        ordersContainer.className = 'orders-for-date';
-                        ordersOnDate.forEach(order => ordersContainer.appendChild(createOrderButton(order.key, order)));
-
-                        dateGroupDiv.appendChild(dateHeaderBtn);
-                        dateGroupDiv.appendChild(ordersContainer);
-                        datesContainer.appendChild(dateGroupDiv);
-
-                        dateHeaderBtn.addEventListener('click', () => {
-                            dateGroupDiv.classList.toggle('expanded');
-                        });
-                        if (expandedDates.has(dateString)) {
-                            dateGroupDiv.classList.add('expanded');
-                        }
-                    });
-
-                    monthGroupDiv.appendChild(monthHeaderBtn);
-                    monthGroupDiv.appendChild(datesContainer);
-                    orderList.appendChild(monthGroupDiv);
-                    
-                    monthHeaderBtn.addEventListener('click', () => {
-                        monthGroupDiv.classList.toggle('expanded');
-                    });
-                    if (expandedMonths.has(monthYearKey)) {
-                        monthGroupDiv.classList.add('expanded');
-                    }
-                });
-                
-                setActiveOrder(activeOrderKey);
-            }
+                monthGroupDiv.appendChild(monthHeaderBtn);
+                monthGroupDiv.appendChild(datesContainer);
+                orderList.appendChild(monthGroupDiv);
+                
+                monthHeaderBtn.addEventListener('click', () => {
+                    monthGroupDiv.classList.toggle('expanded');
+                });
+                if (expandedMonths.has(monthYearKey)) { // Se re-aplica el estado guardado
+                    monthGroupDiv.classList.add('expanded');
+                }
+            });
+            
+            setActiveOrder(activeOrderKey);
+        }
 
             function createOrderButton(key, orderData) {
                 const item = document.createElement('div');
