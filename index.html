@@ -550,60 +550,37 @@
         }
         .month-group.expanded .dates-for-month { max-height: 10000px; }
 
-.date-group { 
-            margin-bottom: 8px; /* Pequeño margen entre grupos de fechas */
-        }
-        .date-header { 
+.date-group { margin-bottom: 8px; }
+        .date-header {
+            /* ESTILO BASE DE BOTÓN PARA CONSISTENCIA */
+            background-color: var(--surface-color);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+            border-right: 1px solid rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+            box-shadow: inset 0px 1px 1px rgba(255,255,255,0.05);
+
+            /* PROPIEDADES ESPECÍFICAS DEL HEADER DE FECHA */
             width: 100%; 
-            /* Se eliminó background-color: transparent para que tome el color del tema */
-            /* Se ajusta el color de fondo para que coincida con los botones de orden */
-            background-color: var(--button-bg-color); /* Usamos la variable global de color de botón */
-            border: 1px solid var(--border-color); 
-            border-radius: 8px; /* Se usa 8px para consistencia con los botones de orden */
-            padding: 8px 12px; /* AJUSTE: Padding para una altura más compacta y uniforme */
+            border-radius: 8px; 
+            padding: 10px 12px; 
             font-weight: 600; 
-            color: var(--text-secondary); /* Color del texto, puedes cambiar a --text-primary si quieres más contraste */
+            color: var(--text-secondary); 
             cursor: pointer; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
             text-align: left; 
-            /* Agregamos un margen-bottom para que haya espacio entre el botón de fecha y el contenido que despliega */
-            margin-bottom: 4px;
         }
-        .date-header:hover { 
-            background-color: var(--surface-hover-color); 
-        }
-        .date-header.active { 
-            background-color: var(--primary-color); /* Se ilumina en color primario cuando está activa, como los otros botones */
-            color: var(--button-text-color); /* Color de texto para el botón activo */
-        }
-        .date-header .status-indicator { 
-            font-weight: 700; 
-            font-size: 0.8rem; 
-            color: var(--success-color); 
-        }
-        .date-header .order-count { 
-            color: var(--text-dark); /* Color del contador de órdenes */
-            font-weight: 500; 
-            font-size: 0.8rem; 
-        }
-        .date-header .collapse-icon { 
-            transition: transform 0.2s; 
-        }
-        .date-group.expanded .date-header .collapse-icon { 
-            transform: rotate(90deg); 
-        }
-        .orders-for-date { 
-            max-height: 0; 
-            overflow: hidden; 
-            transition: max-height 0.3s ease-out; 
-            padding-left: 12px; 
-            margin-top: 0; 
-        }
-        .date-group.expanded .orders-for-date { 
-            max-height: 5000px; /* Suficiente espacio para desplegar */
-        }
+        .date-header:hover { background-color: var(--surface-hover-color); }
+        .date-header.active { background-color: var(--surface-hover-color); color: var(--text-primary); }
+        .date-header .status-indicator { font-weight: 700; font-size: 0.8rem; color: var(--success-color); }
+        .date-header .order-count { color: var(--text-dark); font-weight: 500; font-size: 0.8rem; }
+        .date-header .collapse-icon { transition: transform 0.2s; }
+        .date-group.expanded .date-header .collapse-icon { transform: rotate(90deg); }
+        .orders-for-date { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding-left: 12px; margin-top: 0; }
+        .date-group.expanded .orders-for-date { max-height: 5000px; }
 
         /* Media Queries */
         @media (max-width: 992px) {
@@ -1425,8 +1402,7 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
             }
 
       function updateOrderList() {
-            // Capturamos el estado de los desplegables ANTES de borrar la lista.
-            // Para las fechas, necesitamos ser más cuidadosos, solo guardamos lo que *realmente* está expandido.
+            // CORRECCIÓN DEFINITIVA: Guardamos el estado de los desplegables ANTES de tocar el DOM.
             const expandedMonths = new Set();
             orderList.querySelectorAll('.month-group.expanded').forEach(group => {
                 if (group.dataset.month) expandedMonths.add(group.dataset.month);
@@ -1439,122 +1415,91 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
             const searchInput = doc('orderSearchInput');
             const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
-            orderList.innerHTML = ''; // Ahora sí, borramos la lista
+            orderList.innerHTML = ''; // Limpiamos la lista DESPUÉS de guardar el estado.
 
             if (loadedOrders.size === 0) {
-                orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No hay órdenes cargadas.</p>`;
+                orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No hay órdenes cargadas para el área ${currentArea || ''}.</p>`;
                 return;
             }
 
             if (searchTerm) {
+                // --- MODO BÚSQUEDA ---
                 const filteredOrders = Array.from(loadedOrders.entries()).filter(([key, order]) => 
                     key.toLowerCase().includes(searchTerm)
                 );
-
                 if (filteredOrders.length === 0) {
                     orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No se encontraron órdenes.</p>`;
                 } else {
                     filteredOrders
                         .sort((a, b) => (b[1].orderDate || 0) - (a[1].orderDate || 0))
-                        .forEach(([key, order]) => {
-                            orderList.appendChild(createOrderButton(key, order));
-                        });
+                        .forEach(([key, order]) => orderList.appendChild(createOrderButton(key, order)));
                 }
-                setActiveOrder(activeOrderKey);
-                return;
-            }
-            
-            // --- MODO NORMAL (código original de agrupación) ---
-            const MONTH_NAMES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
-            const groupedByMonth = new Map();
-
-            for (const [key, order] of loadedOrders.entries()) {
-                const date = order.orderDate || new Date(0);
-                const monthYearKey = `${date.getMonth()}-${date.getFullYear()}`;
-                if (!groupedByMonth.has(monthYearKey)) groupedByMonth.set(monthYearKey, []);
-                groupedByMonth.get(monthYearKey).push({ key, ...order });
-            }
-
-            const sortedMonths = Array.from(groupedByMonth.keys()).sort((a, b) => {
-                const [monthA, yearA] = a.split('-').map(Number);
-                const [monthB, yearB] = b.split('-').map(Number);
-                if (yearA !== yearB) return yearB - yearA;
-                return monthB - monthA;
-            });
-            
-            const todayString = new Date().toLocaleDateString('es-ES', { 
-                timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' 
-            });
-
-            sortedMonths.forEach(monthYearKey => {
-                const [monthIndex, year] = monthYearKey.split('-').map(Number);
-                const monthName = `${MONTH_NAMES[monthIndex]} ${year}`;
-                const ordersInMonth = groupedByMonth.get(monthYearKey);
-
-                const monthGroupDiv = document.createElement('div');
-                monthGroupDiv.className = 'month-group';
-                monthGroupDiv.dataset.month = monthYearKey;
-
-                const monthHeaderBtn = document.createElement('button');
-                monthHeaderBtn.className = 'month-header';
-                monthHeaderBtn.innerHTML = `<span>${monthName}</span> <span class="collapse-icon">►</span>`;
-
-                const datesContainer = document.createElement('div');
-                datesContainer.className = 'dates-for-month';
-
-                const groupedByDate = new Map();
-                ordersInMonth.forEach(order => {
+            } else {
+                // --- MODO NORMAL (agrupado) ---
+                const MONTH_NAMES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+                const groupedByMonth = new Map();
+                for (const [key, order] of loadedOrders.entries()) {
                     const date = order.orderDate || new Date(0);
-                    const dateString = formatDate(date);
-                    if (!groupedByDate.has(dateString)) groupedByDate.set(dateString, []);
-                    groupedByDate.get(dateString).push(order);
+                    const monthYearKey = `${date.getMonth()}-${date.getFullYear()}`;
+                    if (!groupedByMonth.has(monthYearKey)) groupedByMonth.set(monthYearKey, []);
+                    groupedByMonth.get(monthYearKey).push({ key, ...order });
+                }
+                const sortedMonths = Array.from(groupedByMonth.keys()).sort((a, b) => {
+                    const [monthA, yearA] = a.split('-').map(Number);
+                    const [monthB, yearB] = b.split('-').map(Number);
+                    if (yearA !== yearB) return yearB - yearA;
+                    return monthB - monthA;
                 });
-
-                const sortedDates = Array.from(groupedByDate.keys()).sort((a, b) => {
-                    const dateA = new Date(a.split('/').reverse().join('-'));
-                    const dateB = new Date(b.split('/').reverse().join('-'));
-                    return dateB - dateA;
-                });
-
-                sortedDates.forEach(dateString => {
-                    const ordersOnDate = groupedByDate.get(dateString);
-                    const orderCount = ordersOnDate.length;
-                    const isToday = dateString === todayString;
-                    const dateGroupDiv = document.createElement('div');
-                    dateGroupDiv.className = 'date-group';
-                    dateGroupDiv.dataset.date = dateString;
-                    const dateHeaderBtn = document.createElement('button');
-                    dateHeaderBtn.className = 'date-header';
-                    const countText = `${orderCount} ${orderCount === 1 ? 'orden' : 'órdenes'}`;
-                    dateHeaderBtn.innerHTML = `<span>📅 ${dateString}</span> ${isToday ? `<span class="status-indicator">(${countText})</span>` : `<span class="order-count">(${countText})</span>`} <span class="collapse-icon">►</span>`;
-                    const ordersContainer = document.createElement('div');
-                    ordersContainer.className = 'orders-for-date';
-                    ordersOnDate.forEach(order => ordersContainer.appendChild(createOrderButton(order.key, order)));
-                    dateGroupDiv.appendChild(dateHeaderBtn);
-                    dateGroupDiv.appendChild(ordersContainer);
-                    datesContainer.appendChild(dateGroupDiv);
-                    dateHeaderBtn.addEventListener('click', () => {
-                        dateGroupDiv.classList.toggle('expanded');
+                const todayString = new Date().toLocaleDateString('es-ES', { timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' });
+                sortedMonths.forEach(monthYearKey => {
+                    const [monthIndex, year] = monthYearKey.split('-').map(Number);
+                    const monthName = `${MONTH_NAMES[monthIndex]} ${year}`;
+                    const ordersInMonth = groupedByMonth.get(monthYearKey);
+                    const monthGroupDiv = document.createElement('div');
+                    monthGroupDiv.className = 'month-group';
+                    monthGroupDiv.dataset.month = monthYearKey;
+                    const monthHeaderBtn = document.createElement('button');
+                    monthHeaderBtn.className = 'month-header';
+                    monthHeaderBtn.innerHTML = `<span>${monthName}</span> <span class="collapse-icon">►</span>`;
+                    const datesContainer = document.createElement('div');
+                    datesContainer.className = 'dates-for-month';
+                    const groupedByDate = new Map();
+                    ordersInMonth.forEach(order => {
+                        const date = order.orderDate || new Date(0);
+                        const dateString = formatDate(date);
+                        if (!groupedByDate.has(dateString)) groupedByDate.set(dateString, []);
+                        groupedByDate.get(dateString).push(order);
                     });
-                    // *** CAMBIO CRÍTICO AQUÍ: Solo expandimos si estaba expandida antes, no por defecto ***
-                    if (expandedDates.has(dateString)) {
-                         dateGroupDiv.classList.add('expanded');
+                    const sortedDates = Array.from(groupedByDate.keys()).sort((a, b) => new Date(a.split('/').reverse().join('-')) - new Date(b.split('/').reverse().join('-'))).reverse();
+                    sortedDates.forEach(dateString => {
+                        const ordersOnDate = groupedByDate.get(dateString);
+                        const dateGroupDiv = document.createElement('div');
+                        dateGroupDiv.className = 'date-group';
+                        dateGroupDiv.dataset.date = dateString;
+                        const dateHeaderBtn = document.createElement('button');
+                        dateHeaderBtn.className = 'date-header';
+                        const countText = `${ordersOnDate.length} ${ordersOnDate.length === 1 ? 'orden' : 'órdenes'}`;
+                        dateHeaderBtn.innerHTML = `<span>📅 ${dateString}</span> ${dateString === todayString ? `<span class="status-indicator">(${countText})</span>` : `<span class="order-count">(${countText})</span>`} <span class="collapse-icon">►</span>`;
+                        const ordersContainer = document.createElement('div');
+                        ordersContainer.className = 'orders-for-date';
+                        ordersOnDate.forEach(order => ordersContainer.appendChild(createOrderButton(order.key, order)));
+                        dateGroupDiv.appendChild(dateHeaderBtn);
+                        dateGroupDiv.appendChild(ordersContainer);
+                        datesContainer.appendChild(dateGroupDiv);
+                        dateHeaderBtn.addEventListener('click', () => dateGroupDiv.classList.toggle('expanded'));
+                        if (expandedDates.has(dateString)) {
+                            dateGroupDiv.classList.add('expanded');
+                        }
+                    });
+                    monthGroupDiv.appendChild(monthHeaderBtn);
+                    monthGroupDiv.appendChild(datesContainer);
+                    orderList.appendChild(monthGroupDiv);
+                    monthHeaderBtn.addEventListener('click', () => monthGroupDiv.classList.toggle('expanded'));
+                    if (expandedMonths.has(monthYearKey)) {
+                        monthGroupDiv.classList.add('expanded');
                     }
                 });
-
-                monthGroupDiv.appendChild(monthHeaderBtn);
-                monthGroupDiv.appendChild(datesContainer);
-                orderList.appendChild(monthGroupDiv);
-                
-                monthHeaderBtn.addEventListener('click', () => {
-                    monthGroupDiv.classList.toggle('expanded');
-                });
-                // *** CAMBIO CRÍTICO AQUÍ: Solo expandimos si estaba expandida antes, no por defecto ***
-                if (expandedMonths.has(monthYearKey)) {
-                    monthGroupDiv.classList.add('expanded');
-                }
-            });
-            
+            }
             setActiveOrder(activeOrderKey);
         }
 
