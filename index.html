@@ -550,8 +550,8 @@
         }
 .month-group.expanded .dates-for-month { max-height: 10000px; }
 
-        .date-group { margin-bottom: 8px; }
-        .date-header { 
+ .date-group { margin-bottom: 8px; }
+        .date-header {
             /* ESTILO BASE DE BOTÓN PARA CONSISTENCIA VISUAL */
             background-color: var(--surface-color);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -561,7 +561,7 @@
             backdrop-filter: blur(5px);
             box-shadow: inset 0px 1px 1px rgba(255,255,255,0.05);
 
-            /* PROPIEDADES PARA EL LAYOUT DEL BOTÓN DE FECHA */
+            /* PROPIEDADES ESPECÍFICAS DEL HEADER DE FECHA */
             width: 100%; 
             border-radius: 8px; 
             padding: 10px 12px; 
@@ -572,7 +572,7 @@
             justify-content: space-between; 
             align-items: center; 
             text-align: left; 
-            transition: all 0.2s;
+            transition: background-color 0.2s; /* Transición suave */
         }
         .date-header:hover { background-color: var(--surface-hover-color); }
         .date-header.active { background-color: var(--surface-hover-color); color: var(--text-primary); }
@@ -1403,7 +1403,7 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
             }
 
       function updateOrderList() {
-            // CORRECCIÓN DEFINITIVA: Guardamos el estado ANTES de tocar el DOM.
+            // Guardamos el estado de los desplegables ANTES de borrar la lista.
             const expandedMonths = new Set();
             orderList.querySelectorAll('.month-group.expanded').forEach(group => {
                 if (group.dataset.month) expandedMonths.add(group.dataset.month);
@@ -1419,15 +1419,13 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
             orderList.innerHTML = ''; // Limpiamos la lista DESPUÉS de guardar el estado.
 
             if (loadedOrders.size === 0) {
-                orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No hay órdenes cargadas para el área ${currentArea || ''}.</p>`;
+                orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No hay órdenes cargadas.</p>`;
                 return;
             }
 
             if (searchTerm) {
                 // MODO BÚSQUEDA
-                const filteredOrders = Array.from(loadedOrders.entries()).filter(([key, order]) => 
-                    key.toLowerCase().includes(searchTerm)
-                );
+                const filteredOrders = Array.from(loadedOrders.entries()).filter(([key]) => key.toLowerCase().includes(searchTerm));
                 if (filteredOrders.length === 0) {
                     orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No se encontraron órdenes.</p>`;
                 } else {
@@ -1452,6 +1450,7 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
                     return monthB - monthA;
                 });
                 const todayString = new Date().toLocaleDateString('es-ES', { timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' });
+
                 sortedMonths.forEach(monthYearKey => {
                     const [monthIndex, year] = monthYearKey.split('-').map(Number);
                     const monthName = `${MONTH_NAMES[monthIndex]} ${year}`;
@@ -1472,6 +1471,7 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
                         groupedByDate.get(dateString).push(order);
                     });
                     const sortedDates = Array.from(groupedByDate.keys()).sort((a, b) => new Date(a.split('/').reverse().join('-')) - new Date(b.split('/').reverse().join('-'))).reverse();
+                    
                     sortedDates.forEach(dateString => {
                         const ordersOnDate = groupedByDate.get(dateString);
                         const dateGroupDiv = document.createElement('div');
@@ -1484,14 +1484,19 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
                         const ordersContainer = document.createElement('div');
                         ordersContainer.className = 'orders-for-date';
                         ordersOnDate.forEach(order => ordersContainer.appendChild(createOrderButton(order.key, order)));
+                        
                         dateGroupDiv.appendChild(dateHeaderBtn);
                         dateGroupDiv.appendChild(ordersContainer);
+                        
+                        // CORRECCIÓN: Esta línea va aquí, una sola vez.
                         datesContainer.appendChild(dateGroupDiv);
+
                         dateHeaderBtn.addEventListener('click', () => dateGroupDiv.classList.toggle('expanded'));
                         if (expandedDates.has(dateString)) {
                             dateGroupDiv.classList.add('expanded');
                         }
                     });
+
                     monthGroupDiv.appendChild(monthHeaderBtn);
                     monthGroupDiv.appendChild(datesContainer);
                     orderList.appendChild(monthGroupDiv);
@@ -1503,6 +1508,7 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
             }
             setActiveOrder(activeOrderKey);
         }
+        
             function createOrderButton(key, orderData) {
                 const item = document.createElement('div');
                 item.className = 'order-item';
