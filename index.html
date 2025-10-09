@@ -548,11 +548,12 @@
             padding-left: 16px;
             margin-top: 0;
         }
-        .month-group.expanded .dates-for-month { max-height: 10000px; }
+.month-group.expanded .dates-for-month { max-height: 10000px; }
 
-.date-group { margin-bottom: 8px; }
-        .date-header {
-            /* ESTILO BASE DE BOTÓN PARA CONSISTENCIA */
+        /* --- INICIO DEL BLOQUE CORREGIDO DEFINITIVO --- */
+        .date-group { margin-bottom: 8px; }
+        .date-header { 
+            /* Estilo base de botón para dar el color y apariencia correctos */
             background-color: var(--surface-color);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             border-left: 1px solid rgba(255, 255, 255, 0.08);
@@ -561,7 +562,7 @@
             backdrop-filter: blur(5px);
             box-shadow: inset 0px 1px 1px rgba(255,255,255,0.05);
 
-            /* PROPIEDADES ESPECÍFICAS DEL HEADER DE FECHA */
+            /* Propiedades para el layout del botón de fecha */
             width: 100%; 
             border-radius: 8px; 
             padding: 10px 12px; 
@@ -572,6 +573,7 @@
             justify-content: space-between; 
             align-items: center; 
             text-align: left; 
+            transition: all 0.2s; /* Transición suave */
         }
         .date-header:hover { background-color: var(--surface-hover-color); }
         .date-header.active { background-color: var(--surface-hover-color); color: var(--text-primary); }
@@ -581,7 +583,8 @@
         .date-group.expanded .date-header .collapse-icon { transform: rotate(90deg); }
         .orders-for-date { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding-left: 12px; margin-top: 0; }
         .date-group.expanded .orders-for-date { max-height: 5000px; }
-
+        
+        
         /* Media Queries */
         @media (max-width: 992px) {
             .app-container { height: auto; padding: 8px; }
@@ -1402,7 +1405,7 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
             }
 
       function updateOrderList() {
-            // CORRECCIÓN DEFINITIVA: Guardamos el estado de los desplegables ANTES de tocar el DOM.
+            // CORRECCIÓN DEFINITIVA: Guardamos el estado ANTES de borrar la lista.
             const expandedMonths = new Set();
             orderList.querySelectorAll('.month-group.expanded').forEach(group => {
                 if (group.dataset.month) expandedMonths.add(group.dataset.month);
@@ -1423,7 +1426,7 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
             }
 
             if (searchTerm) {
-                // --- MODO BÚSQUEDA ---
+                // MODO BÚSQUEDA: Muestra una lista plana con los resultados.
                 const filteredOrders = Array.from(loadedOrders.entries()).filter(([key, order]) => 
                     key.toLowerCase().includes(searchTerm)
                 );
@@ -1435,7 +1438,7 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
                         .forEach(([key, order]) => orderList.appendChild(createOrderButton(key, order)));
                 }
             } else {
-                // --- MODO NORMAL (agrupado) ---
+                // MODO NORMAL: Muestra la lista agrupada por mes y día.
                 const MONTH_NAMES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
                 const groupedByMonth = new Map();
                 for (const [key, order] of loadedOrders.entries()) {
@@ -1502,7 +1505,6 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
             }
             setActiveOrder(activeOrderKey);
         }
-
             function createOrderButton(key, orderData) {
                 const item = document.createElement('div');
                 item.className = 'order-item';
