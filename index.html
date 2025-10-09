@@ -550,29 +550,60 @@
         }
         .month-group.expanded .dates-for-month { max-height: 10000px; }
 
-.date-group { margin-bottom: 8px; }
+.date-group { 
+            margin-bottom: 8px; /* Pequeño margen entre grupos de fechas */
+        }
         .date-header { 
             width: 100%; 
-            background-color: transparent; 
+            /* Se eliminó background-color: transparent para que tome el color del tema */
+            /* Se ajusta el color de fondo para que coincida con los botones de orden */
+            background-color: var(--button-bg-color); /* Usamos la variable global de color de botón */
             border: 1px solid var(--border-color); 
-            border-radius: 6px; 
-            padding: 6px 12px; /* AJUSTE: Reducimos el padding vertical de 10px a 6px */
+            border-radius: 8px; /* Se usa 8px para consistencia con los botones de orden */
+            padding: 8px 12px; /* AJUSTE: Padding para una altura más compacta y uniforme */
             font-weight: 600; 
-            color: var(--text-secondary); 
+            color: var(--text-secondary); /* Color del texto, puedes cambiar a --text-primary si quieres más contraste */
             cursor: pointer; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
             text-align: left; 
+            /* Agregamos un margen-bottom para que haya espacio entre el botón de fecha y el contenido que despliega */
+            margin-bottom: 4px;
         }
-        .date-header:hover { background-color: var(--surface-hover-color); }
-        .date-header.active { background-color: var(--surface-hover-color); color: var(--text-primary); }
-        .date-header .status-indicator { font-weight: 700; font-size: 0.8rem; color: var(--success-color); }
-        .date-header .order-count { color: var(--text-dark); font-weight: 500; font-size: 0.8rem; }
-        .date-header .collapse-icon { transition: transform 0.2s; }
-        .date-group.expanded .date-header .collapse-icon { transform: rotate(90deg); }
-        .orders-for-date { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding-left: 12px; margin-top: 0; }
-        .date-group.expanded .orders-for-date { max-height: 5000px; }
+        .date-header:hover { 
+            background-color: var(--surface-hover-color); 
+        }
+        .date-header.active { 
+            background-color: var(--primary-color); /* Se ilumina en color primario cuando está activa, como los otros botones */
+            color: var(--button-text-color); /* Color de texto para el botón activo */
+        }
+        .date-header .status-indicator { 
+            font-weight: 700; 
+            font-size: 0.8rem; 
+            color: var(--success-color); 
+        }
+        .date-header .order-count { 
+            color: var(--text-dark); /* Color del contador de órdenes */
+            font-weight: 500; 
+            font-size: 0.8rem; 
+        }
+        .date-header .collapse-icon { 
+            transition: transform 0.2s; 
+        }
+        .date-group.expanded .date-header .collapse-icon { 
+            transform: rotate(90deg); 
+        }
+        .orders-for-date { 
+            max-height: 0; 
+            overflow: hidden; 
+            transition: max-height 0.3s ease-out; 
+            padding-left: 12px; 
+            margin-top: 0; 
+        }
+        .date-group.expanded .orders-for-date { 
+            max-height: 5000px; /* Suficiente espacio para desplegar */
+        }
 
         /* Media Queries */
         @media (max-width: 992px) {
@@ -1394,7 +1425,8 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
             }
 
       function updateOrderList() {
-            // CORRECCIÓN: Capturamos el estado de los desplegables ANTES de borrar la lista.
+            // Capturamos el estado de los desplegables ANTES de borrar la lista.
+            // Para las fechas, necesitamos ser más cuidadosos, solo guardamos lo que *realmente* está expandido.
             const expandedMonths = new Set();
             orderList.querySelectorAll('.month-group.expanded').forEach(group => {
                 if (group.dataset.month) expandedMonths.add(group.dataset.month);
@@ -1432,7 +1464,7 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
                 return;
             }
             
-            // --- MODO NORMAL (código original de agrupación, ahora funcionando con el estado guardado) ---
+            // --- MODO NORMAL (código original de agrupación) ---
             const MONTH_NAMES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
             const groupedByMonth = new Map();
 
@@ -1504,8 +1536,9 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
                     dateHeaderBtn.addEventListener('click', () => {
                         dateGroupDiv.classList.toggle('expanded');
                     });
-                    if (expandedDates.has(dateString)) { // Se re-aplica el estado guardado
-                        dateGroupDiv.classList.add('expanded');
+                    // *** CAMBIO CRÍTICO AQUÍ: Solo expandimos si estaba expandida antes, no por defecto ***
+                    if (expandedDates.has(dateString)) {
+                         dateGroupDiv.classList.add('expanded');
                     }
                 });
 
@@ -1516,7 +1549,8 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
                 monthHeaderBtn.addEventListener('click', () => {
                     monthGroupDiv.classList.toggle('expanded');
                 });
-                if (expandedMonths.has(monthYearKey)) { // Se re-aplica el estado guardado
+                // *** CAMBIO CRÍTICO AQUÍ: Solo expandimos si estaba expandida antes, no por defecto ***
+                if (expandedMonths.has(monthYearKey)) {
                     monthGroupDiv.classList.add('expanded');
                 }
             });
