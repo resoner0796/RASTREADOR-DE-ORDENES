@@ -1218,29 +1218,29 @@
                         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                         const orderNumber = String(worksheet['B3']?.v || `Archivo_${file.name.slice(0,10)}`);
                         
-                        // MODIFICACIÓN: Lógica para manejar órdenes nuevas o existentes.
                         const keyToUse = isUpdate ? orderToUpdateKey : orderNumber;
                         let existingOrderData;
 
                         if (loadedOrders.has(keyToUse)) {
-                            // CASO 1: La orden ya existe (cargada por SAP), la tomamos para actualizarla.
+                            // La orden ya existe, la tomamos para actualizarla.
                             existingOrderData = loadedOrders.get(keyToUse);
                         } else {
-                            // CASO 2: La orden es nueva. Creamos una estructura base para ella.
+                            // La orden es nueva. Creamos una estructura base con las celdas correctas.
                             console.log(`La orden ${orderNumber} no fue cargada por SAP. Creando nueva entrada.`);
                             existingOrderData = {
-                                // Intentamos obtener datos básicos del archivo de seriales, con valores por defecto.
-                                orderQty: parseInt(worksheet['G3']?.v || 0), // Cantidad de la Orden (asumiendo celda G3)
-                                catalogNumber: String(worksheet['N3']?.v || 'N/A'), // Número de Catálogo (asumiendo celda N3)
-                                orderDate: new Date(), // Asignamos la fecha de hoy por defecto para que aparezca
+                                // AJUSTE: Leemos la cantidad total de la celda O3
+                                orderQty: parseInt(worksheet['O3']?.v || 0),
+                                // AJUSTE: Leemos el catálogo de la celda I3
+                                catalogNumber: String(worksheet['I3']?.v || 'N/A'),
+                                
+                                orderDate: new Date(),
                                 packedQty: 0,
                                 rastreoData: [],
-                                empaqueData: new Map(), // Iniciamos como un Map vacío para consistencia
+                                empaqueData: new Map(),
                                 headers: { rastreo: [], empaque: [] }
                             };
                         }
 
-                        // El resto de la lógica extrae los datos del archivo y los combina con la data existente (o la nueva que acabamos de crear)
                         const TRACKING_COLS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
                         const PACKING_COLS = ['AE', 'AF', 'AK', 'AO'];
                         const rastreoRawData = extractTableData(worksheet, TRACKING_COLS, 20);
@@ -1248,6 +1248,7 @@
                         
                         const orderData = {
                             ...existingOrderData, 
+                            // Confirmado: Leemos la cantidad empacada de la celda U3
                             packedQty: parseInt(worksheet['U3']?.v || existingOrderData.packedQty || 0),
                             rastreoData: processRastreoData(rastreoRawData),
                             empaqueData: groupEmpaqueData(packingRawData),
