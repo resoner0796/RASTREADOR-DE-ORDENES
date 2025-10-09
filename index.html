@@ -1382,37 +1382,6 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
             }
 
       function updateOrderList() {
-                // --- NUEVO: Lógica para el buscador ---
-                const searchInput = doc('orderSearchInput');
-                const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
-
-                orderList.innerHTML = ''; // Limpiamos la lista antes de volver a dibujarla
-
-                if (loadedOrders.size === 0) {
-                    orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No hay órdenes cargadas para el área ${currentArea || ''}.</p>`;
-                    return;
-                }
-
-                // --- MODO DE BÚSQUEDA ---
-                if (searchTerm) {
-                    const filteredOrders = Array.from(loadedOrders.entries()).filter(([key, order]) => 
-                        key.toLowerCase().includes(searchTerm)
-                    );
-
-                    if (filteredOrders.length === 0) {
-                        orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No se encontraron órdenes.</p>`;
-                    } else {
-                        filteredOrders
-                        	.sort((a, b) => (b[1].orderDate || 0) - (a[1].orderDate || 0)) // Ordenar por fecha descendente
-                        	.forEach(([key, order]) => {
-                            	orderList.appendChild(createOrderButton(key, order));
-                        	});
-                    }
-                    setActiveOrder(activeOrderKey); // Mantiene la selección activa si está en los resultados
-                    return; // Terminamos aquí si estamos en modo búsqueda
-                }
-
-                // --- MODO NORMAL (agrupado por fecha, si no hay búsqueda) ---
                 const expandedMonths = new Set();
                 orderList.querySelectorAll('.month-group.expanded').forEach(group => {
                     if (group.dataset.month) expandedMonths.add(group.dataset.month);
@@ -1421,7 +1390,12 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
                 orderList.querySelectorAll('.date-group.expanded').forEach(group => {
                     if (group.dataset.date) expandedDates.add(group.dataset.date);
                 });
-                // Limpieza del orderList ya se hizo al inicio de la función
+
+                orderList.innerHTML = '';
+                if (loadedOrders.size === 0) {
+                    orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No hay órdenes cargadas para el área ${currentArea || ''}.</p>`;
+                    return;
+                }
 
                 const MONTH_NAMES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
                 const groupedByMonth = new Map();
@@ -1445,9 +1419,7 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
                 });
 
                 sortedMonths.forEach(monthYearKey => {
-                    // ... (el resto de la lógica de agrupación por mes y día sigue aquí, sin cambios)
-                    // ... [El código original de agrupación que ya tenías]
-                    const [monthIndex, year] = monthYearKey.split('-').map(Number);
+                    const [monthIndex, year] = monthYearKey.split('-').map(Number);
                     const monthName = `${MONTH_NAMES[monthIndex]} ${year}`;
                     const ordersInMonth = groupedByMonth.get(monthYearKey);
 
