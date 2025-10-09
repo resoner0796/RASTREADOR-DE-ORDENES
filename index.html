@@ -550,21 +550,8 @@
         }
         .month-group.expanded .dates-for-month { max-height: 10000px; }
 
-     .date-group { margin-bottom: 8px; }
-        .date-header { 
-            width: 100%; /* DEVOLVEMOS ESTA LÍNEA para que ocupe todo el ancho */
-            /* background-color: transparent; se mantiene eliminado para que tenga fondo */
-            border: 1px solid var(--border-color); 
-            border-radius: 8px; /* AJUSTE: Lo ponemos en 8px para que sea igual a los otros */
-            padding: 10px 12px; 
-            font-weight: 600; 
-            color: var(--text-secondary); 
-            cursor: pointer; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            text-align: left; 
-        }
+  .date-group { margin-bottom: 8px; }
+        .date-header { width: 100%; background-color: transparent; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer; display: flex; justify-content: space-between; align-items: center; text-align: left; }
         .date-header:hover { background-color: var(--surface-hover-color); }
         .date-header.active { background-color: var(--surface-hover-color); color: var(--text-primary); }
         .date-header .status-indicator { font-weight: 700; font-size: 0.8rem; color: var(--success-color); }
