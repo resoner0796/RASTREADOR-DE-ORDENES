@@ -551,24 +551,22 @@
 .month-group.expanded .dates-for-month { max-height: 10000px; }
 
 .date-group { margin-bottom: 8px; }
-        .date-header {
-            /* ESTILO GLASS CORREGIDO */
-            background-color: rgba(55, 65, 81, 0.4); 
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid var(--border-color); 
-            border-radius: 8px; 
-            padding: 10px 12px; 
-            font-weight: 600; 
-            color: var(--text-secondary); 
-            cursor: pointer; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            text-align: left; 
-            width: 100%;
+        .date-header { 
+            width: 100%; 
+            /* Se restaura el fondo transparente para el efecto glass original */
+            background-color: transparent; 
+            border: 1px solid var(--border-color); 
+            border-radius: 8px; 
+            padding: 10px 12px; 
+            font-weight: 600; 
+            color: var(--text-secondary); 
+            cursor: pointer; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            text-align: left; 
             transition: background-color 0.2s;
-        }
+        }
         .date-header:hover { background-color: var(--surface-hover-color); }
         .date-header.active { background-color: var(--surface-hover-color); color: var(--text-primary); }
         .date-header .status-indicator { font-weight: 700; font-size: 0.8rem; color: var(--success-color); }
@@ -1419,7 +1417,6 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
             }
 
             if (searchTerm) {
-                // MODO BÚSQUEDA
                 const filteredOrders = Array.from(loadedOrders.entries()).filter(([key]) => key.toLowerCase().includes(searchTerm));
                 if (filteredOrders.length === 0) {
                     orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">No se encontraron órdenes.</p>`;
@@ -1429,7 +1426,6 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
                         .forEach(([key, order]) => orderList.appendChild(createOrderButton(key, order)));
                 }
             } else {
-                // MODO NORMAL (AGRUPADO)
                 const MONTH_NAMES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
                 const groupedByMonth = new Map();
                 for (const [key, order] of loadedOrders.entries()) {
@@ -1445,6 +1441,7 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
                     return monthB - monthA;
                 });
                 const todayString = new Date().toLocaleDateString('es-ES', { timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' });
+
                 sortedMonths.forEach(monthYearKey => {
                     const [monthIndex, year] = monthYearKey.split('-').map(Number);
                     const monthName = `${MONTH_NAMES[monthIndex]} ${year}`;
@@ -1465,6 +1462,7 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
                         groupedByDate.get(dateString).push(order);
                     });
                     const sortedDates = Array.from(groupedByDate.keys()).sort((a, b) => new Date(a.split('/').reverse().join('-')) - new Date(b.split('/').reverse().join('-'))).reverse();
+                    
                     sortedDates.forEach(dateString => {
                         const ordersOnDate = groupedByDate.get(dateString);
                         const dateGroupDiv = document.createElement('div');
@@ -1477,14 +1475,19 @@ doc('orderSearchInput').addEventListener('input', updateOrderList);
                         const ordersContainer = document.createElement('div');
                         ordersContainer.className = 'orders-for-date';
                         ordersOnDate.forEach(order => ordersContainer.appendChild(createOrderButton(order.key, order)));
+                        
                         dateGroupDiv.appendChild(dateHeaderBtn);
                         dateGroupDiv.appendChild(ordersContainer);
+                        
+                        // Esta es la línea que estaba mal. Ahora solo está una vez.
                         datesContainer.appendChild(dateGroupDiv);
+
                         dateHeaderBtn.addEventListener('click', () => dateGroupDiv.classList.toggle('expanded'));
                         if (expandedDates.has(dateString)) {
                             dateGroupDiv.classList.add('expanded');
                         }
                     });
+
                     monthGroupDiv.appendChild(monthHeaderBtn);
                     monthGroupDiv.appendChild(datesContainer);
                     orderList.appendChild(monthGroupDiv);
