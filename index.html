@@ -1935,9 +1935,6 @@ async function handleSapImageExport() {
         const boxData = receivedBoxData.get(boxId);
         const statusClass = boxData ? 'boxid-received' : 'boxid-missing';
         const receivedDateText = boxData && boxData.receivedAt ? formatShortDateTime(boxData.receivedAt.toDate()) : 'N/A';
-        
-        // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
-        // Limpiamos el GR antes de buscarlo para evitar pedos de espacios o tipos de dato
         const grValue = boxData && boxData.gr ? String(boxData.gr).trim() : 'N/A';
         
         const grInfo = grDataMap.get(grValue);
@@ -1950,7 +1947,9 @@ async function handleSapImageExport() {
                 <td data-label="Cantidad">${serials.length}</td>
                 <td data-label="Último Empaque">${formatDateTimeFromSerial(latestSerial[packedDateHeader])}</td>
                 <td data-label="Recibido Logística">${receivedDateText}</td>
-                <td data-label="GR">${grValue}</td>
+                
+                <td data-label="GR" class="copyable" onclick="copyGR(this, '${grValue}')" title="Haz clic para copiar">${grValue}</td>
+                
                 <td data-label="Orden">${ordenValue}</td>
                 <td data-label="Usuario">${usuarioValue}</td>
             </tr>`;
@@ -1961,7 +1960,10 @@ async function handleSapImageExport() {
     else { tableWrapper.innerHTML = `<table id="empaqueTable">${tableHTML}</table>`; }
 
     tableWrapper.querySelectorAll('.box-row').forEach(row => {
-        row.addEventListener('click', () => {
+        row.addEventListener('click', (e) => {
+            // Evitamos que el modal se abra si se hizo clic en la celda de GR
+            if (e.target.classList.contains('copyable')) return; 
+            
             const boxId = row.dataset.boxid;
             const serialsForBox = dataToShow.get(boxId);
             showPackingDetailsModal(boxId, serialsForBox, headers);
