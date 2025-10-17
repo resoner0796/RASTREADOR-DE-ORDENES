@@ -3046,19 +3046,16 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
         showModal('Error de Conexión', `No se pudo conectar a los datos del área ${area}.`, 'error');
     });
     
-    // === LISTENER PARA SAP (HISTÓRICO) - ¡AQUÍ ESTÁ LA NUEVA MAGIA! ===
-    // Ahora escucha la colección completa 'sap_historico' en lugar de un solo documento.
+    // === LISTENER PARA SAP (HISTÓRICO) - CON LA NUEVA LÓGICA ===
     sapListener = db.collection('areas').doc(area).collection('sap_historico').onSnapshot(snapshot => {
         let newSapData = [];
         let latestUpdate = null;
         let updatedBy = null;
 
-        // Recorremos todos los documentos (órdenes) en el histórico
         snapshot.forEach(doc => {
             const orderData = doc.data();
             newSapData.push(orderData);
             
-            // Buscamos la fecha de actualización más reciente de todas las órdenes para mostrarla
             const orderLastUpdated = orderData.lastUpdated ? orderData.lastUpdated.toDate() : null;
             if (orderLastUpdated && (!latestUpdate || orderLastUpdated > latestUpdate)) {
                 latestUpdate = orderLastUpdated;
@@ -3066,12 +3063,10 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
             }
         });
 
-        // Actualizamos los datos globales de SAP
         sapData = newSapData;
         sapLastUpdated = latestUpdate;
         sapLastUpdatedBy = updatedBy;
         
-        // Sincronizamos las fechas con FWD y actualizamos las vistas
         syncFwdAndSapDates();
         updateOrderList();
         if (mainMode === 'sap') {
@@ -3082,15 +3077,39 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
         showModal('Error de Conexión', `No se pudo conectar al histórico de SAP para el área ${area}.`, 'error');
     });
 }
-            function teardownMobileMode() {
-                mobileCollapsibleCardIds.forEach(id => {
-                    const cardElement = doc(id);
-                    if (!cardElement) return;
-                    cardElement.classList.remove('mobile-collapsible', 'expanded');
-                    const trigger = cardElement.querySelector('h3');
-                    if(trigger) trigger.classList.remove('mobile-trigger');
+
+// --- ¡AQUÍ ESTÁ EL CÓDIGO RESTAURADO! ---
+let isMobile = window.innerWidth <= 992;
+const mobileCollapsibleCardIds = ['uploadCard', 'orderListCard', 'filtersCard', 'actionsCard', 'sap-uploadCard', 'sap-orderListCard'];
+function setupMobileMode() {
+    mobileCollapsibleCardIds.forEach(id => {
+        const cardElement = doc(id);
+        if (!cardElement) return;
+        cardElement.classList.add('mobile-collapsible');
+        const trigger = cardElement.querySelector('h3');
+        if (trigger) {
+            trigger.classList.add('mobile-trigger');
+            if (!trigger.dataset.mobileListener) {
+                trigger.addEventListener('click', (e) => {
+                    if(window.innerWidth <= 992) {
+                        e.currentTarget.closest('.card').classList.toggle('expanded');
+                    }
                 });
+                trigger.dataset.mobileListener = 'true';
             }
+        }
+    });
+}
+
+function teardownMobileMode() {
+    mobileCollapsibleCardIds.forEach(id => {
+        const cardElement = doc(id);
+        if (!cardElement) return;
+        cardElement.classList.remove('mobile-collapsible', 'expanded');
+        const trigger = cardElement.querySelector('h3');
+        if(trigger) trigger.classList.remove('mobile-trigger');
+    });
+}
             window.addEventListener('resize', () => {
                 const newIsMobile = window.innerWidth <= 992;
                 if (newIsMobile !== isMobile) {
