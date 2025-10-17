@@ -952,31 +952,39 @@ const copyReportBtn = doc('copyReportBtn');
             mobileControls.line?.addEventListener('click', handleFilterClick);
             desktopControls.line?.addEventListener('click', handleFilterClick);
 
-            sapFileDropArea.addEventListener('click', () => { if (!sapFileDropArea.classList.contains('disabled')) sapFileInput.click(); });
-            sapFileDropArea.addEventListener('dragover', (e) => { if (!sapFileDropArea.classList.contains('disabled')) { e.preventDefault(); sapFileDropArea.classList.add('dragover'); }});
-            sapFileDropArea.addEventListener('dragleave', () => sapFileDropArea.classList.remove('dragover'));
-            sapFileDropArea.addEventListener('drop', (e) => {
-                if (!sapFileDropArea.classList.contains('disabled')) {
-                    e.preventDefault(); sapFileDropArea.classList.remove('dragover');
-                    if (e.dataTransfer.files.length) handleSapFile(e.dataTransfer.files[0]);
-                }
-            });
-            sapFileInput.addEventListener('change', (e) => { if (e.target.files.length) handleSapFile(e.target.files[0]); });
-            sapResetFilterBtn.addEventListener('click', () => {
+            sapFileDropArea.addEventListener('click', () => { if (!sapFileDrop-area.classList.contains('disabled')) sapFileInput.click(); });
+sapFileDropArea.addEventListener('dragover', (e) => { if (!sapFileDropArea.classList.contains('disabled')) { e.preventDefault(); sapFileDropArea.classList.add('dragover'); }});
+sapFileDropArea.addEventListener('dragleave', () => sapFileDropArea.classList.remove('dragover'));
+sapFileDropArea.addEventListener('drop', (e) => {
+    if (!sapFileDropArea.classList.contains('disabled')) {
+        e.preventDefault(); sapFileDropArea.classList.remove('dragover');
+        // Corregido: Pasamos la lista de archivos completa
+        if (e.dataTransfer.files.length) handleSapFile(e.dataTransfer.files);
+    }
+});
+sapFileInput.addEventListener('change', (e) => { 
+    // Corregido: Pasamos la lista de archivos completa
+    if (e.target.files.length) handleSapFile(e.target.files); 
+});
+
+sapResetFilterBtn.addEventListener('click', () => {
     sapDateFilter = []; // Simplemente vaciamos el array
     renderSapView();
 });
-            modalClose.addEventListener('click', hideModal);
-            modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
-            
-            adminBtn.addEventListener('click', () => {
-                if (session.user && session.isMaster) {
-                    showAdminPanel();
-                } else {
-                    showLogin();
-                }
-            });
 
+// 👇 ¡ESTA ES LA LÍNEA QUE FALTABA! 👇
+sapExportImageBtn.addEventListener('click', handleSapImageExport);
+
+modalClose.addEventListener('click', hideModal);
+modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
+
+adminBtn.addEventListener('click', () => {
+    if (session.user && session.isMaster) {
+        showAdminPanel();
+    } else {
+        showLogin();
+    }
+});
             areaSelectBtn.addEventListener('click', showAreaSelector);
             logoutBtn.addEventListener('click', logout);
             showDailyPlanBtn.addEventListener('click', generateDailyPlanReport);
@@ -999,6 +1007,50 @@ const copyReportBtn = doc('copyReportBtn');
                     );
                 }
             });
+
+async function handleSapImageExport() {
+    if (!sapData || sapData.length === 0) {
+        showModal('Exportar Captura', 'No hay datos en la tabla de SAP para exportar.', 'warning');
+        return;
+    }
+
+    const originalButtonText = sapExportImageBtn.textContent;
+    sapExportImageBtn.textContent = 'Generando...';
+    sapExportImageBtn.disabled = true;
+
+    // Ocultamos botones temporalmente para que no salgan en la captura
+    sapResetFilterBtn.style.visibility = 'hidden';
+    sapExportImageBtn.style.visibility = 'hidden';
+
+    // El elemento que queremos capturar
+    const elementToCapture = doc('sap-tableCard'); 
+
+    try {
+        const canvas = await html2canvas(elementToCapture, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: document.body.classList.contains('dark-theme') ? '#22252a' : '#f9fafb'
+        });
+
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/jpeg', 0.95);
+        const dateStamp = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
+        a.download = `Captura_SAP_${currentArea}_${dateStamp}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+    } catch (e) {
+        console.error("Error al generar la imagen de SAP:", e);
+        showModal('Error', 'Ocurrió un error al generar el archivo de imagen.', 'error');
+    } finally {
+        // Volvemos a mostrar los botones y restauramos el estado del botón de exportar
+        sapResetFilterBtn.style.visibility = 'visible';
+        sapExportImageBtn.style.visibility = 'visible';
+        sapExportImageBtn.textContent = originalButtonText;
+        sapExportImageBtn.disabled = false;
+    }
+}
 
             // ===================================
             // === CORE APP CONTROL & UTILITIES ===
