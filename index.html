@@ -582,6 +582,16 @@ td.boxid-missing {
 .copyable:hover {
     color: var(--primary-color);
 }
+
+
+.copyable-header {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.copyable-header:hover {
+    color: var(--primary-color);
+    background-color: var(--surface-hover-color);
+}
         
         @media (min-width: 993px) {
             #scroll-mask {
@@ -1900,9 +1910,7 @@ async function handleSapImageExport() {
         ]);
         boxSnapshot.forEach(doc => receivedBoxData.set(doc.id, doc.data()));
         grSnapshot.forEach(doc => grDataMap.set(doc.id, doc.data()));
-    } catch (e) {
-        console.error("Error al obtener datos históricos:", e);
-    }
+    } catch (e) { console.error("Error al obtener datos históricos:", e); }
     
     let dataToShow = new Map(); let headers = [];
     if (key === 'all' || key === null) {
@@ -1929,9 +1937,13 @@ async function handleSapImageExport() {
     const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
     const filterText = empaqueFilterInput.value.toLowerCase();
     
-    let tableHTML = `<thead><tr><th>BoxID</th><th>Cantidad</th><th>Último Empaque</th><th>Recibido Logística</th><th>GR</th><th>Orden</th><th>Usuario</th></tr></thead><tbody>`;
     let entriesFound = 0;
     const reversedEntries = Array.from(dataToShow.entries()).reverse();
+    
+    // --- ¡AQUÍ EMPIEZA LA MAGIA! ---
+    // 1. Creamos un array para guardar solo los GRs que se van a mostrar
+    const grsToCopy = [];
+    let tableBodyHTML = ''; // Construimos el cuerpo de la tabla por separado
 
     for (const [boxId, serials] of reversedEntries) {
         if(!serials || serials.length === 0) continue;
@@ -1945,39 +1957,83 @@ async function handleSapImageExport() {
         const receivedDateText = boxData && boxData.receivedAt ? formatShortDateTime(boxData.receivedAt.toDate()) : 'N/A';
         const grValue = boxData && boxData.gr ? String(boxData.gr).trim() : 'N/A';
         
+        // 2. Si el GR es válido, lo agregamos a nuestra lista para copiar
+        if (grValue !== 'N/A') {
+            grsToCopy.push(grValue);
+        }
+
         const grInfo = grDataMap.get(grValue);
         const ordenValue = grInfo && grInfo.orden ? grInfo.orden : 'N/A';
         const usuarioValue = grInfo && grInfo.usuario ? grInfo.usuario : 'N/A';
 
-        tableHTML += `
+        tableBodyHTML += `
             <tr class="box-row" data-boxid="${boxId}">
                 <td data-label="BoxID" class="${statusClass}">${boxId}</td>
                 <td data-label="Cantidad">${serials.length}</td>
                 <td data-label="Último Empaque">${formatDateTimeFromSerial(latestSerial[packedDateHeader])}</td>
                 <td data-label="Recibido Logística">${receivedDateText}</td>
-                
                 <td data-label="GR" class="copyable" onclick="copyGR(this, '${grValue}')" title="Haz clic para copiar">${grValue}</td>
-                
                 <td data-label="Orden">${ordenValue}</td>
                 <td data-label="Usuario">${usuarioValue}</td>
             </tr>`;
     }
-    tableHTML += `</tbody>`;
+    
+    // 3. Convertimos la lista de GRs en un solo string, separados por saltos de línea
+    const grColumnString = grsToCopy.join('\\n');
 
-    if (entriesFound === 0) { tableWrapper.innerHTML = `<table id="empaqueTable"><thead><tr><th>No se encontraron resultados.</th></tr></thead></table>`; } 
-    else { tableWrapper.innerHTML = `<table id="empaqueTable">${tableHTML}</table>`; }
+    // 4. Construimos el encabezado y le metemos la función de copiado a la columna GR
+    let tableHeaderHTML = `<thead><tr>
+        <th>BoxID</th>
+        <th>Cantidad</th>
+        <th>Último Empaque</th>
+        <th>Recibido Logística</th>
+        <th class="copyable-header" onclick="copyColumnData(this, '${grColumnString}')" title="Haz clic para copiar toda la columna">GR</th>
+        <th>Orden</th>
+        <th>Usuario</th>
+    </tr></thead>`;
+    
+    if (entriesFound === 0) { 
+        tableWrapper.innerHTML = `<table id="empaqueTable"><thead><tr><th>No se encontraron resultados.</th></tr></thead></table>`; 
+    } else { 
+        tableWrapper.innerHTML = `<table id="empaqueTable">${tableHeaderHTML}<tbody>${tableBodyHTML}</tbody></table>`; 
+    }
 
     tableWrapper.querySelectorAll('.box-row').forEach(row => {
         row.addEventListener('click', (e) => {
-            // Evitamos que el modal se abra si se hizo clic en la celda de GR
             if (e.target.classList.contains('copyable')) return; 
-            
             const boxId = row.dataset.boxid;
             const serialsForBox = dataToShow.get(boxId);
             showPackingDetailsModal(boxId, serialsForBox, headers);
         });
     });
     tableWrapper.style.opacity = '1';
+}
+
+// Función para copiar una columna completa de datos
+window.copyColumnData = function(element, data) {
+    if (!data) return;
+    
+    copyTextToClipboard(data,
+        () => { // Success
+            const originalText = element.textContent;
+            element.textContent = '¡COPIADO!';
+            element.style.color = 'var(--success-color)';
+            setTimeout(() => {
+                element.textContent = originalText;
+                element.style.color = '';
+            }, 2000);
+        },
+        (err) => { // Error
+            console.error('Error al copiar la columna: ', err);
+            const originalText = element.textContent;
+            element.textContent = 'ERROR';
+            element.style.color = 'var(--danger-color)';
+             setTimeout(() => {
+                element.textContent = originalText;
+                element.style.color = '';
+            }, 2000);
+        }
+    );
 }
 
 
