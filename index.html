@@ -953,27 +953,28 @@ const copyReportBtn = doc('copyReportBtn');
             mobileControls.line?.addEventListener('click', handleFilterClick);
             desktopControls.line?.addEventListener('click', handleFilterClick);
 
-            sapFileDropArea.addEventListener('click', () => { if (!sapFileDrop-area.classList.contains('disabled')) sapFileInput.click(); });
+            sapFileDropArea.addEventListener('click', () => { if (!sapFileDropArea.classList.contains('disabled')) sapFileInput.click(); });
 sapFileDropArea.addEventListener('dragover', (e) => { if (!sapFileDropArea.classList.contains('disabled')) { e.preventDefault(); sapFileDropArea.classList.add('dragover'); }});
 sapFileDropArea.addEventListener('dragleave', () => sapFileDropArea.classList.remove('dragover'));
 sapFileDropArea.addEventListener('drop', (e) => {
     if (!sapFileDropArea.classList.contains('disabled')) {
         e.preventDefault(); sapFileDropArea.classList.remove('dragover');
-        // Corregido: Pasamos la lista de archivos completa
-        if (e.dataTransfer.files.length) handleSapFile(e.dataTransfer.files);
+        // --- CORRECCIÓN ---
+        // Volvemos a pasar solo el PRIMER archivo (files[0])
+        if (e.dataTransfer.files.length) handleSapFile(e.dataTransfer.files[0]);
     }
 });
 sapFileInput.addEventListener('change', (e) => { 
-    // Corregido: Pasamos la lista de archivos completa
-    if (e.target.files.length) handleSapFile(e.target.files); 
+    // --- CORRECCIÓN ---
+    // Volvemos a pasar solo el PRIMER archivo (files[0])
+    if (e.target.files.length) handleSapFile(e.target.files[0]); 
 });
 
 sapResetFilterBtn.addEventListener('click', () => {
-    sapDateFilter = []; // Simplemente vaciamos el array
+    sapDateFilter = []; // Vaciamos el array para volver a la vista default
     renderSapView();
 });
 
-// 👇 ¡ESTA ES LA LÍNEA QUE FALTABA! 👇
 sapExportImageBtn.addEventListener('click', handleSapImageExport);
 
 modalClose.addEventListener('click', hideModal);
