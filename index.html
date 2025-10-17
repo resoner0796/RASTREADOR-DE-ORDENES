@@ -1771,11 +1771,13 @@ td.boxid-missing {
     const employeeIdHeader = findHeader(headers, PACKING_KEYS.EMPLOYEE_ID);
     const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
     
-    // Va a Firebase a buscar la información más reciente de este BoxID
     let grValue = "N/A", ordenValue = "N/A", usuarioValue = "N/A";
     try {
         const docSnap = await db.collection('boxID_historico').doc(boxId).get();
-        if (docSnap.exists()) {
+        
+        // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
+        // Cambiamos docSnap.exists() por docSnap.exists (sin los paréntesis)
+        if (docSnap.exists) { 
             const data = docSnap.data();
             grValue = data.gr || "N/A";
             ordenValue = data.orden || "N/A";
@@ -1791,7 +1793,6 @@ td.boxid-missing {
         const latestSerial = serials.reduce((latest, current) => (current[packedDateHeader] > latest[packedDateHeader]) ? current : latest, serials[0]);
         const packerId = latestSerial[employeeIdHeader];
         
-        // Creamos los elementos HTML con su función de copiar
         const grHTML = `<span class="packer-info">GR: <strong class="copyable" onclick="copyGR(this, '${grValue}')" title="Haz clic para copiar">${grValue}</strong></span>`;
         const ordenHTML = `<span class="packer-info">Orden: <strong class="copyable" onclick="copyGR(this, '${ordenValue}')" title="Haz clic para copiar">${ordenValue}</strong></span>`;
         const usuarioHTML = `<span class="packer-info">Confirmado por: <strong>${usuarioValue}</strong></span>`;
@@ -1825,7 +1826,6 @@ td.boxid-missing {
     tableWrapper.style.opacity = '0';
     await new Promise(res => setTimeout(res, 150));
 
-    // 1. Obtenemos TODOS los datos de AMBAS colecciones de una sola vez. Es más rápido.
     let receivedBoxData = new Map();
     let grDataMap = new Map();
     try {
@@ -1839,7 +1839,6 @@ td.boxid-missing {
         console.error("Error al obtener datos históricos:", e);
     }
     
-    // ... (El resto de la lógica para obtener dataToShow no cambia)
     let dataToShow = new Map(); let headers = [];
     if (key === 'all' || key === null) {
         loadedOrders.forEach(order => {
@@ -1876,13 +1875,14 @@ td.boxid-missing {
         entriesFound++;
         const latestSerial = serials.reduce((latest, current) => (current[packedDateHeader] > latest[packedDateHeader]) ? current : latest, serials[0]);
 
-        // 2. HACEMOS LA DOBLE CONEXIÓN
         const boxData = receivedBoxData.get(boxId);
         const statusClass = boxData ? 'boxid-received' : 'boxid-missing';
         const receivedDateText = boxData && boxData.receivedAt ? formatShortDateTime(boxData.receivedAt.toDate()) : 'N/A';
-        const grValue = boxData && boxData.gr ? boxData.gr : 'N/A';
         
-        // Con el GR que encontramos, ahora buscamos en el otro mapa
+        // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
+        // Limpiamos el GR antes de buscarlo para evitar pedos de espacios o tipos de dato
+        const grValue = boxData && boxData.gr ? String(boxData.gr).trim() : 'N/A';
+        
         const grInfo = grDataMap.get(grValue);
         const ordenValue = grInfo && grInfo.orden ? grInfo.orden : 'N/A';
         const usuarioValue = grInfo && grInfo.usuario ? grInfo.usuario : 'N/A';
@@ -1900,7 +1900,6 @@ td.boxid-missing {
     }
     tableHTML += `</tbody>`;
 
-    // El resto de la función se queda igual...
     if (entriesFound === 0) { tableWrapper.innerHTML = `<table id="empaqueTable"><thead><tr><th>No se encontraron resultados.</th></tr></thead></table>`; } 
     else { tableWrapper.innerHTML = `<table id="empaqueTable">${tableHTML}</table>`; }
 
