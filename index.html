@@ -2246,7 +2246,7 @@ window.copyGR = function(element, gr) {
                 showModal('Éxito', `Archivo SAP cargado. Se han creado/actualizado ${orders.length} órdenes en el histórico del área ${currentArea}.`, 'success');
             }
             
-            sapDateFilter = 'default';
+            sapDateFilter = [];
 
         } catch (err) {
             console.error("Error procesando archivo SAP:", err);
