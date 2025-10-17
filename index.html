@@ -2140,37 +2140,95 @@ window.copyGR = function(element, gr) {
             }
 
             async function handleSapFile(file) {
-                if (!file) return;
+    if (!file) return;
 
-                const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
-                if (!canEdit) {
-                    showModal('Acceso Denegado', `No tienes permisos para modificar el área ${currentArea}.`, 'error');
+    const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+    if (!canEdit) {
+        showModal('Acceso Denegado', `No tienes permisos para modificar el área ${currentArea}.`, 'error');
+        return;
+    }
+
+    showModal('Procesando SAP...', `<p>Leyendo el archivo y preparando para guardar en el histórico. Por favor, espere...</p>`);
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+            
+            // 1. Procesa el archivo y obtiene los datos de las órdenes
+            const processedData = processSapFile(workbook, session.isMaster);
+            
+            // Si es un archivo maestro, manejamos múltiples áreas
+            if (session.isMaster && processedData.isMultiArea) {
+                const areasAfectadas = Object.keys(processedData.data);
+                showModal('Procesando Múltiples Áreas...', `Sincronizando órdenes en ${areasAfectadas.length} áreas...`);
+                
+                const promises = [];
+                for (const areaName in processedData.data) {
+                    const ordersForArea = processedData.data[areaName];
+                    promises.push(saveSapOrdersToHistoric(ordersForArea, areaName)); // Guardamos en el histórico
+                    promises.push(syncSapOrdersToFwd(ordersForArea, areaName));   // Sincronizamos con FWD
+                }
+                await Promise.all(promises);
+                
+                showModal('Éxito', `Workshop general procesado. Se han sincronizado los datos para las áreas: ${areasAfectadas.join(', ')}.`, 'success');
+
+            } else { // Si es un archivo de una sola área
+                const orders = processedData.isMultiArea ? processedData.data[currentArea] || [] : processedData;
+                if(orders.length === 0) {
+                    showModal('Sin Datos', 'El archivo no contiene órdenes válidas para el área actual.', 'warning');
                     return;
                 }
+                
+                // 2. Guarda las órdenes en el nuevo histórico
+                await saveSapOrdersToHistoric(orders, currentArea);
+                
+                // 3. Sincroniza los datos con la vista FWD como antes
+                await syncSapOrdersToFwd(orders, currentArea);
 
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    try {
-                        const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-                        const processedData = processSapFile(workbook, session.isMaster);
-
-                        if (session.isMaster && processedData.isMultiArea) {
-                            await syncMultiAreaSapData(processedData.data);
-                        } else {
-                            const orders = processedData.isMultiArea ? processedData.data[currentArea] || [] : processedData;
-                            await saveSapDataToFirebase(orders, currentArea);
-                            await syncSapOrdersToFwd(orders, currentArea);
-                            initialSyncDoneForArea[currentArea] = true;
-                            showModal('Éxito', `Archivo SAP cargado para el área ${currentArea}. Se han creado/actualizado ${orders.length} órdenes.`, 'success');
-                        }
-                        sapDateFilter = 'default';
-                    } catch (err) {
-                        console.error("Error procesando archivo SAP:", err);
-                        showModal('Error', `No se pudo procesar el archivo SAP. <br><small>${err.message}</small>`, 'error');
-                    }
-                };
-                reader.readAsArrayBuffer(file);
+                showModal('Éxito', `Archivo SAP cargado. Se han creado/actualizado ${orders.length} órdenes en el histórico del área ${currentArea}.`, 'success');
             }
+            
+            sapDateFilter = 'default';
+
+        } catch (err) {
+            console.error("Error procesando archivo SAP:", err);
+            showModal('Error', `No se pudo procesar el archivo SAP. <br><small>${err.message}</small>`, 'error');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+
+async function saveSapOrdersToHistoric(sapOrders, areaName) {
+    if (!areaName || sapOrders.length === 0) return;
+    
+    const batch = db.batch();
+    const historicCollectionRef = db.collection('areas').doc(areaName).collection('sap_historico');
+
+    for (const sapOrder of sapOrders) {
+        const orderId = String(sapOrder['Orden']);
+        const orderRef = historicCollectionRef.doc(orderId);
+        
+        // Creamos un objeto con la info a guardar
+        const dataToSave = {
+            ...sapOrder,
+            lastUpdated: new Date(), // Le añadimos una fecha de última actualización
+            lastUpdatedBy: session.user
+        };
+
+        // set con merge:true es la clave. Si no existe, lo crea. Si ya existe, lo actualiza.
+        batch.set(orderRef, dataToSave, { merge: true });
+    }
+
+    try {
+        await batch.commit();
+        console.log(`${sapOrders.length} órdenes de SAP guardadas en el histórico del área ${areaName}.`);
+    } catch (e) {
+        console.error(`Error al guardar en el histórico de SAP para ${areaName}:`, e);
+        showModal('Error de Guardado', `No se pudo actualizar el histórico de SAP para ${areaName}.`, 'error');
+    }
+}
 
             async function syncSapOrdersToFwd(sapOrders, areaName) {
                 if (!areaName || sapOrders.length === 0) return;
@@ -2960,84 +3018,70 @@ window.copyGR = function(element, gr) {
             });
 
             function setupListenersForArea(area) {
-                if (!area) return;
-                if (fwdListener) fwdListener();
-                if (sapListener) sapListener();
+    if (!area) return;
+    // Detenemos los listeners anteriores para evitar duplicados
+    if (fwdListener) fwdListener();
+    if (sapListener) sapListener();
 
-                fwdListener = db.collection('areas').doc(area).collection('orders').onSnapshot(snapshot => {
-                    const ordersFromDB = new Map();
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        if (data.orderDate && data.orderDate.toDate) { data.orderDate = data.orderDate.toDate(); }
-                        if (data.lastUpdated && data.lastUpdated.toDate) { data.lastUpdated = data.lastUpdated.toDate(); }
-                        const empaqueDataMap = new Map();
-                        if (data.empaqueData && Array.isArray(data.empaqueData)) {
-                            data.empaqueData.forEach(item => { empaqueDataMap.set(item.boxId, item.serials); });
-                        }
-                        data.empaqueData = empaqueDataMap;
-                        ordersFromDB.set(doc.id, data);
-                    });
-                    loadedOrders = ordersFromDB;
-                    syncFwdAndSapDates();
-                    updateOrderList();
-                    if (mainMode === 'fwd') render();
-                }, err => {
-                    console.error("Error escuchando datos de FWD: ", err);
-                    showModal('Error de Conexión', `No se pudo conectar a los datos del área ${area}.`, 'error');
-                });
-                
-                sapListener = db.collection('areas').doc(area).collection('sap_data').doc('current_data').onSnapshot(async (docRef) => {
-                    let newSapData = [];
-                    if (docRef.exists) {
-                        const data = docRef.data();
-                        newSapData = data.orders || [];
-                        sapLastUpdated = data.lastUpdated ? data.lastUpdated.toDate() : null;
-                        sapLastUpdatedBy = data.lastUpdatedBy || null;
-                    } else {
-                        sapLastUpdated = null;
-                        sapLastUpdatedBy = null;
-                    }
-                    
-                    const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
-                    if (newSapData.length > 0 && canEdit && !initialSyncDoneForArea[area]) {
-                        console.log(`Datos de SAP cargados para el área ${area}, iniciando sincronización inicial con FWD...`);
-                        await syncSapOrdersToFwd(newSapData, area);
-                        initialSyncDoneForArea[area] = true;
-                    }
-
-                    sapData = newSapData;
-                    
-                    syncFwdAndSapDates();
-                    updateOrderList();
-                    if (mainMode === 'sap') {
-                        render();
-                    }
-                }, err => {
-                    console.error("Error escuchando datos de SAP: ", err);
-                });
+    // === LISTENER PARA FWD (RASTREO) - ESTE NO CAMBIA ===
+    fwdListener = db.collection('areas').doc(area).collection('orders').onSnapshot(snapshot => {
+        const ordersFromDB = new Map();
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.orderDate && data.orderDate.toDate) { data.orderDate = data.orderDate.toDate(); }
+            if (data.lastUpdated && data.lastUpdated.toDate) { data.lastUpdated = data.lastUpdated.toDate(); }
+            const empaqueDataMap = new Map();
+            if (data.empaqueData && Array.isArray(data.empaqueData)) {
+                data.empaqueData.forEach(item => { empaqueDataMap.set(item.boxId, item.serials); });
             }
+            data.empaqueData = empaqueDataMap;
+            ordersFromDB.set(doc.id, data);
+        });
+        loadedOrders = ordersFromDB;
+        syncFwdAndSapDates();
+        updateOrderList();
+        if (mainMode === 'fwd') render();
+    }, err => {
+        console.error("Error escuchando datos de FWD: ", err);
+        showModal('Error de Conexión', `No se pudo conectar a los datos del área ${area}.`, 'error');
+    });
+    
+    // === LISTENER PARA SAP (HISTÓRICO) - ¡AQUÍ ESTÁ LA NUEVA MAGIA! ===
+    // Ahora escucha la colección completa 'sap_historico' en lugar de un solo documento.
+    sapListener = db.collection('areas').doc(area).collection('sap_historico').onSnapshot(snapshot => {
+        let newSapData = [];
+        let latestUpdate = null;
+        let updatedBy = null;
 
-            let isMobile = window.innerWidth <= 992;
-            const mobileCollapsibleCardIds = ['uploadCard', 'orderListCard', 'filtersCard', 'actionsCard', 'sap-uploadCard', 'sap-orderListCard'];
-            function setupMobileMode() {
-                mobileCollapsibleCardIds.forEach(id => {
-                    const cardElement = doc(id);
-                    if (!cardElement) return;
-                    cardElement.classList.add('mobile-collapsible');
-                    const trigger = cardElement.querySelector('h3');
-                    if (trigger) {
-                        trigger.classList.add('mobile-trigger');
-                        if (!trigger.dataset.mobileListener) {
-                            trigger.addEventListener('click', (e) => {
-                                if(window.innerWidth <= 992) {
-                                    e.currentTarget.closest('.card').classList.toggle('expanded');
-                                }
-                            });
-                            trigger.dataset.mobileListener = 'true';
-                        }
-                    }
-                });
+        // Recorremos todos los documentos (órdenes) en el histórico
+        snapshot.forEach(doc => {
+            const orderData = doc.data();
+            newSapData.push(orderData);
+            
+            // Buscamos la fecha de actualización más reciente de todas las órdenes para mostrarla
+            const orderLastUpdated = orderData.lastUpdated ? orderData.lastUpdated.toDate() : null;
+            if (orderLastUpdated && (!latestUpdate || orderLastUpdated > latestUpdate)) {
+                latestUpdate = orderLastUpdated;
+                updatedBy = orderData.lastUpdatedBy;
             }
+        });
+
+        // Actualizamos los datos globales de SAP
+        sapData = newSapData;
+        sapLastUpdated = latestUpdate;
+        sapLastUpdatedBy = updatedBy;
+        
+        // Sincronizamos las fechas con FWD y actualizamos las vistas
+        syncFwdAndSapDates();
+        updateOrderList();
+        if (mainMode === 'sap') {
+            render();
+        }
+    }, err => {
+        console.error("Error escuchando datos del histórico de SAP: ", err);
+        showModal('Error de Conexión', `No se pudo conectar al histórico de SAP para el área ${area}.`, 'error');
+    });
+}
             function teardownMobileMode() {
                 mobileCollapsibleCardIds.forEach(id => {
                     const cardElement = doc(id);
