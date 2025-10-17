@@ -1766,16 +1766,24 @@ td.boxid-missing {
                 ).join('');
             }
             
-            function showPackingDetailsModal(boxId, serials, headers, boxLogisticsData) { // <-- Recibe el nuevo parámetro
+            async function showPackingDetailsModal(boxId, serials, headers) {
     const serialHeader = findHeader(headers, PACKING_KEYS.SERIAL);
     const employeeIdHeader = findHeader(headers, PACKING_KEYS.EMPLOYEE_ID);
     const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
     
-    // --- ¡AQUÍ ESTÁ LA MAGIA! ---
-    // Ya no vamos a Firebase. Usamos los datos que nos pasaron.
-    let grValue = "N/A";
-    if (boxLogisticsData && boxLogisticsData.gr) {
-        grValue = boxLogisticsData.gr;
+    // Va a Firebase a buscar la información más reciente de este BoxID
+    let grValue = "N/A", ordenValue = "N/A", usuarioValue = "N/A";
+    try {
+        const docSnap = await db.collection('boxID_historico').doc(boxId).get();
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            grValue = data.gr || "N/A";
+            ordenValue = data.orden || "N/A";
+            usuarioValue = data.usuario || "N/A";
+        }
+    } catch (e) {
+        console.error("Error al obtener datos del BoxID:", e);
+        grValue = "Error"; ordenValue = "Error"; usuarioValue = "Error";
     }
 
     let packerInfo = '';
@@ -1783,11 +1791,16 @@ td.boxid-missing {
         const latestSerial = serials.reduce((latest, current) => (current[packedDateHeader] > latest[packedDateHeader]) ? current : latest, serials[0]);
         const packerId = latestSerial[employeeIdHeader];
         
+        // Creamos los elementos HTML con su función de copiar
         const grHTML = `<span class="packer-info">GR: <strong class="copyable" onclick="copyGR(this, '${grValue}')" title="Haz clic para copiar">${grValue}</strong></span>`;
+        const ordenHTML = `<span class="packer-info">Orden: <strong class="copyable" onclick="copyGR(this, '${ordenValue}')" title="Haz clic para copiar">${ordenValue}</strong></span>`;
+        const usuarioHTML = `<span class="packer-info">Confirmado por: <strong>${usuarioValue}</strong></span>`;
         
         packerInfo = `<div class="packing-modal-header">
                         <span class="packer-info">EMPACADOR: <strong>${packerId || 'N/A'}</strong></span>
-                        ${grHTML} 
+                        ${ordenHTML}
+                        ${grHTML}
+                        ${usuarioHTML}
                     </div>`;
     }
     
@@ -1804,7 +1817,7 @@ td.boxid-missing {
     }
     content += '</ul>';
 
-    showModal(`Caja: ${boxId}`, content);
+    showModal(`Detalle de Caja: ${boxId}`, content);
 }
 
             async function renderEmpaqueView(key) {
