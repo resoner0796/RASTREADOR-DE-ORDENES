@@ -847,60 +847,63 @@ td.boxid-missing {
             const REYNOSA_TIMEZONE = 'America/Matamoros';
 
             // Element cache
-            const doc = (id) => document.getElementById(id);
-            const appTitle = doc('app-title');
-            const fileDropArea = doc('fileDropArea');
-            const fileInput = doc('fileInput');
-            const updateFileInput = doc('updateFileInput');
-            const orderList = doc('orderList');
-            const statOrderNumber = doc('statOrderNumber');
-            const statCatalogNumber = doc('statCatalogNumber');
-            const statOrderQty = doc('statOrderQty');
-            const statPackedQty = doc('statPackedQty');
-            const statRemainingQty = doc('statRemainingQty');
-            const statScrapQty = doc('statScrapQty');
-            const totalOrdersStat = doc('totalOrdersStat');
-            const completedOrdersStat = doc('completedOrdersStat');
-            const modeRastreo = doc('modeRastreo');
-            const modeEmpaque = doc('modeEmpaque');
-            const rastreoFilterInput = doc('rastreoFilterInput');
-            const areaSelectBtn = doc('areaSelectBtn');
-            const adminBtn = doc('adminBtn');
-            const themeToggleBtn = doc('themeToggleBtn');
-            const logoutBtn = doc('logoutBtn');
-            const orderSearchInput = doc('orderSearchInput');
-            const showDailyPlanBtn = doc('showDailyPlanBtn');
-            const dailyPlanContainer = doc('dailyPlanContainer');
-            const lastUpdatedContainer = doc('lastUpdatedContainer');
-            
-            const mobileControls = {
-                status: doc('rastreoStatusFilters'),
-                line: doc('rastreoLineFilters'),
-                actions: doc('actionsCard')?.querySelector('.actions-container')
-            };
-            const desktopControls = {
-                status: doc('rastreoStatusFiltersDesktop'),
-                line: doc('rastreoLineFiltersDesktop'),
-                actions: doc('desktop-actions-wrapper')
-            };
+            // === ELEMENT CACHE ===
+const doc = (id) => document.getElementById(id);
+const appTitle = doc('app-title');
+const fileDropArea = doc('fileDropArea');
+const fileInput = doc('fileInput');
+const updateFileInput = doc('updateFileInput');
+const orderList = doc('orderList');
+const statOrderNumber = doc('statOrderNumber');
+const statCatalogNumber = doc('statCatalogNumber');
+const statOrderQty = doc('statOrderQty');
+const statPackedQty = doc('statPackedQty');
+const statRemainingQty = doc('statRemainingQty');
+const statScrapQty = doc('statScrapQty');
+const totalOrdersStat = doc('totalOrdersStat');
+const completedOrdersStat = doc('completedOrdersStat');
+const modeRastreo = doc('modeRastreo');
+const modeEmpaque = doc('modeEmpaque');
+const rastreoFilterInput = doc('rastreoFilterInput');
+const areaSelectBtn = doc('areaSelectBtn');
+const adminBtn = doc('adminBtn');
+const themeToggleBtn = doc('themeToggleBtn');
+const logoutBtn = doc('logoutBtn');
+const orderSearchInput = doc('orderSearchInput');
+const showDailyPlanBtn = doc('showDailyPlanBtn');
+const dailyPlanContainer = doc('dailyPlanContainer');
+const lastUpdatedContainer = doc('lastUpdatedContainer');
 
-            const placeholderText = doc('placeholderText');
-            const empaqueFilterInput = doc('empaqueFilterInput');
-            const sapFileDropArea = doc('sapFileDropArea');
-            const sapFileInput = doc('sapFileInput');
-            const sapPlaceholderText = doc('sapPlaceholderText');
-            const sapOrderList = doc('sapOrderList');
-            const sapTotalOrdersStat = doc('sapTotalOrdersStat');
-            const sapCompletedOrdersStat = doc('sapCompletedOrdersStat');
-            const sapResetFilterBtn = doc('sapResetFilter');
-            const sapLastUpdatedContainer = doc('sapLastUpdatedContainer');
-            const modeFwd = doc('modeFwd');
-            const modeSap = doc('modeSap');
-            const modalOverlay = doc('modalOverlay');
-            const modalTitle = doc('modalTitle');
-            const modalBody = doc('modalBody');
-            const modalClose = doc('modalClose');
-            const copyReportBtn = doc('copyReportBtn');
+const mobileControls = {
+    status: doc('rastreoStatusFilters'),
+    line: doc('rastreoLineFilters'),
+    actions: doc('actionsCard')?.querySelector('.actions-container')
+};
+const desktopControls = {
+    status: doc('rastreoStatusFiltersDesktop'),
+    line: doc('rastreoLineFiltersDesktop'),
+    actions: doc('desktop-actions-wrapper')
+};
+
+const placeholderText = doc('placeholderText');
+const empaqueFilterInput = doc('empaqueFilterInput');
+const sapFileDropArea = doc('sapFileDropArea');
+const sapFileInput = doc('sapFileInput');
+const sapPlaceholderText = doc('sapPlaceholderText');
+const sapOrderList = doc('sapOrderList');
+const sapTotalOrdersStat = doc('sapTotalOrdersStat');
+const sapCompletedOrdersStat = doc('sapCompletedOrdersStat');
+const sapResetFilterBtn = doc('sapResetFilter');
+const sapLastUpdatedContainer = doc('sapLastUpdatedContainer');
+const sapExportImageBtn = doc('sapExportImageBtn'); // <-- ¡AQUÍ ESTÁ LA LÍNEA QUE FALTABA!
+const modeFwd = doc('modeFwd');
+const modeSap = doc('modeSap');
+const modalOverlay = doc('modalOverlay');
+const modalTitle = doc('modalTitle');
+const modalBody = doc('modalBody');
+const modalClose = doc('modalClose');
+const copyReportBtn = doc('copyReportBtn');
+
 
             // === EVENT LISTENERS ===
             modeFwd.addEventListener('click', () => switchMainMode('fwd'));
