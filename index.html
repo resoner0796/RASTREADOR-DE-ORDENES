@@ -960,9 +960,9 @@ td.boxid-missing {
             });
             sapFileInput.addEventListener('change', (e) => { if (e.target.files.length) handleSapFile(e.target.files[0]); });
             sapResetFilterBtn.addEventListener('click', () => {
-                sapDateFilter = 'default';
-                renderSapView();
-            });
+    sapDateFilter = []; // Simplemente vaciamos el array
+    renderSapView();
+});
             modalClose.addEventListener('click', hideModal);
             modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
             
@@ -2361,29 +2361,35 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
             }
 
             function renderSapView() {
-                const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
-                sapFileDropArea.classList.toggle('disabled', !canEdit);
-                if (sapFileDropArea.querySelector('p')) {
-                    sapFileDropArea.querySelector('p').textContent = canEdit
-                        ? (session.isMaster ? 'Arrastra un archivo maestro SAP (General o de Área)' : 'Arrastra un archivo maestro SAP (.xlsx)')
-                        : 'No tienes permisos para esta área';
-                }
-                sapPlaceholderText.style.display = sapData.length > 0 ? 'none' : 'block';
-                updateSapDashboard();
-                updateSapOrderList();
-                updateSapTable();
-                sapResetFilterBtn.style.display = (sapDateFilter !== 'default' && sapData.length > 0) ? 'inline-block' : 'none';
-                
-                if (sapLastUpdated) {
-                    let updatedText = `Última actualización: ${formatDateTime(sapLastUpdated)}`;
-                    if (sapLastUpdatedBy) {
-                        updatedText += ` por: ${sapLastUpdatedBy}`;
-                    }
-                    sapLastUpdatedContainer.textContent = updatedText;
-                } else {
-                    sapLastUpdatedContainer.textContent = '';
-                }
-            }
+    const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+    sapFileDropArea.classList.toggle('disabled', !canEdit);
+    if(sapFileDropArea.querySelector('p')) {
+        sapFileDropArea.querySelector('p').textContent = canEdit
+            ? (session.isMaster ? 'Arrastra un archivo maestro SAP (General o de Área)' : 'Arrastra un archivo maestro SAP (.xlsx)')
+            : 'No tienes permisos para esta área';
+    }
+    
+    const hasData = sapData.length > 0;
+    sapPlaceholderText.style.display = hasData ? 'none' : 'block';
+    sapExportImageBtn.disabled = !hasData;
+
+    updateSapDashboard();
+    updateSapOrderList();
+    updateSapTable();
+
+    // El botón "Mostrar Hoy/Tarde" ahora limpia el array de filtros
+    sapResetFilterBtn.style.display = (sapDateFilter.length > 0 && hasData) ? 'inline-block' : 'none';
+    
+    if (sapLastUpdated) {
+        let updatedText = `Última actualización: ${formatDateTime(sapLastUpdated)}`;
+        if (sapLastUpdatedBy) {
+            updatedText += ` por: ${sapLastUpdatedBy}`;
+        }
+        sapLastUpdatedContainer.textContent = updatedText;
+    } else {
+        sapLastUpdatedContainer.textContent = '';
+    }
+}
             
             function isSapOrderForToday(order) {
                 const todayString = new Date().toLocaleDateString('es-ES', {
@@ -2407,97 +2413,114 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
             }
 
             function updateSapOrderList() {
-                const activeDate = sapOrderList.querySelector('.date-header.active')?.dataset.date;
-                
-                if (sapData.length === 0) {
-                    sapOrderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>`;
-                    return;
-                }
-                
-                const groupedByDate = new Map();
-                sapData.forEach(order => {
-                    const date = excelSerialToDate(order['Finish']) || new Date(0);
-                    const dateString = formatDate(date);
-                    if (!groupedByDate.has(dateString)) groupedByDate.set(dateString, 0);
-                    groupedByDate.set(dateString, groupedByDate.get(dateString) + 1);
-                });
+    if (sapData.length === 0) {
+        sapOrderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>`;
+        return;
+    }
+    
+    // Si el filtro no es un array (es 'default' o un solo día de antes), lo convertimos en array para facilitar
+    if (!Array.isArray(sapDateFilter)) {
+        sapDateFilter = sapDateFilter === 'default' ? [] : [sapDateFilter];
+    }
 
-                const sortedDates = Array.from(groupedByDate.keys()).sort((a, b) => {
-                    const dateA = new Date(a.split('/').reverse().join('-'));
-                    const dateB = new Date(b.split('/').reverse().join('-'));
-                    return dateB - dateA;
-                });
+    const groupedByDate = new Map();
+    sapData.forEach(order => {
+        const date = excelSerialToDate(order['Finish']) || new Date(0);
+        const dateString = formatDate(date);
+        if (!groupedByDate.has(dateString)) groupedByDate.set(dateString, 0);
+        groupedByDate.set(dateString, groupedByDate.get(dateString) + 1);
+    });
 
-                const todayString = new Date().toLocaleDateString('es-ES', {
-                    timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric'
-                });
-                
-                let html = '';
-                sortedDates.forEach(dateString => {
-                    const orderCount = groupedByDate.get(dateString);
-                    const isToday = dateString === todayString;
-                    const countText = `${orderCount} ${orderCount === 1 ? 'orden' : 'órdenes'}`;
+    const sortedDates = Array.from(groupedByDate.keys()).sort((a, b) => {
+        const dateA = new Date(a.split('/').reverse().join('-'));
+        const dateB = new Date(b.split('/').reverse().join('-'));
+        return dateB - dateA;
+    });
 
-                    html += `<div class="order-item">`;
-                    html += `<button class="date-header" data-date="${dateString}" style="width:100%; justify-content: space-between;">
-                                <span>📅 ${dateString}</span>
-                                ${isToday ? `<span class="status-indicator">(${countText})</span>` : `<span class="order-count">(${countText})</span>`}
-                            </button>`;
-                    html += `</div>`;
-                });
-                
-                sapOrderList.innerHTML = html;
-                sapOrderList.querySelectorAll('.date-header').forEach(header => {
-                    if(header.dataset.date === activeDate) {
-                        header.classList.add('active');
-                    }
-                    
-                    header.addEventListener('click', () => {
-                        sapOrderList.querySelectorAll('.date-header').forEach(h => h.classList.remove('active'));
-                        header.classList.add('active');
-                        sapDateFilter = header.dataset.date;
-                        renderSapView();
-                    });
-                });
+    const todayString = new Date().toLocaleDateString('es-ES', { timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' });
+    
+    let html = '';
+    sortedDates.forEach(dateString => {
+        const orderCount = groupedByDate.get(dateString);
+        const isToday = dateString === todayString;
+        const countText = `${orderCount} ${orderCount === 1 ? 'orden' : 'órdenes'}`;
+
+        html += `<div class="order-item">
+                    <button class="date-header" data-date="${dateString}" style="width:100%; justify-content: space-between;">
+                        <span>📅 ${dateString}</span>
+                        ${isToday ? `<span class="status-indicator">(${countText})</span>` : `<span class="order-count">(${countText})</span>`}
+                    </button>
+                 </div>`;
+    });
+    
+    sapOrderList.innerHTML = html;
+    
+    sapOrderList.querySelectorAll('.date-header').forEach(header => {
+        // Marcamos como activos todos los que estén en nuestro array de filtros
+        if (sapDateFilter.includes(header.dataset.date)) {
+            header.classList.add('active');
+        }
+        
+        header.addEventListener('click', () => {
+            const clickedDate = header.dataset.date;
+            const dateIndex = sapDateFilter.indexOf(clickedDate);
+
+            // Lógica de Toggling: Si ya está, lo quitamos. Si no está, lo agregamos.
+            if (dateIndex > -1) {
+                sapDateFilter.splice(dateIndex, 1); // Quitar del array
+            } else {
+                sapDateFilter.push(clickedDate); // Agregar al array
             }
             
+            // Volvemos a renderizar todo para reflejar los cambios
+            renderSapView();
+        });
+    });
+}
+            
             function updateSapTable() {
-                const table = doc('sapTable');
-                if (sapData.length === 0) {
-                    table.innerHTML = '';
-                    return;
-                }
+    const table = doc('sapTable');
+    if (sapData.length === 0) {
+        table.innerHTML = '';
+        return;
+    }
 
-                let dataToDisplay = sapData;
-                if (sapDateFilter === 'default') {
-                    dataToDisplay = sapData.filter(row => row.status === 'late' || isSapOrderForToday(row));
-                } else if (sapDateFilter) {
-                    dataToDisplay = sapData.filter(row => formatDate(excelSerialToDate(row['Finish'])) === sapDateFilter);
-                }
+    let dataToDisplay = [];
+    // Si el array de filtros está vacío, usamos la lógica de "Hoy/Tarde"
+    if (sapDateFilter.length === 0) {
+        dataToDisplay = sapData.filter(row => row.status === 'late' || isSapOrderForToday(row));
+    } else {
+        // Si el array tiene fechas, filtramos por todas las fechas incluidas en él
+        dataToDisplay = sapData.filter(row => {
+            const orderDate = formatDate(excelSerialToDate(row['Finish']));
+            return sapDateFilter.includes(orderDate);
+        });
+    }
 
-                if (dataToDisplay.length === 0) {
-                    table.innerHTML = `<thead><tr><th>No hay órdenes para la selección actual.</th></tr></thead>`;
-                    return;
-                }
+    // El resto de la función para pintar la tabla no cambia...
+    if (dataToDisplay.length === 0) {
+        table.innerHTML = `<thead><tr><th>No hay órdenes para la selección actual.</th></tr></thead>`;
+        return;
+    }
 
-                const headers = ['Orden', 'Catalogo', 'Material', 'Special Stock', 'Finish', 'Total orden', 'Total confirmado', 'Faltante'];
-                table.innerHTML = `
-                    <thead><tr>${headers.map(h => `<th>${h.replace(/_/g, ' ')}</th>`).join('')}</tr></thead>
-                    <tbody>
-                        ${dataToDisplay.map(row => `
-                            <tr class="is-${row.status}-sap">
-                                <td data-label="Orden">${row['Orden']}</td>
-                                <td data-label="Catalogo">${row['Catalogo']}</td>
-                                <td data-label="Material">${row['Material']}</td>
-                                <td data-label="Special Stock">${row['Special Stock']}</td>
-                                <td data-label="Finish">${formatDate(excelSerialToDate(row['Finish']))}</td>
-                                <td data-label="Total orden">${row['Total orden']}</td>
-                                <td data-label="Total confirmado">${row['Total confirmado']}</td>
-                                <td data-label="Faltante">${row['Faltante']}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>`;
-            }
+    const headers = ['Orden', 'Catalogo', 'Material', 'Special Stock', 'Finish', 'Total orden', 'Total confirmado', 'Faltante'];
+    table.innerHTML = `
+        <thead><tr>${headers.map(h => `<th>${h.replace(/_/g, ' ')}</th>`).join('')}</tr></thead>
+        <tbody>
+            ${dataToDisplay.map(row => `
+                <tr class="is-${row.status}-sap">
+                    <td data-label="Orden">${row['Orden']}</td>
+                    <td data-label="Catalogo">${row['Catalogo']}</td>
+                    <td data-label="Material">${row['Material']}</td>
+                    <td data-label="Special Stock">${row['Special Stock']}</td>
+                    <td data-label="Finish">${formatDate(excelSerialToDate(row['Finish']))}</td>
+                    <td data-label="Total orden">${row['Total orden']}</td>
+                    <td data-label="Total confirmado">${row['Total confirmado']}</td>
+                    <td data-label="Faltante">${row['Faltante']}</td>
+                </tr>
+            `).join('')}
+        </tbody>`;
+}
 
             function formatCell(value, header, isDateTime = false) {
                 if (isDateTime) return formatDateTimeFromSerial(value);
