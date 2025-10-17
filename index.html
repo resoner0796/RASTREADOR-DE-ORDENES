@@ -1747,21 +1747,16 @@ td.boxid-missing {
                 ).join('');
             }
             
-            async function showPackingDetailsModal(boxId, serials, headers) {
+            function showPackingDetailsModal(boxId, serials, headers, boxLogisticsData) { // <-- Recibe el nuevo parámetro
     const serialHeader = findHeader(headers, PACKING_KEYS.SERIAL);
     const employeeIdHeader = findHeader(headers, PACKING_KEYS.EMPLOYEE_ID);
     const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
     
-    // 1. Obtenemos el GR desde Firebase
+    // --- ¡AQUÍ ESTÁ LA MAGIA! ---
+    // Ya no vamos a Firebase. Usamos los datos que nos pasaron.
     let grValue = "N/A";
-    try {
-        const docSnap = await db.collection('boxID_historico').doc(boxId).get();
-        if (docSnap.exists()) {
-            grValue = docSnap.data().gr || "N/A";
-        }
-    } catch (e) {
-        console.error("Error al obtener GR:", e);
-        grValue = "Error de consulta";
+    if (boxLogisticsData && boxLogisticsData.gr) {
+        grValue = boxLogisticsData.gr;
     }
 
     let packerInfo = '';
@@ -1769,7 +1764,6 @@ td.boxid-missing {
         const latestSerial = serials.reduce((latest, current) => (current[packedDateHeader] > latest[packedDateHeader]) ? current : latest, serials[0]);
         const packerId = latestSerial[employeeIdHeader];
         
-        // 2. Creamos el HTML para el GR, con la función de copiar
         const grHTML = `<span class="packer-info">GR: <strong class="copyable" onclick="copyGR(this, '${grValue}')" title="Haz clic para copiar">${grValue}</strong></span>`;
         
         packerInfo = `<div class="packing-modal-header">
@@ -1793,12 +1787,12 @@ td.boxid-missing {
 
     showModal(`Caja: ${boxId}`, content);
 }
+
             async function renderEmpaqueView(key) {
     const tableWrapper = doc('empaqueTableContainer');
     tableWrapper.style.opacity = '0';
     await new Promise(res => setTimeout(res, 150));
 
-    // 1. Obtenemos TODOS los datos de los BoxIDs recibidos (no solo los IDs)
     let receivedBoxData = new Map();
     try {
         const snapshot = await db.collection('boxID_historico').get();
@@ -1807,7 +1801,6 @@ td.boxid-missing {
         console.error("Error al obtener el histórico de BoxIDs:", e);
     }
     
-    // ... (El resto de la lógica para obtener dataToShow y headers no cambia)
     let dataToShow = new Map(); let headers = [];
     if (key === 'all' || key === null) {
         loadedOrders.forEach(order => {
@@ -1834,7 +1827,6 @@ td.boxid-missing {
     const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
     
     const filterText = empaqueFilterInput.value.toLowerCase();
-    // 2. AÑADIMOS LA NUEVA COLUMNA AL ENCABEZADO
     let tableHTML = `<thead><tr><th>BoxID</th><th>Cantidad</th><th>Último Empaque</th><th>Recibido Logística</th></tr></thead><tbody>`;
     let entriesFound = 0;
 
@@ -1842,15 +1834,11 @@ td.boxid-missing {
 
     for (const [boxId, serials] of reversedEntries) {
         if(!serials || serials.length === 0) continue;
-        
         const serialsMatchFilter = serials.some(s => String(s[findHeader(headers, PACKING_KEYS.SERIAL)]).toLowerCase().includes(filterText));
-        
         if (filterText && !String(boxId).toLowerCase().includes(filterText) && !serialsMatchFilter) continue;
-        
         entriesFound++;
         const latestSerial = serials.reduce((latest, current) => (current[packedDateHeader] > latest[packedDateHeader]) ? current : latest, serials[0]);
 
-        // 3. Verificamos el estatus y obtenemos la fecha de logística
         const boxData = receivedBoxData.get(boxId);
         const statusClass = boxData ? 'boxid-received' : 'boxid-missing';
         const receivedDateText = boxData && boxData.receivedAt ? formatShortDateTime(boxData.receivedAt.toDate()) : 'N/A';
@@ -1875,7 +1863,10 @@ td.boxid-missing {
         row.addEventListener('click', () => {
             const boxId = row.dataset.boxid;
             const serialsForBox = dataToShow.get(boxId);
-            showPackingDetailsModal(boxId, serialsForBox, headers);
+            // --- ¡AQUÍ ESTÁ LA MAGIA! ---
+            // Le pasamos la información de logística que ya teníamos guardada
+            const logisticsData = receivedBoxData.get(boxId);
+            showPackingDetailsModal(boxId, serialsForBox, headers, logisticsData);
         });
     });
     tableWrapper.style.opacity = '1';
