@@ -546,6 +546,38 @@
             #table-controls-header, #sap-controls-header { margin: 0; padding: 0; }
         }
         
+        /* Estilos para los nuevos filtros en la tabla de Empaque */
+#empaqueTable th {
+    vertical-align: top; /* Alinear todo arriba */
+}
+
+#empaqueTable th > span {
+    display: block; /* Hacemos que el título ocupe su línea */
+    margin-bottom: 6px; /* Espacio entre título e input */
+    font-weight: 600; /* Lo hacemos un poco más grueso */
+    font-size: 0.75rem;
+}
+
+#empaqueTable .filter-input {
+    width: 100%;
+    padding: 4px 6px;
+    font-size: 0.8rem;
+    background-color: var(--bg-dark); /* Usamos el color de fondo más oscuro */
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 4px;
+    box-sizing: border-box; /* Súper importante para que el padding no desmadre el ancho */
+}
+
+#empaqueTable .filter-input::placeholder {
+    color: var(--text-dark);
+    opacity: 0.7;
+}
+
+#empaqueTable .copyable-header span {
+    display: inline-block; /* Dejamos que el título de GR esté en línea */
+}
+        
         /* Estilos para la tabla de Empaque */
 #empaqueTable {
     table-layout: fixed; /* Forzamos anchos para que no se desmadre */
@@ -1940,10 +1972,8 @@ async function handleSapImageExport() {
     let entriesFound = 0;
     const reversedEntries = Array.from(dataToShow.entries()).reverse();
     
-    // --- ¡AQUÍ EMPIEZA LA MAGIA! ---
-    // 1. Creamos un array para guardar solo los GRs que se van a mostrar
     const grsToCopy = [];
-    let tableBodyHTML = ''; // Construimos el cuerpo de la tabla por separado
+    let tableBodyHTML = ''; 
 
     for (const [boxId, serials] of reversedEntries) {
         if(!serials || serials.length === 0) continue;
@@ -1957,7 +1987,6 @@ async function handleSapImageExport() {
         const receivedDateText = boxData && boxData.receivedAt ? formatShortDateTime(boxData.receivedAt.toDate()) : 'N/A';
         const grValue = boxData && boxData.gr ? String(boxData.gr).trim() : 'N/A';
         
-        // 2. Si el GR es válido, lo agregamos a nuestra lista para copiar
         if (grValue !== 'N/A') {
             grsToCopy.push(grValue);
         }
@@ -1978,18 +2007,19 @@ async function handleSapImageExport() {
             </tr>`;
     }
     
-    // 3. Convertimos la lista de GRs en un solo string, separados por saltos de línea
     const grColumnString = grsToCopy.join('\\n');
 
-    // 4. Construimos el encabezado y le metemos la función de copiado a la columna GR
+    // --- ¡AQUÍ ESTÁ EL ENCABEZADO ACTUALIZADO CON FILTROS! ---
     let tableHeaderHTML = `<thead><tr>
-        <th>BoxID</th>
-        <th>Cantidad</th>
-        <th>Último Empaque</th>
-        <th>Recibido Logística</th>
-        <th class="copyable-header" onclick="copyColumnData(this, '${grColumnString}')" title="Haz clic para copiar toda la columna">GR</th>
-        <th>Orden</th>
-        <th>Usuario</th>
+        <th><span>BoxID</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="0"></th>
+        <th><span>Cantidad</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="1"></th>
+        <th><span>Último Empaque</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="2"></th>
+        <th><span>Recibido Logística</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="3"></th>
+        <th class="copyable-header" onclick="copyColumnData(this, '${grColumnString}')" title="Haz clic para copiar toda la columna">
+            <span>GR</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="4">
+        </th>
+        <th><span>Orden</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="5"></th>
+        <th><span>Usuario</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="6"></th>
     </tr></thead>`;
     
     if (entriesFound === 0) { 
@@ -2000,13 +2030,55 @@ async function handleSapImageExport() {
 
     tableWrapper.querySelectorAll('.box-row').forEach(row => {
         row.addEventListener('click', (e) => {
+            // Evitamos que el modal se abra si se hizo clic en una celda copiable (GR)
             if (e.target.classList.contains('copyable')) return; 
+            
             const boxId = row.dataset.boxid;
             const serialsForBox = dataToShow.get(boxId);
             showPackingDetailsModal(boxId, serialsForBox, headers);
         });
     });
+    
     tableWrapper.style.opacity = '1';
+
+    // --- ¡AQUÍ AÑADIMOS LA LÓGICA DE FILTRADO! ---
+    tableWrapper.querySelectorAll('.filter-input').forEach(input => {
+        // Evitamos que al hacer clic en el input se dispare el clic de la fila/encabezado
+        input.addEventListener('click', (e) => {
+            e.stopPropagation();
+        }); 
+        
+        // Evitamos que al teclear en el input del GR se active el copiado de columna
+        if (input.closest('.copyable-header')) {
+            input.addEventListener('click', (e) => {
+                e.preventDefault(); // Previene el evento de copiado
+            });
+        }
+        
+        input.addEventListener('keyup', () => {
+            const table = doc('empaqueTable');
+            // Aseguramos que solo tomamos los filtros del thead de esta tabla
+            const filters = Array.from(table.querySelectorAll('thead .filter-input')); 
+            const rows = table.querySelectorAll('tbody tr');
+
+            rows.forEach(row => {
+                let shouldShow = true;
+                filters.forEach(filter => {
+                    const filterValue = filter.value.toLowerCase();
+                    const colIndex = parseInt(filter.dataset.colIndex, 10); 
+                    
+                    if (filterValue) {
+                        const cell = row.cells[colIndex];
+                        const cellValue = cell ? cell.textContent.toLowerCase() : '';
+                        if (!cellValue.includes(filterValue)) {
+                            shouldShow = false;
+                        }
+                    }
+                });
+                row.style.display = shouldShow ? '' : 'none';
+            });
+        });
+    });
 }
 
 // Función para copiar una columna completa de datos
