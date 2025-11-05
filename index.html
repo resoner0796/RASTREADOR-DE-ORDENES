@@ -2314,35 +2314,28 @@ window.copyGR = function(element, gr) {
             }
             
             // --- NUEVA FUNCIÓN ---
-        async function deleteSapOrderFromFirebase(orderKey) {
-            if (!orderKey) return;
-            const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
-            if (!canEdit) {
-                showModal('Acceso Denegado', `No tienes permisos para modificar el área ${currentArea}.`, 'error');
-                return;
-            }
+        // --- FUNCIÓN MODIFICADA (YA NO BORRA DE FWD) ---
+            async function deleteSapOrderFromFirebase(orderKey) {
+                if (!orderKey) return;
+                const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+                if (!canEdit) {
+                    showModal('Acceso Denegado', `No tienes permisos para modificar el área ${currentArea}.`, 'error');
+                    return;
+                }
 
-            try {
-                const batch = db.batch();
-                
-                // 1. Referencia al documento en 'sap_historico'
-                const sapDocRef = db.collection('areas').doc(currentArea).collection('sap_historico').doc(orderKey);
-                batch.delete(sapDocRef);
-                
-                // 2. Referencia al documento en 'orders' (vista FWD) para mantener sincronizado
-                const fwdDocRef = db.collection('areas').doc(currentArea).collection('orders').doc(orderKey);
-                batch.delete(fwdDocRef);
-                
-                await batch.commit();
-                
-                // No mostramos modal de éxito, el listener de snapshot se encargará de refrescar la UI.
-                console.log(`Orden ${orderKey} eliminada de 'sap_historico' y 'orders'.`);
+                try {
+                    // Borra ÚNICAMENTE del histórico de SAP
+                    const sapDocRef = db.collection('areas').doc(currentArea).collection('sap_historico').doc(orderKey);
+                    await sapDocRef.delete();
+                    
+                    // El listener de snapshot se encargará de refrescar la UI.
+                    console.log(`Orden ${orderKey} eliminada de 'sap_historico'.`);
 
-            } catch (e) {
-                console.error("Error al eliminar la orden SAP de Firebase: ", e);
-                showModal('Error al Eliminar', `No se pudo eliminar la orden ${orderKey} de ambas colecciones.`, 'error');
-            }
-        }
+                } catch (e) {
+                    console.error("Error al eliminar la orden SAP de Firebase: ", e);
+                    showModal('Error al Eliminar', `No se pudo eliminar la orden ${orderKey} del histórico de SAP.`, 'error');
+                }
+            }
             
             
             async function syncMultiAreaSapData(groupedData) {
@@ -2784,9 +2777,10 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
     table.querySelectorAll('.sap-delete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const key = e.currentTarget.dataset.orderKey;
-            // Llamamos a la función INTERNA
+            
+            // === ¡AQUÍ ESTÁ EL CAMBIO DE TEXTO! ===
             showConfirmationModal(
-                `¿Seguro que quieres eliminar la orden SAP ${key}? Esto la borrará del histórico de SAP y de la vista FWD.`, 
+                `¿Seguro que quieres eliminar la orden SAP ${key}? Esto la borrará SÓLO del histórico de SAP (No afectará la vista FWD).`, 
                 () => deleteSapOrderFromFirebase(key)
             );
         });
