@@ -2313,6 +2313,38 @@ window.copyGR = function(element, gr) {
                 }
             }
             
+            // --- NUEVA FUNCIÓN ---
+        async function deleteSapOrderFromFirebase(orderKey) {
+            if (!orderKey) return;
+            const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+            if (!canEdit) {
+                showModal('Acceso Denegado', `No tienes permisos para modificar el área ${currentArea}.`, 'error');
+                return;
+            }
+
+            try {
+                const batch = db.batch();
+                
+                // 1. Referencia al documento en 'sap_historico'
+                const sapDocRef = db.collection('areas').doc(currentArea).collection('sap_historico').doc(orderKey);
+                batch.delete(sapDocRef);
+                
+                // 2. Referencia al documento en 'orders' (vista FWD) para mantener sincronizado
+                const fwdDocRef = db.collection('areas').doc(currentArea).collection('orders').doc(orderKey);
+                batch.delete(fwdDocRef);
+                
+                await batch.commit();
+                
+                // No mostramos modal de éxito, el listener de snapshot se encargará de refrescar la UI.
+                console.log(`Orden ${orderKey} eliminada de 'sap_historico' y 'orders'.`);
+
+            } catch (e) {
+                console.error("Error al eliminar la orden SAP de Firebase: ", e);
+                showModal('Error al Eliminar', `No se pudo eliminar la orden ${orderKey} de ambas colecciones.`, 'error');
+            }
+        }
+            
+            
             async function syncMultiAreaSapData(groupedData) {
                 const totalOrders = Object.values(groupedData).reduce((sum, arr) => sum + arr.length, 0);
                 const areasAffected = Object.keys(groupedData);
@@ -2674,49 +2706,76 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
 }
             
             function updateSapTable() {
-    const table = doc('sapTable');
-    if (sapData.length === 0) {
-        table.innerHTML = '';
-        return;
-    }
+    const table = doc('sapTable');
+    if (sapData.length === 0) {
+        table.innerHTML = '';
+        return;
+    }
 
-    let dataToDisplay = [];
-    // Si el array de filtros está vacío, usamos la lógica de "Hoy/Tarde"
-    if (sapDateFilter.length === 0) {
-        dataToDisplay = sapData.filter(row => row.status === 'late' || isSapOrderForToday(row));
-    } else {
-        // Si el array tiene fechas, filtramos por todas las fechas incluidas en él
-        dataToDisplay = sapData.filter(row => {
-            const orderDate = formatDate(excelSerialToDate(row['Finish']));
-            return sapDateFilter.includes(orderDate);
-        });
-    }
+    let dataToDisplay = [];
+    // Si el array de filtros está vacío, usamos la lógica de "Hoy/Tarde"
+    if (sapDateFilter.length === 0) {
+        dataToDisplay = sapData.filter(row => row.status === 'late' || isSapOrderForToday(row));
+    } else {
+        // Si el array tiene fechas, filtramos por todas las fechas incluidas en él
+        dataToDisplay = sapData.filter(row => {
+            const orderDate = formatDate(excelSerialToDate(row['Finish']));
+            return sapDateFilter.includes(orderDate);
+        });
+    }
 
-    // El resto de la función para pintar la tabla no cambia...
-    if (dataToDisplay.length === 0) {
-        table.innerHTML = `<thead><tr><th>No hay órdenes para la selección actual.</th></tr></thead>`;
-        return;
-    }
+    // El resto de la función para pintar la tabla no cambia...
+    if (dataToDisplay.length === 0) {
+        table.innerHTML = `<thead><tr><th>No hay órdenes para la selección actual.</th></tr></thead>`;
+        return;
+    }
 
+    // --- INICIO DE CAMBIOS ---
+    const canManageThisArea = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+    
     const headers = ['Orden', 'Catalogo', 'Material', 'Special Stock', 'Finish', 'Total orden', 'Total confirmado', 'Faltante'];
-    table.innerHTML = `
-        <thead><tr>${headers.map(h => `<th>${h.replace(/_/g, ' ')}</th>`).join('')}</tr></thead>
-        <tbody>
-            ${dataToDisplay.map(row => `
-                <tr class="is-${row.status}-sap">
-                    <td data-label="Orden">${row['Orden']}</td>
-                    <td data-label="Catalogo">${row['Catalogo']}</td>
-                    <td data-label="Material">${row['Material']}</td>
-                    <td data-label="Special Stock">${row['Special Stock']}</td>
-                    <td data-label="Finish">${formatDate(excelSerialToDate(row['Finish']))}</td>
-                    <td data-label="Total orden">${row['Total orden']}</td>
-                    <td data-label="Total confirmado">${row['Total confirmado']}</td>
-                    <td data-label="Faltante">${row['Faltante']}</td>
-                </tr>
-            `).join('')}
-        </tbody>`;
-}
+    
+    // Añadimos la cabecera de Acciones si hay permisos
+    if (canManageThisArea) {
+        headers.push('Acciones');
+    }
 
+    table.innerHTML = `
+        <thead><tr>${headers.map(h => `<th>${h.replace(/_/g, ' ')}</th>`).join('')}</tr></thead>
+        <tbody>
+            ${dataToDisplay.map(row => {
+                const orderKey = String(row['Orden']); // Aseguramos que sea string
+                
+                // Creamos el botón de eliminar si hay permisos
+                let actionButtonHTML = '';
+                if (canManageThisArea) {
+                    actionButtonHTML = `
+                        <td data-label="Acciones" style="text-align: center;">
+                            <button class="icon-btn" title="Eliminar orden SAP" 
+                                    onclick="showConfirmationModal('¿Seguro que quieres eliminar la orden SAP ${orderKey}? Esto la borrará del histórico de SAP y de la vista FWD.', () => deleteSapOrderFromFirebase('${orderKey}'))" 
+                                    style="font-size: 1rem; filter: grayscale(0) opacity(0.6);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </td>`;
+                }
+
+                return `
+                    <tr class="is-${row.status}-sap">
+                        <td data-label="Orden">${orderKey}</td>
+                        <td data-label="Catalogo">${row['Catalogo']}</td>
+                        <td data-label="Material">${row['Material']}</td>
+                        <td data-label="Special Stock">${row['Special Stock']}</td>
+                        <td data-label="Finish">${formatDate(excelSerialToDate(row['Finish']))}</td>
+                        <td data-label="Total orden">${row['Total orden']}</td>
+                        <td data-label="Total confirmado">${row['Total confirmado']}</td>
+                        <td data-label="Faltante">${row['Faltante']}</td>
+                        ${actionButtonHTML} 
+                    </tr>
+                `;
+            }).join('')}
+        </tbody>`;
+    // --- FIN DE CAMBIOS ---
+}
             function formatCell(value, header, isDateTime = false) {
                 if (isDateTime) return formatDateTimeFromSerial(value);
                 if (header && header.toLowerCase().includes('date')) return formatDate(excelSerialToDate(value));
