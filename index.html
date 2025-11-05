@@ -2796,7 +2796,7 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
     const headers = ['Orden', 'Catalogo', 'Material', 'Special Stock', 'Finish', 'Total orden', 'Total confirmado', 'Faltante'];
     
     // Preparamos los strings para copiar columnas
-    const allVisibleOrderKeys = dataToDisplay.map(row => String(row['Orden'])).join('\n');
+    const allVisibleOrderKeys = dataToDisplay.map(row => String(row['Orden'])).join('\n'); // <-- El \n aquí es el que tronaba el onclick
 
     let headersHTML = '';
     // 1. Checkbox de "Seleccionar Todo" (si hay permisos)
@@ -2804,9 +2804,9 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
         headersHTML += `<th><input type="checkbox" id="sap-select-all-checkbox" title="Seleccionar Todo"></th>`;
     }
     
-    // 2. Encabezado de "Orden" (AHORA COPIA TODA LA COLUMNA)
+    // 2. Encabezado de "Orden" (AHORA CON ID Y SIN ONCLICK)
     headersHTML += `<th class="copyable-header" 
-                        onclick="copyColumnData(this, '${allVisibleOrderKeys}')" 
+                        id="sap-copy-order-header" 
                         title="Clic para copiar TODA la columna 'Orden'">Orden</th>`;
 
     // 3. El resto de los headers
@@ -2873,12 +2873,13 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
             }).join('')}
         </tbody>`;
 
-    // --- SECCIÓN DE LISTENERS (MODIFICADA) ---
+    // === SECCIÓN DE LISTENERS (MODIFICADA) ===
 
     // 1. Conectar botones de eliminar (FILA)
     table.querySelectorAll('.sap-delete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const key = e.currentTarget.dataset.orderKey;
+            // Llamamos a la función INTERNA
             showConfirmationModal(
                 `¿Seguro que quieres eliminar la orden SAP ${key}? Esto la borrará SÓLO del histórico de SAP (No afectará la vista FWD).`, 
                 () => deleteSapOrderFromFirebase(key)
@@ -2892,9 +2893,22 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
             // Evitamos que el clic en la celda active el checkbox
             e.stopPropagation(); 
             const key = e.currentTarget.dataset.orderKey;
+            // Llamamos a la función INTERNA/GLOBAL (esta jala de ambas formas)
             copySerialNumber(e.currentTarget, key);
         });
     });
+
+    // --- ¡AQUÍ ESTÁ LA NUEVA MAGIA! ---
+    // 2.5. Conectar encabezado de copiar (COLUMNA)
+    const copyHeader = doc('sap-copy-order-header');
+    if (copyHeader) {
+        copyHeader.addEventListener('click', (e) => {
+            // 'allVisibleOrderKeys' sigue en scope, la usamos
+            // Llamamos a la función GLOBAL 'copyColumnData' que ya existe
+            window.copyColumnData(e.currentTarget, allVisibleOrderKeys); 
+        });
+    }
+    // --- FIN DE LA NUEVA MAGIA ---
 
     // 3. Conectar "Seleccionar Todo"
     const selectAllCheckbox = doc('sap-select-all-checkbox');
