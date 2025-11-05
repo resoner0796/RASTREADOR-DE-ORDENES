@@ -1314,64 +1314,92 @@ async function handleSapImageExport() {
             }
 
             function processFile(file, isUpdate) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const orderNumber = String(worksheet['B3']?.v || `Archivo_${file.name.slice(0,10)}`);
-                        
-                        const keyToUse = isUpdate ? orderToUpdateKey : orderNumber;
-                        let existingOrderData;
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const orderNumber = String(worksheet['B3']?.v || `Archivo_${file.name.slice(0, 10)}`);
 
-                        if (loadedOrders.has(keyToUse)) {
-                            // La orden ya existe, la tomamos para actualizarla.
-                            existingOrderData = loadedOrders.get(keyToUse);
-                        } else {
-                            // La orden es nueva. Creamos una estructura base con las celdas correctas.
-                            console.log(`La orden ${orderNumber} no fue cargada por SAP. Creando nueva entrada.`);
-                            existingOrderData = {
-                                // AJUSTE: Leemos la cantidad total de la celda O3
-                                orderQty: parseInt(worksheet['O3']?.v || 0),
-                                // AJUSTE: Leemos el catálogo de la celda I3
-                                catalogNumber: String(worksheet['I3']?.v || 'N/A'),
-                                
-                                orderDate: new Date(),
-                                packedQty: 0,
-                                rastreoData: [],
-                                empaqueData: new Map(),
-                                headers: { rastreo: [], empaque: [] }
-                            };
-                        }
+                // --- 🔒 INICIO DEL CANDADO DE SEGURIDAD 🔒 ---
+                // 1. Validamos la ESTRUCTURA (que el header esté donde debe)
+                const serialHeaderCell = worksheet['B20'];
+                if (!serialHeaderCell || !serialHeaderCell.v || serialHeaderCell.v.toString().trim() !== TRACKING_KEYS.SERIAL) {
+                    reject(new Error(
+                        `El archivo "${file.name}" no es un reporte de rastreo válido. ` +
+                        `No se encontró el encabezado '${TRACKING_KEYS.SERIAL}' en la celda B20.`
+                    ));
+                    return; // Detenemos la ejecución aquí
+                }
+                // --- FIN DEL CANDADO 1 ---
 
-                        const TRACKING_COLS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
-                        const PACKING_COLS = ['AE', 'AF', 'AK', 'AO'];
-                        const rastreoRawData = extractTableData(worksheet, TRACKING_COLS, 20);
-                        const packingRawData = extractTableData(worksheet, PACKING_COLS, 20);
-                        
-                        const orderData = {
-                            ...existingOrderData, 
-                            // Confirmado: Leemos la cantidad empacada de la celda U3
-                            packedQty: parseInt(worksheet['U3']?.v || existingOrderData.packedQty || 0),
-                            rastreoData: processRastreoData(rastreoRawData),
-                            empaqueData: groupEmpaqueData(packingRawData),
-                            headers: {
-                                rastreo: Object.keys(rastreoRawData[0] || {}),
-                                empaque: Object.keys(packingRawData[0] || {})
-                            },
-                            lastUpdated: new Date(),
-                            lastUpdatedBy: session.user
-                        };
-                        resolve({ key: keyToUse, data: orderData });
-                    } catch(err) { 
-                        console.error("Error detallado en processFile:", err);
-                        reject(err); 
+                const keyToUse = isUpdate ? orderToUpdateKey : orderNumber;
+                let existingOrderData;
+
+                if (loadedOrders.has(keyToUse)) {
+                    // La orden ya existe, la tomamos para actualizarla.
+                    existingOrderData = loadedOrders.get(keyToUse);
+                } else {
+                    // La orden es nueva. Creamos una estructura base con las celdas correctas.
+                    console.log(`La orden ${orderNumber} no fue cargada por SAP. Creando nueva entrada.`);
+                    existingOrderData = {
+                        // AJUSTE: Leemos la cantidad total de la celda O3
+                        orderQty: parseInt(worksheet['O3']?.v || 0),
+                        // AJUSTE: Leemos el catálogo de la celda I3
+                        catalogNumber: String(worksheet['I3']?.v || 'N/A'),
+
+                        orderDate: new Date(),
+                        packedQty: 0,
+                        rastreoData: [],
+                        empaqueData: new Map(),
+                        headers: { rastreo: [], empaque: [] }
+                    };
+                }
+
+                const TRACKING_COLS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
+                const PACKING_COLS = ['AE', 'AF', 'AK', 'AO'];
+                const rastreoRawData = extractTableData(worksheet, TRACKING_COLS, 20);
+                const packingRawData = extractTableData(worksheet, PACKING_COLS, 20);
+
+                // --- 🔒 INICIO DEL CANDADO 2 🔒 ---
+                // 2. Validamos los DATOS (si es que hay datos)
+                if (rastreoRawData.length > 0) {
+                    // Como ya validamos el header, podemos usar la KEY con confianza
+                    const firstSerial = String(rastreoRawData[0][TRACKING_KEYS.SERIAL] || '').trim();
+                    if (!firstSerial.startsWith('S#')) {
+                        reject(new Error(
+                            `El archivo "${file.name}" no es válido. ` +
+                            `El primer serial ('${firstSerial}') no inicia con 'S#'.`
+                        ));
+                        return; // Detenemos la ejecución
                     }
+                }
+                // --- FIN DEL CANDADO 2 ---
+
+                const orderData = {
+                    ...existingOrderData,
+                    // Confirmado: Leemos la cantidad empacada de la celda U3
+                    packedQty: parseInt(worksheet['U3']?.v || existingOrderData.packedQty || 0),
+                    rastreoData: processRastreoData(rastreoRawData),
+                    empaqueData: groupEmpaqueData(packingRawData),
+                    headers: {
+                        rastreo: Object.keys(rastreoRawData[0] || {}),
+                        empaque: Object.keys(packingRawData[0] || {})
+                    },
+                    lastUpdated: new Date(),
+                    lastUpdatedBy: session.user
                 };
-                reader.readAsArrayBuffer(file);
-            });
-        }
+
+                resolve({ key: keyToUse, data: orderData });
+            } catch (err) {
+                console.error("Error detallado en processFile:", err);
+                reject(err);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+}
             function extractTableData(worksheet, cols, startRow) {
                 const headers = {};
                 cols.forEach(col => {
