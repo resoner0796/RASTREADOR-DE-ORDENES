@@ -833,9 +833,13 @@ td.boxid-missing {
                         <div id="sap-controls-header">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
     <h3>WorkShop</h3>
-    <div style="display: flex; gap: 10px;"> <button id="sapResetFilter" class="filter-btn" style="display: none;">Mostrar Hoy/Tarde</button>
+    <div style="display: flex; gap: 10px;">
+        <button id="sapResetFilter" class="filter-btn" style="display: none;">Mostrar Hoy/Tarde</button>
+        
+        <button id="sapBulkDeleteBtn" class="btn btn-danger" style="width: auto; padding: 5px 10px; display: none;">Eliminar (0)</button>
+        
         <button id="sapExportImageBtn" class="btn" style="width: auto; padding: 5px 10px;">Exportar Captura</button>
-    </div>
+    </div>
                             <div id="sapLastUpdatedContainer" style="text-align: right; font-size: 0.75rem; color: var(--text-dark); padding-bottom: 10px; height: 1em;"></div>
                         </div>
                         <div class="table-wrapper">
@@ -890,6 +894,7 @@ td.boxid-missing {
             let fwdListener = null;
             let sapListener = null;
             let initialSyncDoneForArea = {};
+            let selectedSapOrders = new Set(); // <-- AGREGA ESTA LÍNEA
 
             // Key Maps
             const TRACKING_KEYS = { SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', DATE_REGISTERED: 'Date Registered', LINE: 'Line', STATION: 'Station' };
@@ -1026,6 +1031,21 @@ sapResetFilterBtn.addEventListener('click', () => {
 });
 
 sapExportImageBtn.addEventListener('click', handleSapImageExport);
+
+// --- AGREGA ESTE LISTENER ---
+doc('sapBulkDeleteBtn').addEventListener('click', () => {
+    const ordersToDelete = Array.from(selectedSapOrders);
+    if (ordersToDelete.length === 0) {
+        showModal('Error', 'No hay órdenes seleccionadas para eliminar.', 'warning');
+        return;
+    }
+
+    showConfirmationModal(
+        `¿Seguro que quieres eliminar ${ordersToDelete.length} órdenes? Esto las borrará SÓLO del histórico de SAP.`,
+        () => deleteMultipleSapOrders(ordersToDelete)
+    );
+});
+// --- FIN DE AGREGAR ---
 
 modalClose.addEventListener('click', hideModal);
 modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
@@ -2336,6 +2356,49 @@ window.copyGR = function(element, gr) {
                     showModal('Error al Eliminar', `No se pudo eliminar la orden ${orderKey} del histórico de SAP.`, 'error');
                 }
             }
+
+        // --- AGREGA ESTAS DOS NUEVAS FUNCIONES ---
+
+        function updateSapBulkDeleteButton() {
+            const bulkDeleteBtn = doc('sapBulkDeleteBtn');
+            if (bulkDeleteBtn) {
+                const selectedCount = selectedSapOrders.size;
+                if (selectedCount > 0) {
+                    bulkDeleteBtn.textContent = `Eliminar (${selectedCount})`;
+                    bulkDeleteBtn.style.display = 'inline-block';
+                } else {
+                    bulkDeleteBtn.style.display = 'none';
+                }
+            }
+        }
+
+        async function deleteMultipleSapOrders(orderKeys) {
+            if (!orderKeys || orderKeys.length === 0) return;
+            const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+            if (!canEdit) {
+                showModal('Acceso Denegado', `No tienes permisos para modificar el área ${currentArea}.`, 'error');
+                return;
+            }
+
+            const batch = db.batch();
+            const collectionRef = db.collection('areas').doc(currentArea).collection('sap_historico');
+            
+            orderKeys.forEach(key => {
+                const docRef = collectionRef.doc(key);
+                batch.delete(docRef);
+            });
+
+            try {
+                await batch.commit();
+                console.log(`${orderKeys.length} órdenes eliminadas de 'sap_historico'.`);
+                selectedSapOrders.clear(); // Limpiamos la selección
+                updateSapBulkDeleteButton(); // Ocultamos el botón
+                // El listener de snapshot se encargará de refrescar la UI
+            } catch (e) {
+                console.error("Error en el borrado múltiple de SAP: ", e);
+                showModal('Error al Eliminar', `No se pudieron eliminar las órdenes seleccionadas del histórico de SAP.`, 'error');
+            }
+        }
             
             
             async function syncMultiAreaSapData(groupedData) {
@@ -2702,6 +2765,8 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
     const table = doc('sapTable');
     if (sapData.length === 0) {
         table.innerHTML = '';
+        selectedSapOrders.clear(); // Limpiamos por si acaso
+        updateSapBulkDeleteButton(); // Ocultamos el botón
         return;
     }
 
@@ -2720,26 +2785,63 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
     // El resto de la función para pintar la tabla no cambia...
     if (dataToDisplay.length === 0) {
         table.innerHTML = `<thead><tr><th>No hay órdenes para la selección actual.</th></tr></thead>`;
+        // Aunque no haya datos visibles, puede haber selecciones de otros filtros
+        updateSapBulkDeleteButton(); 
         return;
     }
 
     const canManageThisArea = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
     
+    // --- INICIO CAMBIO DE HEADERS ---
     const headers = ['Orden', 'Catalogo', 'Material', 'Special Stock', 'Finish', 'Total orden', 'Total confirmado', 'Faltante'];
     
-    // Añadimos la cabecera de Acciones si hay permisos
+    // Preparamos los strings para copiar columnas
+    const allVisibleOrderKeys = dataToDisplay.map(row => String(row['Orden'])).join('\n');
+
+    let headersHTML = '';
+    // 1. Checkbox de "Seleccionar Todo" (si hay permisos)
     if (canManageThisArea) {
-        headers.push('Acciones');
+        headersHTML += `<th><input type="checkbox" id="sap-select-all-checkbox" title="Seleccionar Todo"></th>`;
     }
+    
+    // 2. Encabezado de "Orden" (AHORA COPIA TODA LA COLUMNA)
+    headersHTML += `<th class="copyable-header" 
+                        onclick="copyColumnData(this, '${allVisibleOrderKeys}')" 
+                        title="Clic para copiar TODA la columna 'Orden'">Orden</th>`;
+
+    // 3. El resto de los headers
+    headers.slice(1).forEach(h => { // Empezamos desde el 1 porque el 0 (Orden) ya lo pusimos
+        headersHTML += `<th>${h.replace(/_/g, ' ')}</th>`;
+    });
+
+    // 4. Encabezado de "Acciones" (si hay permisos)
+    if (canManageThisArea) {
+        headers.push('Acciones'); // (Solo para que el conteo de map() de abajo funcione)
+        headersHTML += `<th>Acciones</th>`;
+    }
+    // --- FIN CAMBIO DE HEADERS ---
+
 
     table.innerHTML = `
-        <thead><tr>${headers.map(h => `<th>${h.replace(/_/g, ' ')}</th>`).join('')}</tr></thead>
+        <thead><tr>${headersHTML}</tr></thead>
         <tbody>
             ${dataToDisplay.map(row => {
                 const orderKey = String(row['Orden']); // Aseguramos que sea string
-                
+                const isChecked = selectedSapOrders.has(orderKey); // Vemos si ya estaba seleccionada
+
                 let actionButtonHTML = '';
+                let checkboxHTML = '';
+
                 if (canManageThisArea) {
+                    // Checkbox para la fila
+                    checkboxHTML = `
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="sap-select-row-checkbox" 
+                                   data-order-key="${orderKey}" 
+                                   ${isChecked ? 'checked' : ''}>
+                        </td>`;
+                    
+                    // Botón de eliminar de la fila
                     actionButtonHTML = `
                         <td data-label="Acciones" style="text-align: center;">
                             <button class="icon-btn sap-delete-btn" title="Eliminar orden SAP" 
@@ -2751,10 +2853,11 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
                 }
 
                 return `
-                    <tr class="is-${row.status}-sap">
+                    <tr class="is-${row.status}-sap ${isChecked ? 'is-selected-row' : ''}"> 
+                        ${checkboxHTML}
                         
                         <td data-label="Orden" class="serial-cell sap-copy-cell" 
-                            title="Clic para copiar orden" 
+                            title="Clic para copiar orden ${orderKey}" 
                             data-order-key="${orderKey}">${orderKey}</td>
 
                         <td data-label="Catalogo">${row['Catalogo']}</td>
@@ -2770,15 +2873,12 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
             }).join('')}
         </tbody>`;
 
-    // === INICIO DE LA SOLUCIÓN (addEventListeners) ===
-    // Ahora, buscamos los botones que acabamos de crear y les "conectamos" la función
+    // --- SECCIÓN DE LISTENERS (MODIFICADA) ---
 
-    // 1. Conectar botones de eliminar
+    // 1. Conectar botones de eliminar (FILA)
     table.querySelectorAll('.sap-delete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const key = e.currentTarget.dataset.orderKey;
-            
-            // === ¡AQUÍ ESTÁ EL CAMBIO DE TEXTO! ===
             showConfirmationModal(
                 `¿Seguro que quieres eliminar la orden SAP ${key}? Esto la borrará SÓLO del histórico de SAP (No afectará la vista FWD).`, 
                 () => deleteSapOrderFromFirebase(key)
@@ -2786,15 +2886,64 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
         });
     });
 
-    // 2. Conectar celdas de copiar
+    // 2. Conectar celdas de copiar (CELDA)
     table.querySelectorAll('.sap-copy-cell').forEach(cell => {
         cell.addEventListener('click', (e) => {
+            // Evitamos que el clic en la celda active el checkbox
+            e.stopPropagation(); 
             const key = e.currentTarget.dataset.orderKey;
-            // Llamamos a la función INTERNA
             copySerialNumber(e.currentTarget, key);
         });
     });
-    // === FIN DE LA SOLUCIÓN ===
+
+    // 3. Conectar "Seleccionar Todo"
+    const selectAllCheckbox = doc('sap-select-all-checkbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('click', (e) => {
+            const isChecked = e.currentTarget.checked;
+            const rowCheckboxes = table.querySelectorAll('.sap-select-row-checkbox');
+            
+            rowCheckboxes.forEach(cb => {
+                const key = cb.dataset.orderKey;
+                cb.checked = isChecked;
+                if (isChecked) {
+                    selectedSapOrders.add(key);
+                } else {
+                    selectedSapOrders.delete(key);
+                }
+                cb.closest('tr').classList.toggle('is-selected-row', isChecked);
+            });
+            updateSapBulkDeleteButton();
+        });
+    }
+
+    // 4. Conectar checkboxes de CADA fila
+    table.querySelectorAll('.sap-select-row-checkbox').forEach(cb => {
+        cb.addEventListener('click', (e) => {
+            // Evitamos que el clic en el check propague a la celda/fila
+            e.stopPropagation(); 
+            const key = e.currentTarget.dataset.orderKey;
+            const isChecked = e.currentTarget.checked;
+
+            if (isChecked) {
+                selectedSapOrders.add(key);
+            } else {
+                selectedSapOrders.delete(key);
+            }
+            e.currentTarget.closest('tr').classList.toggle('is-selected-row', isChecked);
+            updateSapBulkDeleteButton();
+
+            // Sincronizamos el "Seleccionar Todo"
+            if (selectAllCheckbox) {
+                const allVisibleCheckboxes = table.querySelectorAll('.sap-select-row-checkbox');
+                const allChecked = Array.from(allVisibleCheckboxes).every(c => c.checked);
+                selectAllCheckbox.checked = allChecked;
+            }
+        });
+    });
+
+    // Sincronizamos el botón de borrado en lote por si acaso
+    updateSapBulkDeleteButton();
 }
             function formatCell(value, header, isDateTime = false) {
                 if (isDateTime) return formatDateTimeFromSerial(value);
