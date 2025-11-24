@@ -2823,14 +2823,9 @@ function teardownMobileMode() {
 
                 setTimeout(adjustStickyTops, 500);
             }
-
-            // === INICIO DE LA APP ===
-            initializeApp();
-        });
-    </script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
+                    
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
                 .then(registration => {
                     console.log('✅ Service Worker registrado con éxito. Alcance:', registration.scope);
@@ -2840,3 +2835,10 @@ function teardownMobileMode() {
                 });
             });
         }
+
+                    
+            // === INICIO DE LA APP ===
+            initializeApp();
+        });
+ 
+        
