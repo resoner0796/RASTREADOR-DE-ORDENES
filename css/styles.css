@@ -1,3 +1,11 @@
+html {
+            min-height: 100%;
+            background-color: #0a0a0a;
+        }
+        body {
+            min-height: 100vh;
+        }
+
 :root { }
         body.dark-theme {
             --bg-gradient: radial-gradient(ellipse at center top, #22252a 0%, #0a0a0a 70%);
