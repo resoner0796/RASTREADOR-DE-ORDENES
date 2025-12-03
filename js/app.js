@@ -1008,41 +1008,60 @@ async function handleSapImageExport() {
             }
             
             function updateRastreoTable(data, headers) {
-                const table = doc('rastreoTable');
-                if (!table) return;
-                const isMobile = window.innerWidth <= 992;
-                let headersToRender;
-                const serialHeader = findHeader(headers, TRACKING_KEYS.SERIAL);
+    const table = doc('rastreoTable');
+    if (!table) return;
+    
+    // --- OPTIMIZACIÓN MÓVIL ---
+    // Si es móvil, limitamos a 50 filas iniciales para evitar crash
+    const isMobile = window.innerWidth <= 992; 
+    const MAX_ROWS = isMobile ? 50 : 500; 
+    
+    let dataToRender = data;
+    let limitMessage = '';
 
-                if (isMobile) {
-                    headersToRender = [
-                        findHeader(headers, TRACKING_KEYS.SERIAL), findHeader(headers, TRACKING_KEYS.LINE),
-                        findHeader(headers, TRACKING_KEYS.STATION), findHeader(headers, TRACKING_KEYS.DATE_REGISTERED)
-                    ].filter(Boolean);
-                } else {
-                    const headersToHide = [TRACKING_KEYS.CREATED_BY, TRACKING_KEYS.NOT_PACKED, TRACKING_KEYS.IS_SCRAP].map(h => findHeader(headers, h)).filter(Boolean);
-                    headersToRender = headers ? headers.filter(h => !headersToHide.includes(h) && h !== 'status') : [];
-                }
+    if (data.length > MAX_ROWS) {
+        dataToRender = data.slice(0, MAX_ROWS);
+        limitMessage = `<tr class="limit-warning"><td colspan="100%" style="padding:15px; font-weight:bold; color:var(--warning-color);">⚠️ Se muestran los primeros ${MAX_ROWS} registros de ${data.length} para optimizar rendimiento. (Usa filtros para ver específicos)</td></tr>`;
+    }
+    // ---------------------------
 
-                if (!data || data.length === 0 || !headersToRender || headersToRender.length === 0) {
-                    table.innerHTML = `<thead><tr><th></th></tr></thead><tbody></tbody>`;
-                    return;
-                }
-                table.innerHTML = `
-                    <thead><tr>${headersToRender.map(h => `<th>${h}</th>`).join('')}</tr></thead>
-                    <tbody>
-                        ${data.map(row => `
-                            <tr class="is-${row.status}">
-                                ${headersToRender.map(h => {
-                                    const isSerialColumn = h === serialHeader;
-                                    const cellClass = isSerialColumn ? 'serial-cell' : '';
-                                    const clickHandler = isSerialColumn ? `onclick="copySerialNumber(this, '${String(row[h]).replace(/'/g, "\\'")}')"` : '';
-                                    return `<td class="${cellClass}" ${clickHandler} data-label="${h}">${formatCell(row[h], h, h === findHeader(headers, TRACKING_KEYS.DATE_REGISTERED))}</td>`
-                                }).join('')}
-                            </tr>
-                        `).join('')}
-                    </tbody>`;
-            }
+    const isMobileView = window.innerWidth <= 992; // Usar variable local para evitar conflictos
+    let headersToRender;
+    const serialHeader = findHeader(headers, TRACKING_KEYS.SERIAL);
+
+    if (isMobileView) {
+        headersToRender = [
+            findHeader(headers, TRACKING_KEYS.SERIAL), findHeader(headers, TRACKING_KEYS.LINE),
+            findHeader(headers, TRACKING_KEYS.STATION), findHeader(headers, TRACKING_KEYS.DATE_REGISTERED)
+        ].filter(Boolean);
+    } else {
+        const headersToHide = [TRACKING_KEYS.CREATED_BY, TRACKING_KEYS.NOT_PACKED, TRACKING_KEYS.IS_SCRAP].map(h => findHeader(headers, h)).filter(Boolean);
+        headersToRender = headers ? headers.filter(h => !headersToHide.includes(h) && h !== 'status') : [];
+    }
+
+    if (!dataToRender || dataToRender.length === 0 || !headersToRender || headersToRender.length === 0) {
+        table.innerHTML = `<thead><tr><th></th></tr></thead><tbody></tbody>`;
+        return;
+    }
+    
+    // Renderizado del HTML
+    table.innerHTML = `
+        <thead><tr>${headersToRender.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+        <tbody>
+            ${dataToRender.map(row => `
+                <tr class="is-${row.status}">
+                    ${headersToRender.map(h => {
+                        const isSerialColumn = h === serialHeader;
+                        const cellClass = isSerialColumn ? 'serial-cell' : '';
+                        // Nota: Sanitizar strings es buena práctica, pero aquí lo mantenemos simple
+                        const clickHandler = isSerialColumn ? `onclick="copySerialNumber(this, '${String(row[h]).replace(/'/g, "\\'")}')"` : '';
+                        return `<td class="${cellClass}" ${clickHandler} data-label="${h}">${formatCell(row[h], h, h === findHeader(headers, TRACKING_KEYS.DATE_REGISTERED))}</td>`
+                    }).join('')}
+                </tr>
+            `).join('')}
+            ${limitMessage}
+        </tbody>`;
+}
 
             function updateLineCounts(data, headers) {
                 if (!headers) headers = [];
@@ -2736,15 +2755,26 @@ function teardownMobileMode() {
         if(trigger) trigger.classList.remove('mobile-trigger');
     });
 }
-            window.addEventListener('resize', () => {
-                const newIsMobile = window.innerWidth <= 992;
-                if (newIsMobile !== isMobile) {
-                    isMobile = newIsMobile;
-                    if (isMobile) setupMobileMode(); else teardownMobileMode();
-                    render();
-                }
-                adjustStickyTops();
-            });
+            let resizeTimeout;
+
+window.addEventListener('resize', () => {
+    // Limpiamos el timeout anterior si el evento se dispara rápido
+    clearTimeout(resizeTimeout);
+    
+    // Esperamos 200ms a que termine el movimiento
+    resizeTimeout = setTimeout(() => {
+        const newIsMobile = window.innerWidth <= 992;
+        
+        // Solo renderizamos si CAMBIÓ el modo (de escritorio a móvil o viceversa)
+        if (newIsMobile !== isMobile) {
+            isMobile = newIsMobile;
+            if (isMobile) setupMobileMode(); else teardownMobileMode();
+            render();
+        }
+        
+        adjustStickyTops();
+    }, 200);
+});
 
             window.copySerialNumber = function(element, serial) {
                 if (!serial) return;
