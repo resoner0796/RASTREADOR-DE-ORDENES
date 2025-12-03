@@ -627,65 +627,76 @@ async function handleSapImageExport() {
             }
 
             function updateOrderList() {
-    // ---> INICIO DE CAMBIOS: Obtenemos el texto de búsqueda y lo preparamos
+    // 1. Obtener texto de búsqueda
     const searchText = orderSearchInput ? orderSearchInput.value.trim().toUpperCase() : '';
     const isSearching = searchText !== '';
 
-    // Guardamos los grupos que estaban expandidos antes de redibujar
+    // 2. Guardar estado de carpetas expandidas (para que no se cierren al escribir)
     const expandedMonths = new Set();
-    if (!isSearching) { // Solo guardamos el estado si NO estamos buscando
-        orderList.querySelectorAll('.month-group.expanded').forEach(group => {
-            if (group.dataset.month) expandedMonths.add(group.dataset.month);
-        });
-    }
     const expandedDates = new Set();
-    if (!isSearching) { // Solo guardamos el estado si NO estamos buscando
-        orderList.querySelectorAll('.date-group.expanded').forEach(group => {
-            if (group.dataset.date) expandedDates.add(group.dataset.date);
-        });
+    if (!isSearching) {
+        orderList.querySelectorAll('.month-group.expanded').forEach(g => expandedMonths.add(g.dataset.month));
+        orderList.querySelectorAll('.date-group.expanded').forEach(g => expandedDates.add(g.dataset.date));
     }
 
     orderList.innerHTML = '';
 
-    // ---> CAMBIO: Filtramos las órdenes si hay texto en la búsqueda
-    let filteredOrders = loadedOrders;
+    // 3. Filtrar órdenes
+    let filteredOrders = [];
     if (isSearching) {
-        const tempFiltered = new Map();
+        // Si busca, buscamos en TODO el mapa
         loadedOrders.forEach((value, key) => {
             if (key.toUpperCase().includes(searchText)) {
-                tempFiltered.set(key, value);
+                filteredOrders.push({ key, ...value });
             }
         });
-        filteredOrders = tempFiltered;
-    }
-    // ---> FIN DE CAMBIOS en esta sección
+    } else {
+        // SI NO BUSCA: Convertimos el mapa a array para poder ordenarlo y cortarlo
+        // Esto es lo que SALVA la memoria de tu celular
+        filteredOrders = Array.from(loadedOrders.entries()).map(([key, value]) => ({ key, ...value }));
+        
+        // Ordenamos por fecha (más reciente primero)
+        filteredOrders.sort((a, b) => {
+            const dateA = a.orderDate || new Date(0);
+            const dateB = b.orderDate || new Date(0);
+            return dateB - dateA; 
+        });
 
-    if (filteredOrders.size === 0) {
-        orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">${isSearching ? 'No se encontraron órdenes.' : `No hay órdenes cargadas para el área ${currentArea || ''}.`}</p>`;
+        // SOLO MOSTRAMOS LAS ÚLTIMAS 50 ÓRDENES EN EL MENÚ
+        // Si necesitas más, el usuario tendrá que usar el buscador
+        const MAX_SIDEBAR_ITEMS = 50; 
+        if (filteredOrders.length > MAX_SIDEBAR_ITEMS) {
+            filteredOrders = filteredOrders.slice(0, MAX_SIDEBAR_ITEMS);
+        }
+    }
+
+    if (filteredOrders.length === 0) {
+        orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem; padding: 10px;">${isSearching ? 'No se encontraron órdenes.' : `No hay órdenes recientes.`}</p>`;
         return;
     }
 
+    // 4. Agrupación por Mes y Fecha (Lógica original optimizada)
     const MONTH_NAMES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
     const groupedByMonth = new Map();
 
-    // ---> CAMBIO: Usamos 'filteredOrders' en lugar de 'loadedOrders'
-    for (const [key, order] of filteredOrders.entries()) {
+    filteredOrders.forEach(order => {
         const date = order.orderDate || new Date(0);
         const monthYearKey = `${date.getMonth()}-${date.getFullYear()}`;
         if (!groupedByMonth.has(monthYearKey)) groupedByMonth.set(monthYearKey, []);
-        groupedByMonth.get(monthYearKey).push({ key, ...order });
-    }
+        groupedByMonth.get(monthYearKey).push(order);
+    });
 
+    // Ordenar los meses para pintar
     const sortedMonths = Array.from(groupedByMonth.keys()).sort((a, b) => {
-        const [monthA, yearA] = a.split('-').map(Number);
-        const [monthB, yearB] = b.split('-').map(Number);
-        if (yearA !== yearB) return yearB - yearA;
-        return monthB - monthA;
+        const [mA, yA] = a.split('-').map(Number);
+        const [mB, yB] = b.split('-').map(Number);
+        return yB !== yA ? yB - yA : mB - mA;
     });
-    
-    const todayString = new Date().toLocaleDateString('es-ES', {
-        timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric'
-    });
+
+    const todayString = new Date().toLocaleDateString('es-ES', { timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    // Fragmento de documento para no repintar el DOM a cada rato (Más velocidad)
+    const fragment = document.createDocumentFragment();
 
     sortedMonths.forEach(monthYearKey => {
         const [monthIndex, year] = monthYearKey.split('-').map(Number);
@@ -699,56 +710,62 @@ async function handleSapImageExport() {
         const monthHeaderBtn = document.createElement('button');
         monthHeaderBtn.className = 'month-header';
         monthHeaderBtn.innerHTML = `<span>${monthName}</span> <span class="collapse-icon">►</span>`;
+        
+        // Listener del mes
+        monthHeaderBtn.addEventListener('click', () => {
+            monthGroupDiv.classList.toggle('expanded');
+        });
 
         const datesContainer = document.createElement('div');
         datesContainer.className = 'dates-for-month';
 
+        // Agrupar por fecha exacta dentro del mes
         const groupedByDate = new Map();
         ordersInMonth.forEach(order => {
-            const date = order.orderDate || new Date(0);
-            const dateString = formatDate(date);
+            const dateString = formatDate(order.orderDate || new Date(0));
             if (!groupedByDate.has(dateString)) groupedByDate.set(dateString, []);
             groupedByDate.get(dateString).push(order);
         });
 
         const sortedDates = Array.from(groupedByDate.keys()).sort((a, b) => {
-            const dateA = new Date(a.split('/').reverse().join('-'));
-            const dateB = new Date(b.split('/').reverse().join('-'));
-            return dateB - dateA;
+            const da = new Date(a.split('/').reverse().join('-'));
+            const db = new Date(b.split('/').reverse().join('-'));
+            return db - da;
         });
 
         sortedDates.forEach(dateString => {
             const ordersOnDate = groupedByDate.get(dateString);
-            const orderCount = ordersOnDate.length;
             const isToday = dateString === todayString;
-
+            
             const dateGroupDiv = document.createElement('div');
             dateGroupDiv.className = 'date-group';
             dateGroupDiv.dataset.date = dateString;
 
             const dateHeaderBtn = document.createElement('button');
             dateHeaderBtn.className = 'date-header';
-            
-            const countText = `${orderCount} ${orderCount === 1 ? 'orden' : 'órdenes'}`;
             dateHeaderBtn.innerHTML = `
                 <span>📅 ${dateString}</span>
-                ${isToday ? `<span class="status-indicator">(${countText})</span>` : `<span class="order-count">(${countText})</span>`}
+                <span class="${isToday ? 'status-indicator' : 'order-count'}">(${ordersOnDate.length})</span>
                 <span class="collapse-icon">►</span>
             `;
-
-            const ordersContainer = document.createElement('div');
-            ordersContainer.className = 'orders-for-date';
-            ordersOnDate.forEach(order => ordersContainer.appendChild(createOrderButton(order.key, order)));
-
-            dateGroupDiv.appendChild(dateHeaderBtn);
-            dateGroupDiv.appendChild(ordersContainer);
-            datesContainer.appendChild(dateGroupDiv);
 
             dateHeaderBtn.addEventListener('click', () => {
                 dateGroupDiv.classList.toggle('expanded');
             });
 
-            // ---> CAMBIO: Forzamos la expansión si se está buscando algo
+            const ordersContainer = document.createElement('div');
+            ordersContainer.className = 'orders-for-date';
+            
+            // Aquí creamos los botones
+            ordersOnDate.forEach(order => {
+                ordersContainer.appendChild(createOrderButton(order.key, order));
+            });
+
+            dateGroupDiv.appendChild(dateHeaderBtn);
+            dateGroupDiv.appendChild(ordersContainer);
+            datesContainer.appendChild(dateGroupDiv);
+
+            // Expandir si estamos buscando o si estaba abierto antes
             if (isSearching || expandedDates.has(dateString)) {
                 dateGroupDiv.classList.add('expanded');
             }
@@ -756,18 +773,27 @@ async function handleSapImageExport() {
 
         monthGroupDiv.appendChild(monthHeaderBtn);
         monthGroupDiv.appendChild(datesContainer);
-        orderList.appendChild(monthGroupDiv);
-        
-        monthHeaderBtn.addEventListener('click', () => {
-            monthGroupDiv.classList.toggle('expanded');
-        });
-        
-        // ---> CAMBIO: Forzamos la expansión si se está buscando algo
+        fragment.appendChild(monthGroupDiv);
+
+        // Expandir mes si es búsqueda o estaba abierto
         if (isSearching || expandedMonths.has(monthYearKey)) {
             monthGroupDiv.classList.add('expanded');
         }
     });
+
+    orderList.appendChild(fragment);
     
+    // Si no está buscando y hay datos, muestra un aviso al final
+    if (!isSearching && loadedOrders.size > 50) {
+        const infoMsg = document.createElement('div');
+        infoMsg.style.padding = "10px";
+        infoMsg.style.textAlign = "center";
+        infoMsg.style.color = "var(--text-secondary)";
+        infoMsg.style.fontSize = "0.8rem";
+        infoMsg.innerText = `Mostrando las 50 órdenes más recientes de ${loadedOrders.size}. Usa el buscador para ver anteriores.`;
+        orderList.appendChild(infoMsg);
+    }
+
     setActiveOrder(activeOrderKey);
 }
 
