@@ -495,47 +495,63 @@ html {
         .orders-for-date { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding-left: 12px; margin-top: 0; }
         .date-group.expanded .orders-for-date { max-height: 5000px; }
         /* Media Queries */
-        @media (max-width: 992px) {
-            .app-container { height: auto; padding: 8px; }
-            .main-container { display: flex; flex-direction: column; gap: 12px; height: auto; }
-            .sidebar { position: static; height: auto; max-height: none; }
-            .sidebar, .main-content { display: contents !important; }
-            #sap-uploadCard { display: none; }
-            .sidebar > h2 { display: none; }
-            #areaSelectBtn { flex-grow: 1 !important; }
-            .card-row { grid-template-columns: 1fr; }
-            #desktop-controls-container { display: none; }
-            .global-header { order: 1; }
-            .header { order: 2; }
-            #uploadCard { order: 3; }
-            #orderListCard, #sap-orderListCard { order: 4; }
-            #rastreoView, #empaqueView { order: 5; }
-            #sap-tableCard { order: 6; }
-            .global-dashboard-card { grid-template-columns: 1fr 1fr; }
-            .summary-card { grid-template-columns: 1fr 1fr; & > .stat-item:has(.stat-value-wrapper > #statOrderNumber) { grid-column: 1 / -1; } }
-            .stat-item p { font-size: 1.5rem; }
-            .card.mobile-collapsible .card-content { display: none; padding-top: 16px; }
-            .card.mobile-collapsible.expanded .card-content { display: block; }
-            .card.mobile-collapsible h3.mobile-trigger { margin-bottom: 0; cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center; }
-            .card.mobile-collapsible:not(.expanded) h3.mobile-trigger { border-bottom: 1px solid var(--border-color); }
-            .card.mobile-collapsible h3.mobile-trigger::after { content: '►'; display: inline-block; font-size: 0.7rem; transition: transform 0.2s; color: var(--text-secondary); }
-            .card.mobile-collapsible.expanded h3.mobile-trigger::after { transform: rotate(90deg); }
-            .top-header-container { padding-left: 0; }
-            #modalBody .user-list li { grid-template-columns: 1fr; gap: 8px; }
-            #modalBody .user-list li > div { display: flex; gap: 8px; }
-            #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header { position: static; }
-            #table-controls-header, #sap-controls-header { margin: 0; padding: 0; }
-        }
-        
-        /* Estilos para los nuevos filtros en la tabla de Empaque */
+     /* ==========================================================================
+   OPTIMIZACIÓN MÓVIL Y ESTILOS RESPONSIVOS
+   ========================================================================== */
+
+@media (max-width: 992px) {
+    /* --- 🚀 OPTIMIZACIÓN CRÍTICA ANTICRASH --- */
+    /* Esto hace que el navegador NO calcule las filas que no se ven en pantalla */
+    table tbody {
+        content-visibility: auto;
+        contain-intrinsic-size: 50px; /* Altura estimada de cada fila para evitar saltos */
+    }
+    /* ------------------------------------------ */
+
+    .app-container { height: auto; padding: 8px; }
+    .main-container { display: flex; flex-direction: column; gap: 12px; height: auto; }
+    .sidebar { position: static; height: auto; max-height: none; }
+    .sidebar, .main-content { display: contents !important; }
+    #sap-uploadCard { display: none; }
+    .sidebar > h2 { display: none; }
+    #areaSelectBtn { flex-grow: 1 !important; }
+    .card-row { grid-template-columns: 1fr; }
+    #desktop-controls-container { display: none; }
+    .global-header { order: 1; }
+    .header { order: 2; }
+    #uploadCard { order: 3; }
+    #orderListCard, #sap-orderListCard { order: 4; }
+    #rastreoView, #empaqueView { order: 5; }
+    #sap-tableCard { order: 6; }
+    .global-dashboard-card { grid-template-columns: 1fr 1fr; }
+    .summary-card { grid-template-columns: 1fr 1fr; }
+    .summary-card > .stat-item:has(.stat-value-wrapper > #statOrderNumber) { grid-column: 1 / -1; }
+    .stat-item p { font-size: 1.5rem; }
+    .card.mobile-collapsible .card-content { display: none; padding-top: 16px; }
+    .card.mobile-collapsible.expanded .card-content { display: block; }
+    .card.mobile-collapsible h3.mobile-trigger { margin-bottom: 0; cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center; }
+    .card.mobile-collapsible:not(.expanded) h3.mobile-trigger { border-bottom: 1px solid var(--border-color); }
+    .card.mobile-collapsible h3.mobile-trigger::after { content: '►'; display: inline-block; font-size: 0.7rem; transition: transform 0.2s; color: var(--text-secondary); }
+    .card.mobile-collapsible.expanded h3.mobile-trigger::after { transform: rotate(90deg); }
+    .top-header-container { padding-left: 0; }
+    #modalBody .user-list li { grid-template-columns: 1fr; gap: 8px; }
+    #modalBody .user-list li > div { display: flex; gap: 8px; }
+    #fwdView .header, #sapView .global-header, #table-controls-header, #sap-controls-header { position: static; }
+    #table-controls-header, #sap-controls-header { margin: 0; padding: 0; }
+}
+
+/* ==========================================================================
+   ESTILOS DE TABLA EMPAQUE (FILTROS Y ANCHOS)
+   ========================================================================== */
+
 #empaqueTable th {
-    vertical-align: top; /* Alinear todo arriba */
+    vertical-align: top;
 }
 
 #empaqueTable th > span {
-    display: block; /* Hacemos que el título ocupe su línea */
-    margin-bottom: 6px; /* Espacio entre título e input */
-    font-weight: 600; /* Lo hacemos un poco más grueso */
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
     font-size: 0.75rem;
 }
 
@@ -543,11 +559,12 @@ html {
     width: 100%;
     padding: 4px 6px;
     font-size: 0.8rem;
-    background-color: var(--bg-dark); /* Usamos el color de fondo más oscuro */
+    /* ✅ CORRECCIÓN: Usamos una variable existente para que no se vea transparente */
+    background-color: var(--surface-color); 
     border: 1px solid var(--border-color);
     color: var(--text-primary);
     border-radius: 4px;
-    box-sizing: border-box; /* Súper importante para que el padding no desmadre el ancho */
+    box-sizing: border-box;
 }
 
 #empaqueTable .filter-input::placeholder {
@@ -556,29 +573,28 @@ html {
 }
 
 #empaqueTable .copyable-header span {
-    display: inline-block; /* Dejamos que el título de GR esté en línea */
+    display: inline-block;
 }
-        
-        /* Estilos para la tabla de Empaque */
+
+/* Forzar layout fijo para rendimiento y control */
 #empaqueTable {
-    table-layout: fixed; /* Forzamos anchos para que no se desmadre */
+    table-layout: fixed;
     width: 100%;
 }
 
 #empaqueTable th, 
 #empaqueTable td {
-    white-space: nowrap; /* Evita que el texto salte de línea */
-    overflow: hidden; /* Oculta lo que no quepa */
-    text-overflow: ellipsis; /* Pone los "..." si el texto es muy largo */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Le damos un ancho fijo a las columnas más importantes */
+/* Anchos fijos para columnas clave */
 #empaqueTable th:nth-child(1), #empaqueTable td:nth-child(1) { width: 140px; } /* BoxID */
 #empaqueTable th:nth-child(5), #empaqueTable td:nth-child(5) { width: 120px; } /* GR */
 #empaqueTable th:nth-child(6), #empaqueTable td:nth-child(6) { width: 120px; } /* Orden */
-        
-        
-        /* ... al final de tu bloque de estilos ... */
+
+/* Estilos de estado de BoxID */
 td.boxid-received {
     color: var(--success-color) !important;
     font-weight: 600;
@@ -587,15 +603,15 @@ td.boxid-received {
 td.boxid-missing {
     color: var(--danger-color) !important;
 }
-        
-        .copyable {
+
+/* Utilidades de copiado */
+.copyable {
     cursor: pointer;
     transition: color 0.2s ease;
 }
 .copyable:hover {
     color: var(--primary-color);
 }
-
 
 .copyable-header {
     cursor: pointer;
@@ -605,25 +621,29 @@ td.boxid-missing {
     color: var(--primary-color);
     background-color: var(--surface-hover-color);
 }
-        
-        @media (min-width: 993px) {
-            #scroll-mask {
-                display: block;
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                height: 16px;
-                background: transparent;
-                z-index: 18;
-            }
-            #mainModeSwitcher { margin-left: auto; margin-right: auto; }
-            #mobile-controls-row { display: none; }
-            #desktop-controls-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
-            .desktop-filters-group { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; flex-grow: 1; }
-            .desktop-actions-group { display: flex; flex-shrink: 0; gap: 8px; }
-            .filter-group-inline { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-            .filter-label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
-            #desktop-controls-container .btn, #desktop-controls-container .filter-btn { width: auto; padding: 4px 10px; font-size: 0.8rem; margin: 0; }
-            #desktop-controls-container .btn { padding: 5px 10px; font-size: 0.75rem; }
-        }
+
+/* ==========================================================================
+   MEDIA QUERY ESCRITORIO (MIN-WIDTH: 993px)
+   ========================================================================== */
+
+@media (min-width: 993px) {
+    #scroll-mask {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 16px;
+        background: transparent;
+        z-index: 18;
+    }
+    #mainModeSwitcher { margin-left: auto; margin-right: auto; }
+    #mobile-controls-row { display: none; }
+    #desktop-controls-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+    .desktop-filters-group { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; flex-grow: 1; }
+    .desktop-actions-group { display: flex; flex-shrink: 0; gap: 8px; }
+    .filter-group-inline { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .filter-label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+    #desktop-controls-container .btn, #desktop-controls-container .filter-btn { width: auto; padding: 4px 10px; font-size: 0.8rem; margin: 0; }
+    #desktop-controls-container .btn { padding: 5px 10px; font-size: 0.75rem; }
+}
