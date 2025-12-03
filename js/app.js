@@ -664,7 +664,7 @@ async function handleSapImageExport() {
 
         // SOLO MOSTRAMOS LAS ÚLTIMAS 50 ÓRDENES EN EL MENÚ
         // Si necesitas más, el usuario tendrá que usar el buscador
-        const MAX_SIDEBAR_ITEMS = 50; 
+        const MAX_SIDEBAR_ITEMS = 150; 
         if (filteredOrders.length > MAX_SIDEBAR_ITEMS) {
             filteredOrders = filteredOrders.slice(0, MAX_SIDEBAR_ITEMS);
         }
