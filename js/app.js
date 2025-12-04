@@ -803,49 +803,66 @@ async function handleSapImageExport() {
 }
 
             function createOrderButton(key, orderData) {
-                const item = document.createElement('div');
-                item.className = 'order-item';
+    const item = document.createElement('div');
+    item.className = 'order-item';
 
-                const btn = document.createElement('button');
-                btn.className = 'order-btn';
-                btn.textContent = key;
-                btn.dataset.key = key;
-                btn.onclick = () => setActiveOrder(key);
-                if (orderData && orderData.orderQty > 0 && orderData.orderQty <= orderData.packedQty) {
-                    btn.classList.add('is-complete');
-                }
-                
-                const progressBar = document.createElement('div');
-                progressBar.className = 'order-progress-bar';
-                const progressBarInner = document.createElement('div');
-                progressBarInner.className = 'order-progress-bar-inner';
-                const percentage = (orderData.orderQty > 0) ? (orderData.packedQty / orderData.orderQty) * 100 : 0;
-                progressBarInner.style.width = `${Math.min(percentage, 100)}%`;
+    const btn = document.createElement('button');
+    btn.className = 'order-btn';
+    
+    // --- CAMBIO: AHORA USAMOS HTML PARA MOSTRAR ORDEN Y CATÁLOGO ---
+    const catalog = orderData.catalogNumber || ''; // Si no hay catálogo, dejamos vacío
+    
+    // Usamos un contenedor flex vertical para alinear bien los textos
+    // El estilo inline asegura que se vea bien sin tocar tu CSS
+    btn.innerHTML = `
+        <div style="display: flex; flex-direction: column; width: 100%; overflow: hidden; line-height: 1.2;">
+            <span style="font-weight: 700; font-size: 0.95rem;">${key}</span>
+            <span style="font-size: 0.75rem; opacity: 0.75; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${catalog}</span>
+        </div>
+    `;
+    // -------------------------------------------------------------
 
-                if (percentage < 30) progressBarInner.style.backgroundColor = 'var(--danger-color)';
-                else if (percentage < 70) progressBarInner.style.backgroundColor = 'var(--warning-color)';
-                else progressBarInner.style.backgroundColor = 'var(--success-color)';
-                
-                progressBar.appendChild(progressBarInner);
-                btn.appendChild(progressBar);
-                item.appendChild(btn);
+    btn.dataset.key = key;
+    btn.onclick = () => setActiveOrder(key);
+    
+    // Lógica de completado (igual que antes)
+    if (orderData && orderData.orderQty > 0 && orderData.orderQty <= orderData.packedQty) {
+        btn.classList.add('is-complete');
+    }
+    
+    // Barra de progreso (igual que antes)
+    const progressBar = document.createElement('div');
+    progressBar.className = 'order-progress-bar';
+    const progressBarInner = document.createElement('div');
+    progressBarInner.className = 'order-progress-bar-inner';
+    const percentage = (orderData.orderQty > 0) ? (orderData.packedQty / orderData.orderQty) * 100 : 0;
+    progressBarInner.style.width = `${Math.min(percentage, 100)}%`;
 
-                const canManageThisArea = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
-                
-                if (key !== 'all' && canManageThisArea && session.isMaster) {
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'icon-btn';
-                    deleteBtn.title = 'Eliminar orden';
-                    deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
-                    deleteBtn.onclick = () => {
-                        showConfirmationModal(`¿Estás seguro de que quieres eliminar la orden ${key}?`, async () => {
-                            await deleteOrderFromFirebase(key);
-                        });
-                    };
-                    item.appendChild(deleteBtn);
-                }
-                return item;
-            }
+    if (percentage < 30) progressBarInner.style.backgroundColor = 'var(--danger-color)';
+    else if (percentage < 70) progressBarInner.style.backgroundColor = 'var(--warning-color)';
+    else progressBarInner.style.backgroundColor = 'var(--success-color)';
+    
+    progressBar.appendChild(progressBarInner);
+    btn.appendChild(progressBar);
+    item.appendChild(btn);
+
+    // Botón de eliminar (igual que antes)
+    const canManageThisArea = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+    
+    if (key !== 'all' && canManageThisArea && session.isMaster) {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'icon-btn';
+        deleteBtn.title = 'Eliminar orden';
+        deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+        deleteBtn.onclick = () => {
+            showConfirmationModal(`¿Estás seguro de que quieres eliminar la orden ${key}?`, async () => {
+                await deleteOrderFromFirebase(key);
+            });
+        };
+        item.appendChild(deleteBtn);
+    }
+    return item;
+}
 
             function setActiveOrder(key) {
                 activeOrderKey = key;
