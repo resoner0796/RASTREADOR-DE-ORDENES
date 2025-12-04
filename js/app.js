@@ -631,7 +631,7 @@ async function handleSapImageExport() {
     const searchText = orderSearchInput ? orderSearchInput.value.trim().toUpperCase() : '';
     const isSearching = searchText !== '';
 
-    // 2. Guardar estado de carpetas expandidas (para que no se cierren al escribir)
+    // 2. Guardar estado de carpetas expandidas
     const expandedMonths = new Set();
     const expandedDates = new Set();
     if (!isSearching) {
@@ -644,27 +644,22 @@ async function handleSapImageExport() {
     // 3. Filtrar órdenes
     let filteredOrders = [];
     if (isSearching) {
-        // Si busca, buscamos en TODO el mapa
         loadedOrders.forEach((value, key) => {
             if (key.toUpperCase().includes(searchText)) {
                 filteredOrders.push({ key, ...value });
             }
         });
     } else {
-        // SI NO BUSCA: Convertimos el mapa a array para poder ordenarlo y cortarlo
-        // Esto es lo que SALVA la memoria de tu celular
         filteredOrders = Array.from(loadedOrders.entries()).map(([key, value]) => ({ key, ...value }));
         
-        // Ordenamos por fecha (más reciente primero)
         filteredOrders.sort((a, b) => {
             const dateA = a.orderDate || new Date(0);
             const dateB = b.orderDate || new Date(0);
             return dateB - dateA; 
         });
 
-        // SOLO MOSTRAMOS LAS ÚLTIMAS 50 ÓRDENES EN EL MENÚ
-        // Si necesitas más, el usuario tendrá que usar el buscador
-        const MAX_SIDEBAR_ITEMS = 150; 
+        // --- CAMBIO 1: AUMENTAR LÍMITE A 200 ---
+        const MAX_SIDEBAR_ITEMS = 200; 
         if (filteredOrders.length > MAX_SIDEBAR_ITEMS) {
             filteredOrders = filteredOrders.slice(0, MAX_SIDEBAR_ITEMS);
         }
@@ -675,7 +670,7 @@ async function handleSapImageExport() {
         return;
     }
 
-    // 4. Agrupación por Mes y Fecha (Lógica original optimizada)
+    // 4. Agrupación (Lógica original)
     const MONTH_NAMES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
     const groupedByMonth = new Map();
 
@@ -686,7 +681,6 @@ async function handleSapImageExport() {
         groupedByMonth.get(monthYearKey).push(order);
     });
 
-    // Ordenar los meses para pintar
     const sortedMonths = Array.from(groupedByMonth.keys()).sort((a, b) => {
         const [mA, yA] = a.split('-').map(Number);
         const [mB, yB] = b.split('-').map(Number);
@@ -694,8 +688,6 @@ async function handleSapImageExport() {
     });
 
     const todayString = new Date().toLocaleDateString('es-ES', { timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' });
-
-    // Fragmento de documento para no repintar el DOM a cada rato (Más velocidad)
     const fragment = document.createDocumentFragment();
 
     sortedMonths.forEach(monthYearKey => {
@@ -711,7 +703,6 @@ async function handleSapImageExport() {
         monthHeaderBtn.className = 'month-header';
         monthHeaderBtn.innerHTML = `<span>${monthName}</span> <span class="collapse-icon">►</span>`;
         
-        // Listener del mes
         monthHeaderBtn.addEventListener('click', () => {
             monthGroupDiv.classList.toggle('expanded');
         });
@@ -719,7 +710,6 @@ async function handleSapImageExport() {
         const datesContainer = document.createElement('div');
         datesContainer.className = 'dates-for-month';
 
-        // Agrupar por fecha exacta dentro del mes
         const groupedByDate = new Map();
         ordersInMonth.forEach(order => {
             const dateString = formatDate(order.orderDate || new Date(0));
@@ -737,15 +727,33 @@ async function handleSapImageExport() {
             const ordersOnDate = groupedByDate.get(dateString);
             const isToday = dateString === todayString;
             
+            // --- CAMBIO 2: LÓGICA DEL PUNTITO AMARILLO ---
+            // Verificamos si hay alguna orden donde lo empacado sea menor a lo ordenado
+            const hasIncompleteOrders = ordersOnDate.some(o => (o.packedQty || 0) < (o.orderQty || 0));
+            
+            // Creamos el HTML del puntito (usando var(--warning-color) que ya tienes en CSS)
+            const warningDotHTML = hasIncompleteOrders 
+                ? `<span style="height: 8px; width: 8px; background-color: var(--warning-color); border-radius: 50%; display: inline-block; margin-right: 6px; box-shadow: 0 0 4px var(--warning-color);" title="Hay órdenes incompletas"></span>` 
+                : '';
+
+            // --- CAMBIO 3: FORMATO DE TEXTO (17 órdenes) ---
+            const count = ordersOnDate.length;
+            const countLabel = count === 1 ? 'orden' : 'órdenes';
+            const countText = `(${count} ${countLabel})`;
+
             const dateGroupDiv = document.createElement('div');
             dateGroupDiv.className = 'date-group';
             dateGroupDiv.dataset.date = dateString;
 
             const dateHeaderBtn = document.createElement('button');
             dateHeaderBtn.className = 'date-header';
+            
+            // Aquí inyectamos el puntito antes de la fecha
             dateHeaderBtn.innerHTML = `
-                <span>📅 ${dateString}</span>
-                <span class="${isToday ? 'status-indicator' : 'order-count'}">(${ordersOnDate.length})</span>
+                <span style="display:flex; align-items:center;">
+                    ${warningDotHTML} 📅 ${dateString}
+                </span>
+                <span class="${isToday ? 'status-indicator' : 'order-count'}" style="font-size: 0.8rem;">${countText}</span>
                 <span class="collapse-icon">►</span>
             `;
 
@@ -756,7 +764,6 @@ async function handleSapImageExport() {
             const ordersContainer = document.createElement('div');
             ordersContainer.className = 'orders-for-date';
             
-            // Aquí creamos los botones
             ordersOnDate.forEach(order => {
                 ordersContainer.appendChild(createOrderButton(order.key, order));
             });
@@ -765,7 +772,6 @@ async function handleSapImageExport() {
             dateGroupDiv.appendChild(ordersContainer);
             datesContainer.appendChild(dateGroupDiv);
 
-            // Expandir si estamos buscando o si estaba abierto antes
             if (isSearching || expandedDates.has(dateString)) {
                 dateGroupDiv.classList.add('expanded');
             }
@@ -775,7 +781,6 @@ async function handleSapImageExport() {
         monthGroupDiv.appendChild(datesContainer);
         fragment.appendChild(monthGroupDiv);
 
-        // Expandir mes si es búsqueda o estaba abierto
         if (isSearching || expandedMonths.has(monthYearKey)) {
             monthGroupDiv.classList.add('expanded');
         }
@@ -783,14 +788,14 @@ async function handleSapImageExport() {
 
     orderList.appendChild(fragment);
     
-    // Si no está buscando y hay datos, muestra un aviso al final
-    if (!isSearching && loadedOrders.size > 50) {
+    // Ajustamos el mensaje del límite
+    if (!isSearching && loadedOrders.size > 200) {
         const infoMsg = document.createElement('div');
         infoMsg.style.padding = "10px";
         infoMsg.style.textAlign = "center";
         infoMsg.style.color = "var(--text-secondary)";
         infoMsg.style.fontSize = "0.8rem";
-        infoMsg.innerText = `Mostrando las 50 órdenes más recientes de ${loadedOrders.size}. Usa el buscador para ver anteriores.`;
+        infoMsg.innerText = `Mostrando las últimas 200 órdenes de ${loadedOrders.size}. Usa el buscador para ver anteriores.`;
         orderList.appendChild(infoMsg);
     }
 
