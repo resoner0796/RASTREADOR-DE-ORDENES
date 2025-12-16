@@ -727,29 +727,12 @@ async function handleSapImageExport() {
             const ordersOnDate = groupedByDate.get(dateString);
             const isToday = dateString === todayString;
             
-            // --- NUEVA LÓGICA DEL CONTADOR EN EL CÍRCULO ---
-            // Contamos cuántas órdenes tienen packedQty menor a orderQty
+            // --- NUEVA LÓGICA DEL CONTADOR (CON CLASE CSS) ---
             const incompleteCount = ordersOnDate.filter(o => (o.packedQty || 0) < (o.orderQty || 0)).length;
             
-            // Diseño del Badge:
-            // 1. Usamos 'inline-flex' para centrar el número.
-            // 2. Le damos un tamaño fijo (20px) para que se vea bien el número.
-            // 3. Color de texto oscuro (#1f2937) para que contraste con el amarillo de fondo.
+            // Ahora usamos la clase .incomplete-badge que tiene el efecto de semáforo
             const warningDotHTML = incompleteCount > 0 
-                ? `<span style="
-                    height: 20px; 
-                    min-width: 20px;
-                    background-color: var(--warning-color); 
-                    color: #1f2937; 
-                    border-radius: 50%; 
-                    display: inline-flex; 
-                    justify-content: center; 
-                    align-items: center; 
-                    margin-right: 8px; 
-                    font-size: 0.7rem; 
-                    font-weight: 800;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                   " title="${incompleteCount} órdenes incompletas">${incompleteCount}</span>` 
+                ? `<span class="incomplete-badge" title="${incompleteCount} órdenes incompletas">${incompleteCount}</span>` 
                 : '';
             // -----------------------------------------------
 
