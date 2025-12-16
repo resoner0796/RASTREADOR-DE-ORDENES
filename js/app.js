@@ -659,7 +659,7 @@ async function handleSapImageExport() {
         });
 
         // Límite de 200 como pediste
-        const MAX_SIDEBAR_ITEMS = 200; 
+        const MAX_SIDEBAR_ITEMS = 280; 
         if (filteredOrders.length > MAX_SIDEBAR_ITEMS) {
             filteredOrders = filteredOrders.slice(0, MAX_SIDEBAR_ITEMS);
         }
