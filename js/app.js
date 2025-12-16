@@ -658,7 +658,7 @@ async function handleSapImageExport() {
             return dateB - dateA; 
         });
 
-        // --- CAMBIO 1: AUMENTAR LÍMITE A 200 ---
+        // Límite de 200 como pediste
         const MAX_SIDEBAR_ITEMS = 200; 
         if (filteredOrders.length > MAX_SIDEBAR_ITEMS) {
             filteredOrders = filteredOrders.slice(0, MAX_SIDEBAR_ITEMS);
@@ -670,7 +670,7 @@ async function handleSapImageExport() {
         return;
     }
 
-    // 4. Agrupación (Lógica original)
+    // 4. Agrupación
     const MONTH_NAMES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
     const groupedByMonth = new Map();
 
@@ -727,16 +727,32 @@ async function handleSapImageExport() {
             const ordersOnDate = groupedByDate.get(dateString);
             const isToday = dateString === todayString;
             
-            // --- CAMBIO 2: LÓGICA DEL PUNTITO AMARILLO ---
-            // Verificamos si hay alguna orden donde lo empacado sea menor a lo ordenado
-            const hasIncompleteOrders = ordersOnDate.some(o => (o.packedQty || 0) < (o.orderQty || 0));
+            // --- NUEVA LÓGICA DEL CONTADOR EN EL CÍRCULO ---
+            // Contamos cuántas órdenes tienen packedQty menor a orderQty
+            const incompleteCount = ordersOnDate.filter(o => (o.packedQty || 0) < (o.orderQty || 0)).length;
             
-            // Creamos el HTML del puntito (usando var(--warning-color) que ya tienes en CSS)
-            const warningDotHTML = hasIncompleteOrders 
-                ? `<span style="height: 8px; width: 8px; background-color: var(--warning-color); border-radius: 50%; display: inline-block; margin-right: 6px; box-shadow: 0 0 4px var(--warning-color);" title="Hay órdenes incompletas"></span>` 
+            // Diseño del Badge:
+            // 1. Usamos 'inline-flex' para centrar el número.
+            // 2. Le damos un tamaño fijo (20px) para que se vea bien el número.
+            // 3. Color de texto oscuro (#1f2937) para que contraste con el amarillo de fondo.
+            const warningDotHTML = incompleteCount > 0 
+                ? `<span style="
+                    height: 20px; 
+                    min-width: 20px;
+                    background-color: var(--warning-color); 
+                    color: #1f2937; 
+                    border-radius: 50%; 
+                    display: inline-flex; 
+                    justify-content: center; 
+                    align-items: center; 
+                    margin-right: 8px; 
+                    font-size: 0.7rem; 
+                    font-weight: 800;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                   " title="${incompleteCount} órdenes incompletas">${incompleteCount}</span>` 
                 : '';
+            // -----------------------------------------------
 
-            // --- CAMBIO 3: FORMATO DE TEXTO (17 órdenes) ---
             const count = ordersOnDate.length;
             const countLabel = count === 1 ? 'orden' : 'órdenes';
             const countText = `(${count} ${countLabel})`;
@@ -748,7 +764,6 @@ async function handleSapImageExport() {
             const dateHeaderBtn = document.createElement('button');
             dateHeaderBtn.className = 'date-header';
             
-            // Aquí inyectamos el puntito antes de la fecha
             dateHeaderBtn.innerHTML = `
                 <span style="display:flex; align-items:center;">
                     ${warningDotHTML} 📅 ${dateString}
@@ -788,7 +803,6 @@ async function handleSapImageExport() {
 
     orderList.appendChild(fragment);
     
-    // Ajustamos el mensaje del límite
     if (!isSearching && loadedOrders.size > 200) {
         const infoMsg = document.createElement('div');
         infoMsg.style.padding = "10px";
