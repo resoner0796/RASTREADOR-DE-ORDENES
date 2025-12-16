@@ -647,3 +647,40 @@ td.boxid-missing {
     #desktop-controls-container .btn, #desktop-controls-container .filter-btn { width: auto; padding: 4px 10px; font-size: 0.8rem; margin: 0; }
     #desktop-controls-container .btn { padding: 5px 10px; font-size: 0.75rem; }
 }
+
+/* --- Estilo para el Badge de Semáforo (Puntito Amarillo) --- */
+.incomplete-badge {
+    height: 22px;       /* Un pelín más grande para que respire el número */
+    min-width: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 8px;
+    
+    font-size: 0.75rem; 
+    font-weight: 800;
+    color: #3f2e05;     /* Texto café oscuro para contraste con el amarillo */
+    text-shadow: 0 1px 0 rgba(255,255,255,0.4); /* Pequeño relieve al texto */
+
+    /* EL EFECTO SEMÁFORO / BRILLO */
+    background-color: var(--warning-color);
+    
+    /* 1. Gradiente radial para dar efecto de esfera 3D (Brillo blanco arriba a la izq) */
+    background-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 40%);
+    
+    /* 2. Sombra interior para profundidad y Sombra exterior para resplandor (Glow) */
+    box-shadow: 
+        inset 0 -2px 5px rgba(0,0,0,0.2), /* Sombra interna abajo */
+        0 0 8px var(--warning-color);     /* Resplandor exterior */
+
+    /* Animación de palpitación suave */
+    animation: semaphore-pulse 2s infinite ease-in-out;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+@keyframes semaphore-pulse {
+    0% { box-shadow: inset 0 -2px 5px rgba(0,0,0,0.2), 0 0 5px var(--warning-color); }
+    50% { box-shadow: inset 0 -2px 5px rgba(0,0,0,0.2), 0 0 15px var(--warning-color); } /* Aumenta el brillo */
+    100% { box-shadow: inset 0 -2px 5px rgba(0,0,0,0.2), 0 0 5px var(--warning-color); }
+}
