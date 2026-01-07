@@ -2747,7 +2747,7 @@ function setupListenersForArea(area) {
     // FECHA DE CORTE: Solo traer órdenes de los últimos 45 días
     // Si necesitas más historia, aumenta este número, pero te costará más lecturas.
     const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - 45); 
+    cutoffDate.setDate(cutoffDate.getDate() - 31); 
 
     console.log(`📡 Iniciando listeners para ${area} (Datos desde: ${cutoffDate.toLocaleDateString()})`);
 
