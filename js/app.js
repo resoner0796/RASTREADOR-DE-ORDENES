@@ -1178,37 +1178,29 @@ async function handleSapImageExport() {
     showModal(`Detalle de Caja: ${boxId}`, content);
 }
 
-            async function renderEmpaqueView(key) {
+            // --- OPTIMIZACIÓN 2: ESTRATEGIA FRANCOTIRADOR (SOLO LEER LO NECESARIO) ---
+async function renderEmpaqueView(key) {
     const tableWrapper = doc('empaqueTableContainer');
     tableWrapper.style.opacity = '0';
     await new Promise(res => setTimeout(res, 150));
 
-    let receivedBoxData = new Map();
-    let grDataMap = new Map();
-    try {
-        const [boxSnapshot, grSnapshot] = await Promise.all([
-            db.collection('boxID_historico').get(),
-            db.collection('gr_historico').get()
-        ]);
-        boxSnapshot.forEach(doc => receivedBoxData.set(doc.id, doc.data()));
-        grSnapshot.forEach(doc => grDataMap.set(doc.id, doc.data()));
-    } catch (e) { console.error("Error al obtener datos históricos:", e); }
-    
-    let dataToShow = new Map(); let headers = [];
+    // 1. Identificar qué datos vamos a mostrar (SIN leer Firebase todavía)
+    let dataToShow = new Map(); 
+    let headers = [];
+
     if (key === 'all' || key === null) {
+        // CUIDADO: Ver 'todas' las cajas de todas las órdenes consume mucho.
+        // Si es posible, evita esta vista o limita a las primeras 50 cajas.
         loadedOrders.forEach(order => {
             if(order.empaqueData) order.empaqueData.forEach((serials, boxId) => {
                 if (!dataToShow.has(boxId)) dataToShow.set(boxId, []);
                 if(serials && serials.length > 0) dataToShow.get(boxId).push(...serials);
             });
         });
-        if (loadedOrders.size > 0) {
-            const orderWithHeaders = Array.from(loadedOrders.values()).find(o => o.headers && o.headers.empaque && o.headers.empaque.length > 0);
-            if (orderWithHeaders) headers = orderWithHeaders.headers.empaque;
-        }
     } else if (loadedOrders.has(key)) {
         const order = loadedOrders.get(key);
-        dataToShow = order.empaqueData || new Map(); headers = order.headers.empaque || [];
+        dataToShow = order.empaqueData || new Map(); 
+        headers = order.headers.empaque || [];
     }
 
     if (!dataToShow || dataToShow.size === 0) {
@@ -1216,6 +1208,55 @@ async function handleSapImageExport() {
         tableWrapper.style.opacity = '1'; return;
     }
 
+    // 2. FRANCOTIRADOR: Identificar IDs únicos que necesitamos consultar
+    // En lugar de bajar TODA la colección, bajamos solo estas IDs.
+    const boxIdsToFetch = Array.from(dataToShow.keys());
+    
+    // Firebase 'in' query soporta hasta 30 elementos. Si son más, hacemos lotes o lecturas individuales.
+    // Para no complicar con lotes de 'in', usaremos Promise.all con lecturas directas (son baratas si son < 100).
+    // Si una orden tiene 500 cajas, son 500 lecturas. Sigue siendo mejor que 50,000 lecturas de la colección completa.
+    
+    let receivedBoxData = new Map();
+    let grDataMap = new Map();
+    
+    if (boxIdsToFetch.length > 0) {
+        try {
+            // A. Consultar solo las cajas de ESTA orden
+            // Usamos map para crear un array de promesas de lectura
+            const boxPromises = boxIdsToFetch.map(id => db.collection('boxID_historico').doc(id).get());
+            const boxSnapshots = await Promise.all(boxPromises);
+            
+            const grsToFetch = new Set();
+
+            boxSnapshots.forEach(docSnap => {
+                if (docSnap.exists) {
+                    const data = docSnap.data();
+                    receivedBoxData.set(docSnap.id, data);
+                    if (data.gr && data.gr !== 'N/A') {
+                        grsToFetch.add(String(data.gr).trim());
+                    }
+                }
+            });
+
+            // B. Consultar solo los GRs relacionados a ESTAS cajas
+            const uniqueGRs = Array.from(grsToFetch);
+            if (uniqueGRs.length > 0) {
+                const grPromises = uniqueGRs.map(id => db.collection('gr_historico').doc(id).get());
+                const grSnapshots = await Promise.all(grPromises);
+                
+                grSnapshots.forEach(docSnap => {
+                    if (docSnap.exists) {
+                        grDataMap.set(docSnap.id, docSnap.data());
+                    }
+                });
+            }
+
+        } catch (e) { 
+            console.error("Error al obtener datos históricos puntuales:", e); 
+        }
+    }
+
+    // El resto de tu lógica de renderizado se mantiene igual...
     const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
     const filterText = empaqueFilterInput.value.toLowerCase();
     
@@ -1257,9 +1298,8 @@ async function handleSapImageExport() {
             </tr>`;
     }
     
-    const grColumnString = grsToCopy.join('\\n');
+    const grColumnString = grsToCopy.join('\n');
 
-    // --- ¡AQUÍ ESTÁ EL ENCABEZADO ACTUALIZADO CON FILTROS! ---
     let tableHeaderHTML = `<thead><tr>
         <th><span>BoxID</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="0"></th>
         <th><span>Cantidad</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="1"></th>
@@ -1280,9 +1320,7 @@ async function handleSapImageExport() {
 
     tableWrapper.querySelectorAll('.box-row').forEach(row => {
         row.addEventListener('click', (e) => {
-            // Evitamos que el modal se abra si se hizo clic en una celda copiable (GR)
             if (e.target.classList.contains('copyable')) return; 
-            
             const boxId = row.dataset.boxid;
             const serialsForBox = dataToShow.get(boxId);
             showPackingDetailsModal(boxId, serialsForBox, headers);
@@ -1291,38 +1329,30 @@ async function handleSapImageExport() {
     
     tableWrapper.style.opacity = '1';
 
-    // --- ¡AQUÍ AÑADIMOS LA LÓGICA DE FILTRADO! ---
+    // (Lógica de filtros internos - se mantiene igual, cópiala del código original si falta)
+    applyInternalTableFilters(tableWrapper); // He encapsulado esto abajo para no alargar el bloque
+}
+
+// Helper para no perder la lógica de los filtros de columna que ya tenías
+function applyInternalTableFilters(tableWrapper) {
     tableWrapper.querySelectorAll('.filter-input').forEach(input => {
-        // Evitamos que al hacer clic en el input se dispare el clic de la fila/encabezado
-        input.addEventListener('click', (e) => {
-            e.stopPropagation();
-        }); 
-        
-        // Evitamos que al teclear en el input del GR se active el copiado de columna
+        input.addEventListener('click', (e) => e.stopPropagation()); 
         if (input.closest('.copyable-header')) {
-            input.addEventListener('click', (e) => {
-                e.preventDefault(); // Previene el evento de copiado
-            });
+            input.addEventListener('click', (e) => e.preventDefault());
         }
-        
         input.addEventListener('keyup', () => {
             const table = doc('empaqueTable');
-            // Aseguramos que solo tomamos los filtros del thead de esta tabla
             const filters = Array.from(table.querySelectorAll('thead .filter-input')); 
             const rows = table.querySelectorAll('tbody tr');
-
             rows.forEach(row => {
                 let shouldShow = true;
                 filters.forEach(filter => {
                     const filterValue = filter.value.toLowerCase();
                     const colIndex = parseInt(filter.dataset.colIndex, 10); 
-                    
                     if (filterValue) {
                         const cell = row.cells[colIndex];
                         const cellValue = cell ? cell.textContent.toLowerCase() : '';
-                        if (!cellValue.includes(filterValue)) {
-                            shouldShow = false;
-                        }
+                        if (!cellValue.includes(filterValue)) shouldShow = false;
                     }
                 });
                 row.style.display = shouldShow ? '' : 'none';
@@ -2707,65 +2737,85 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
                 applyTheme(currentTheme);
             });
 
-            function setupListenersForArea(area) {
+            // --- OPTIMIZACIÓN 1: LISTENERS LIMITADOS POR FECHA ---
+function setupListenersForArea(area) {
     if (!area) return;
-    // Detenemos los listeners anteriores para evitar duplicados
+    // Detenemos los listeners anteriores
     if (fwdListener) fwdListener();
     if (sapListener) sapListener();
 
-    // === LISTENER PARA FWD (RASTREO) - ESTE NO CAMBIA ===
-    fwdListener = db.collection('areas').doc(area).collection('orders').onSnapshot(snapshot => {
-        const ordersFromDB = new Map();
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            if (data.orderDate && data.orderDate.toDate) { data.orderDate = data.orderDate.toDate(); }
-            if (data.lastUpdated && data.lastUpdated.toDate) { data.lastUpdated = data.lastUpdated.toDate(); }
-            const empaqueDataMap = new Map();
-            if (data.empaqueData && Array.isArray(data.empaqueData)) {
-                data.empaqueData.forEach(item => { empaqueDataMap.set(item.boxId, item.serials); });
+    // FECHA DE CORTE: Solo traer órdenes de los últimos 45 días
+    // Si necesitas más historia, aumenta este número, pero te costará más lecturas.
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - 45); 
+
+    console.log(`📡 Iniciando listeners para ${area} (Datos desde: ${cutoffDate.toLocaleDateString()})`);
+
+    // 1. LISTENER FWD (Sólo órdenes recientes)
+    // NOTA: Si la consola te pide crear un índice, dale clic al link azul que aparecerá.
+    fwdListener = db.collection('areas').doc(area).collection('orders')
+        .where('orderDate', '>=', cutoffDate) 
+        .onSnapshot(snapshot => {
+            const ordersFromDB = new Map();
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.orderDate && data.orderDate.toDate) { data.orderDate = data.orderDate.toDate(); }
+                if (data.lastUpdated && data.lastUpdated.toDate) { data.lastUpdated = data.lastUpdated.toDate(); }
+                
+                const empaqueDataMap = new Map();
+                if (data.empaqueData && Array.isArray(data.empaqueData)) {
+                    data.empaqueData.forEach(item => { empaqueDataMap.set(item.boxId, item.serials); });
+                }
+                data.empaqueData = empaqueDataMap;
+                ordersFromDB.set(doc.id, data);
+            });
+            loadedOrders = ordersFromDB;
+            syncFwdAndSapDates();
+            updateOrderList();
+            if (mainMode === 'fwd') render();
+        }, err => {
+            console.error("Error escuchando datos de FWD: ", err);
+            // Si falla por falta de índice, avisamos
+            if (err.code === 'failed-precondition') {
+                showModal('Requiere Índice', 'Abre la consola del navegador (F12) y haz clic en el link de Firebase para crear el índice de orderDate.', 'warning');
+            } else {
+                showModal('Error de Conexión', `No se pudo conectar a los datos del área ${area}.`, 'error');
             }
-            data.empaqueData = empaqueDataMap;
-            ordersFromDB.set(doc.id, data);
         });
-        loadedOrders = ordersFromDB;
-        syncFwdAndSapDates();
-        updateOrderList();
-        if (mainMode === 'fwd') render();
-    }, err => {
-        console.error("Error escuchando datos de FWD: ", err);
-        showModal('Error de Conexión', `No se pudo conectar a los datos del área ${area}.`, 'error');
-    });
     
-    // === LISTENER PARA SAP (HISTÓRICO) - CON LA NUEVA LÓGICA ===
-    sapListener = db.collection('areas').doc(area).collection('sap_historico').onSnapshot(snapshot => {
-        let newSapData = [];
-        let latestUpdate = null;
-        let updatedBy = null;
+    // 2. LISTENER SAP (Sólo histórico reciente)
+    sapListener = db.collection('areas').doc(area).collection('sap_historico')
+        .where('lastUpdated', '>=', cutoffDate) // Asumiendo que usas lastUpdated para filtrar
+        // OJO: Si 'lastUpdated' no existe en todos tus docs viejos, usa otro campo o considera no filtrar este si son pocos.
+        // Si prefieres traer todo el SAP porque son pocos registros (comparado con FWD), quita el .where().
+        .onSnapshot(snapshot => {
+            let newSapData = [];
+            let latestUpdate = null;
+            let updatedBy = null;
 
-        snapshot.forEach(doc => {
-            const orderData = doc.data();
-            newSapData.push(orderData);
+            snapshot.forEach(doc => {
+                const orderData = doc.data();
+                newSapData.push(orderData);
+                
+                const orderLastUpdated = orderData.lastUpdated ? orderData.lastUpdated.toDate() : null;
+                if (orderLastUpdated && (!latestUpdate || orderLastUpdated > latestUpdate)) {
+                    latestUpdate = orderLastUpdated;
+                    updatedBy = orderData.lastUpdatedBy;
+                }
+            });
+
+            sapData = newSapData;
+            sapLastUpdated = latestUpdate;
+            sapLastUpdatedBy = updatedBy;
             
-            const orderLastUpdated = orderData.lastUpdated ? orderData.lastUpdated.toDate() : null;
-            if (orderLastUpdated && (!latestUpdate || orderLastUpdated > latestUpdate)) {
-                latestUpdate = orderLastUpdated;
-                updatedBy = orderData.lastUpdatedBy;
+            syncFwdAndSapDates();
+            updateOrderList();
+            if (mainMode === 'sap') {
+                render();
             }
+        }, err => {
+            console.error("Error escuchando datos del histórico de SAP: ", err);
         });
-
-        sapData = newSapData;
-        sapLastUpdated = latestUpdate;
-        sapLastUpdatedBy = updatedBy;
-        
-        syncFwdAndSapDates();
-        updateOrderList();
-        if (mainMode === 'sap') {
-            render();
-        }
-    }, err => {
-        console.error("Error escuchando datos del histórico de SAP: ", err);
-        showModal('Error de Conexión', `No se pudo conectar al histórico de SAP para el área ${area}.`, 'error');
-    });
 }
 
 // --- ¡AQUÍ ESTÁ EL CÓDIGO RESTAURADO! ---
