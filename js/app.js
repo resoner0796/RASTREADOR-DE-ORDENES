@@ -31,6 +31,7 @@ const firebaseConfig = {
             let currentArea = 'MULTIPORT';
             let fwdListener = null;
             let sapListener = null;
+            let globalAreasCache = null;
             let initialSyncDoneForArea = {};
             let selectedSapOrders = new Set(); // <-- AGREGA ESTA LÍNEA
 
@@ -1773,53 +1774,55 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
     }
 }
 
-            async function syncSapOrdersToFwd(sapOrders, areaName) {
-                if (!areaName || sapOrders.length === 0) return;
-                
-                const batch = db.batch();
-                const ordersCollectionRef = db.collection('areas').doc(areaName).collection('orders');
+            // --- OPTIMIZACIÓN FINAL: SINCRONIZACIÓN SAP -> FWD (CERO LECTURAS) ---
+// Pégalo en tu Rastreador de Órdenes
+async function syncSapOrdersToFwd(sapOrders, areaName) {
+    if (!areaName || sapOrders.length === 0) return;
+    
+    // Procesamos en lotes de 500 (límite de Firebase)
+    const chunks = [];
+    for (let i = 0; i < sapOrders.length; i += 500) {
+        chunks.push(sapOrders.slice(i, i + 500));
+    }
 
-                const existingOrdersSnapshot = await ordersCollectionRef.get();
-                const existingOrdersMap = new Map();
-                existingOrdersSnapshot.forEach(doc => {
-                    existingOrdersMap.set(doc.id, doc.data());
-                });
+    let totalUpdated = 0;
 
-                for (const sapOrder of sapOrders) {
-                    const orderId = String(sapOrder['Orden']);
-                    const orderRef = ordersCollectionRef.doc(orderId);
-                    
-                    const existingOrder = existingOrdersMap.get(orderId);
+    for (const chunk of chunks) {
+        const batch = db.batch();
+        const ordersCollectionRef = db.collection('areas').doc(areaName).collection('orders');
 
-                    const masterData = {
-                        orderQty: sapOrder['Total orden'] || 0,
-                        catalogNumber: sapOrder['Catalogo'] || 'N/A',
-                        orderDate: excelSerialToDate(sapOrder['Finish']) || new Date(),
-                    };
+        chunk.forEach(sapOrder => {
+            const orderId = String(sapOrder['Orden']);
+            const orderRef = ordersCollectionRef.doc(orderId);
+            
+            // Datos Maestros que SIEMPRE manda SAP
+            const masterData = {
+                orderQty: sapOrder['Total orden'] || 0,
+                catalogNumber: sapOrder['Catalogo'] || 'N/A',
+                orderDate: excelSerialToDate(sapOrder['Finish']) || new Date(),
+                // Agregamos esto para asegurar que el filtro 'lastUpdated' detecte el cambio
+                lastUpdated: new Date(),
+                lastUpdatedBy: session.user
+            };
 
-                    if (existingOrder) {
-                        batch.update(orderRef, masterData);
-                    } else {
-                        const defaultData = {
-                            packedQty: 0,
-                            rastreoData: [],
-                            empaqueData: [],
-                            headers: { rastreo: [], empaque: [] },
-                            lastUpdated: new Date(),
-                            lastUpdatedBy: session.user
-                        };
-                        batch.set(orderRef, { ...defaultData, ...masterData });
-                    }
-                }
+            // TRUCO DE ORO: 'merge: true'
+            // Si el documento existe, solo actualiza masterData.
+            // Si NO existe, lo crea con masterData.
+            // NOTA: Para no sobrescribir packedQty con 0 si ya existe, NO lo incluimos aquí.
+            
+            batch.set(orderRef, masterData, { merge: true });
+        });
 
-                try {
-                    await batch.commit();
-                    console.log(`${sapOrders.length} órdenes de SAP sincronizadas con FWD para el área ${areaName}.`);
-                } catch (e) {
-                    console.error(`Error al sincronizar órdenes de SAP a FWD para ${areaName}:`, e);
-                    showModal('Error de Sincronización', `No se pudieron actualizar las órdenes en la vista FWD para ${areaName}.`, 'error');
-                }
-            }
+        try {
+            await batch.commit();
+            totalUpdated += chunk.length;
+        } catch (e) {
+            console.error(`Error lote sincronización SAP ${areaName}:`, e);
+        }
+    }
+    
+    console.log(`✅ Sincronización SAP completada. ${totalUpdated} órdenes actualizadas en FWD sin lecturas masivas.`);
+}
 
 
             function processSapFile(workbook, isMasterUpload = false) {
@@ -2332,35 +2335,36 @@ async function saveSapOrdersToHistoric(sapOrders, areaName) {
                 render();
             }
 
-            async function showAreaSelector() {
-                const areasSnapshot = await db.collection('areas').get();
-                let areas = [];
-                areasSnapshot.forEach(doc => {
-                    if(doc.id !== 'CONFIG') areas.push({ id: doc.id, ...doc.data() })
-                });
-                areas.sort((a,b) => a.id.localeCompare(b.id));
+            // --- OPTIMIZACIÓN: SELECTOR DE ÁREA CON CACHÉ ---
+async function showAreaSelector() {
+    // Usamos la función optimizada getCachedAreas()
+    const areasIds = await getCachedAreas(); 
+    
+    // Como getCachedAreas devuelve solo IDs strings, reconstruimos objetos simples
+    let areas = areasIds.map(id => ({ id: id, name: id })); // O ajusta si tienes nombres reales guardados
 
-                let content = '<h3>Selecciona un Área para Visualizar</h3><ul class="area-list" style="grid-template-columns: 1fr auto;">';
-                areas.forEach(area => {
-                    content += `<li><span>${area.name}</span> <button class="btn select-area-btn" data-area="${area.id}" style="width: auto; padding: 5px 10px;">Seleccionar</button></li>`;
-                });
-                content += '</ul>';
-                showModal('Selector de Área', content);
+    let content = '<h3>Selecciona un Área para Visualizar</h3><ul class="area-list" style="grid-template-columns: 1fr auto;">';
+    areas.forEach(area => {
+        content += `<li><span>${area.name}</span> <button class="btn select-area-btn" data-area="${area.id}" style="width: auto; padding: 5px 10px;">Seleccionar</button></li>`;
+    });
+    content += '</ul>';
+    
+    showModal('Selector de Área', content);
 
-                doc('modalBody').querySelectorAll('.select-area-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const newArea = e.target.dataset.area;
-                        if (newArea !== currentArea) {
-                            currentArea = newArea;
-                            localStorage.setItem('currentArea', currentArea);
-                            areaSelectBtn.textContent = `Área: ${currentArea}`;
-                            setupListenersForArea(currentArea);
-                        }
-                        updateUIAfterAuth();
-                        hideModal();
-                    });
-                });
+    doc('modalBody').querySelectorAll('.select-area-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const newArea = e.target.dataset.area;
+            if (newArea !== currentArea) {
+                currentArea = newArea;
+                localStorage.setItem('currentArea', currentArea);
+                areaSelectBtn.textContent = `Área: ${currentArea}`;
+                setupListenersForArea(currentArea);
             }
+            updateUIAfterAuth();
+            hideModal();
+        });
+    });
+}
 
             async function showAdminPanel() {
                 const [areasSnapshot, usersSnapshot] = await Promise.all([
