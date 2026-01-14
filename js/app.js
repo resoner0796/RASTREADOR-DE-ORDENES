@@ -1186,47 +1186,39 @@ async function renderEmpaqueView(key) {
     await new Promise(res => setTimeout(res, 150));
 
     // 1. Identificar qué datos vamos a mostrar (SIN leer Firebase todavía)
-    let dataToShow = new Map(); 
+    let dataToShow = new Map();
     let headers = [];
 
     if (key === 'all' || key === null) {
-        // CUIDADO: Ver 'todas' las cajas de todas las órdenes consume mucho.
-        // Si es posible, evita esta vista o limita a las primeras 50 cajas.
         loadedOrders.forEach(order => {
-            if(order.empaqueData) order.empaqueData.forEach((serials, boxId) => {
+            if (order.empaqueData) order.empaqueData.forEach((serials, boxId) => {
                 if (!dataToShow.has(boxId)) dataToShow.set(boxId, []);
-                if(serials && serials.length > 0) dataToShow.get(boxId).push(...serials);
+                if (serials && serials.length > 0) dataToShow.get(boxId).push(...serials);
             });
         });
     } else if (loadedOrders.has(key)) {
         const order = loadedOrders.get(key);
-        dataToShow = order.empaqueData || new Map(); 
+        dataToShow = order.empaqueData || new Map();
         headers = order.headers.empaque || [];
     }
 
     if (!dataToShow || dataToShow.size === 0) {
         tableWrapper.innerHTML = `<table id="empaqueTable"><thead><tr><th>No hay datos de empaque.</th></tr></thead></table>`;
-        tableWrapper.style.opacity = '1'; return;
+        tableWrapper.style.opacity = '1';
+        return;
     }
 
     // 2. FRANCOTIRADOR: Identificar IDs únicos que necesitamos consultar
-    // En lugar de bajar TODA la colección, bajamos solo estas IDs.
     const boxIdsToFetch = Array.from(dataToShow.keys());
-    
-    // Firebase 'in' query soporta hasta 30 elementos. Si son más, hacemos lotes o lecturas individuales.
-    // Para no complicar con lotes de 'in', usaremos Promise.all con lecturas directas (son baratas si son < 100).
-    // Si una orden tiene 500 cajas, son 500 lecturas. Sigue siendo mejor que 50,000 lecturas de la colección completa.
-    
     let receivedBoxData = new Map();
     let grDataMap = new Map();
-    
+
     if (boxIdsToFetch.length > 0) {
         try {
             // A. Consultar solo las cajas de ESTA orden
-            // Usamos map para crear un array de promesas de lectura
             const boxPromises = boxIdsToFetch.map(id => db.collection('boxID_historico').doc(id).get());
             const boxSnapshots = await Promise.all(boxPromises);
-            
+
             const grsToFetch = new Set();
 
             boxSnapshots.forEach(docSnap => {
@@ -1244,7 +1236,7 @@ async function renderEmpaqueView(key) {
             if (uniqueGRs.length > 0) {
                 const grPromises = uniqueGRs.map(id => db.collection('gr_historico').doc(id).get());
                 const grSnapshots = await Promise.all(grPromises);
-                
+
                 grSnapshots.forEach(docSnap => {
                     if (docSnap.exists) {
                         grDataMap.set(docSnap.id, docSnap.data());
@@ -1252,23 +1244,22 @@ async function renderEmpaqueView(key) {
                 });
             }
 
-        } catch (e) { 
-            console.error("Error al obtener datos históricos puntuales:", e); 
+        } catch (e) {
+            console.error("Error al obtener datos históricos puntuales:", e);
         }
     }
 
-    // El resto de tu lógica de renderizado se mantiene igual...
     const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
     const filterText = empaqueFilterInput.value.toLowerCase();
-    
+
     let entriesFound = 0;
     const reversedEntries = Array.from(dataToShow.entries()).reverse();
-    
+
     const grsToCopy = [];
-    let tableBodyHTML = ''; 
+    let tableBodyHTML = '';
 
     for (const [boxId, serials] of reversedEntries) {
-        if(!serials || serials.length === 0) continue;
+        if (!serials || serials.length === 0) continue;
         const serialsMatchFilter = serials.some(s => String(s[findHeader(headers, PACKING_KEYS.SERIAL)]).toLowerCase().includes(filterText));
         if (filterText && !String(boxId).toLowerCase().includes(filterText) && !serialsMatchFilter) continue;
         entriesFound++;
@@ -1278,7 +1269,7 @@ async function renderEmpaqueView(key) {
         const statusClass = boxData ? 'boxid-received' : 'boxid-missing';
         const receivedDateText = boxData && boxData.receivedAt ? formatShortDateTime(boxData.receivedAt.toDate()) : 'N/A';
         const grValue = boxData && boxData.gr ? String(boxData.gr).trim() : 'N/A';
-        
+
         if (grValue !== 'N/A') {
             grsToCopy.push(grValue);
         }
@@ -1298,40 +1289,51 @@ async function renderEmpaqueView(key) {
                 <td data-label="Usuario">${usuarioValue}</td>
             </tr>`;
     }
-    
+
     const grColumnString = grsToCopy.join('\n');
 
+    // --- CORRECCIÓN 1: Quitamos el onclick inline y añadimos ID ---
     let tableHeaderHTML = `<thead><tr>
         <th><span>BoxID</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="0"></th>
         <th><span>Cantidad</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="1"></th>
         <th><span>Último Empaque</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="2"></th>
         <th><span>Recibido Logística</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="3"></th>
-        <th class="copyable-header" onclick="copyColumnData(this, '${grColumnString}')" title="Haz clic para copiar toda la columna">
+        <th class="copyable-header" id="header-gr-copy" title="Haz clic para copiar toda la columna">
             <span>GR</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="4">
         </th>
         <th><span>Orden</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="5"></th>
         <th><span>Usuario</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="6"></th>
     </tr></thead>`;
-    
-    if (entriesFound === 0) { 
-        tableWrapper.innerHTML = `<table id="empaqueTable"><thead><tr><th>No se encontraron resultados.</th></tr></thead></table>`; 
-    } else { 
-        tableWrapper.innerHTML = `<table id="empaqueTable">${tableHeaderHTML}<tbody>${tableBodyHTML}</tbody></table>`; 
+
+    if (entriesFound === 0) {
+        tableWrapper.innerHTML = `<table id="empaqueTable"><thead><tr><th>No se encontraron resultados.</th></tr></thead></table>`;
+    } else {
+        tableWrapper.innerHTML = `<table id="empaqueTable">${tableHeaderHTML}<tbody>${tableBodyHTML}</tbody></table>`;
     }
+
+    // --- CORRECCIÓN 2: Agregamos el listener de JS puro aquí ---
+    const grHeaderBtn = doc('header-gr-copy');
+    if (grHeaderBtn) {
+        grHeaderBtn.addEventListener('click', (e) => {
+            // Evitamos que se dispare si das clic en el input de filtro
+            if (e.target.tagName === 'INPUT') return;
+            // Usamos la variable grColumnString que está en memoria
+            window.copyColumnData(e.currentTarget, grColumnString);
+        });
+    }
+    // -------------------------------------------------------------
 
     tableWrapper.querySelectorAll('.box-row').forEach(row => {
         row.addEventListener('click', (e) => {
-            if (e.target.classList.contains('copyable')) return; 
+            if (e.target.classList.contains('copyable')) return;
             const boxId = row.dataset.boxid;
             const serialsForBox = dataToShow.get(boxId);
             showPackingDetailsModal(boxId, serialsForBox, headers);
         });
     });
-    
-    tableWrapper.style.opacity = '1';
 
-    // (Lógica de filtros internos - se mantiene igual, cópiala del código original si falta)
-    applyInternalTableFilters(tableWrapper); // He encapsulado esto abajo para no alargar el bloque
+    tableWrapper.style.opacity = '1';
+    applyInternalTableFilters(tableWrapper);
 }
 
 // Helper para no perder la lógica de los filtros de columna que ya tenías
