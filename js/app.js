@@ -591,7 +591,7 @@ async function handleSapImageExport() {
 
                             if (ageInHours > 25) {
                                 status = 'very_delayed';
-                            } else if (ageInHours > 8) {
+                            } else if (ageInHours > 6) {
                                 status = 'delayed';
                             } else {
                                 status = 'today';
@@ -787,13 +787,13 @@ async function handleSapImageExport() {
 
     orderList.appendChild(fragment);
     
-    if (!isSearching && loadedOrders.size > 250) {
+    if (!isSearching && loadedOrders.size > 300) {
         const infoMsg = document.createElement('div');
         infoMsg.style.padding = "10px";
         infoMsg.style.textAlign = "center";
         infoMsg.style.color = "var(--text-secondary)";
         infoMsg.style.fontSize = "0.8rem";
-        infoMsg.innerText = `Mostrando las últimas 200 órdenes de ${loadedOrders.size}. Usa el buscador para ver anteriores.`;
+        infoMsg.innerText = `Mostrando las últimas 300 órdenes de ${loadedOrders.size}. Usa el buscador para ver anteriores.`;
         orderList.appendChild(infoMsg);
     }
 
