@@ -787,13 +787,13 @@ async function handleSapImageExport() {
 
     orderList.appendChild(fragment);
     
-    if (!isSearching && loadedOrders.size > 300) {
+    if (!isSearching && loadedOrders.size > 200) {
         const infoMsg = document.createElement('div');
         infoMsg.style.padding = "10px";
         infoMsg.style.textAlign = "center";
         infoMsg.style.color = "var(--text-secondary)";
         infoMsg.style.fontSize = "0.8rem";
-        infoMsg.innerText = `Mostrando las últimas 300 órdenes de ${loadedOrders.size}. Usa el buscador para ver anteriores.`;
+        infoMsg.innerText = `Mostrando las últimas 200 órdenes de ${loadedOrders.size}. Usa el buscador para ver anteriores.`;
         orderList.appendChild(infoMsg);
     }
 
