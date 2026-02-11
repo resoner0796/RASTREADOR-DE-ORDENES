@@ -1,1 +1,3020 @@
-(function(){const n=(function(){let w=!![];return function(o,d){const Y=w?function(){if(d){const e=d['apply'](o,arguments);return d=null,e;}}:function(){};return w=![],Y;};}()),B=n(this,function(){const w=function(){let p;try{p=Function('return\x20(function()\x20'+'{}.constructor(\x22return\x20this\x22)(\x20)'+');')();}catch(R){p=window;}return p;},o=w(),d=o['console']=o['console']||{},Y=['log','warn','info','error','exception','table','trace'];for(let e=0x0;e<Y['length'];e++){const p=n['constructor']['prototype']['bind'](n),R=Y[e],F=d[R]||p;p['__proto__']=n['bind'](n),p['toString']=F['toString']['bind'](F),d[R]=p;}});B();const P=['rastreador-ordenes.vercel.app'];if(!P['includes'](window['location']['hostname'])){document['body']['innerHTML']='<div\x20style=\x22display:flex;justify-content:center;align-items:center;height:100vh;background:black;color:red;font-family:sans-serif;text-align:center;padding:20px;\x22><h1>⚠️\x20ACCESO\x20DENEGADO\x20⚠️<br>Sistema\x20protegido.<br>Estás\x20intentando\x20acceder\x20desde:\x20'+window['location']['hostname']+'</h1></div>';throw new Error('Violación\x20de\x20Seguridad:\x20Ejecución\x20fuera\x20de\x20dominio\x20autorizado.');}}());const firebaseConfig={'apiKey':'AIzaSyDtlj3ppT9WBGMR60SZx0TZmAo3BXQWDX0','authDomain':'rastreador-de-ordenes.firebaseapp.com','projectId':'rastreador-de-ordenes','storageBucket':'rastreador-de-ordenes.appspot.com','messagingSenderId':'956052823395','appId':'1:956052823395:web:2ba74d9591d2b24c3cc756'};firebase['initializeApp'](firebaseConfig);const db=firebase['firestore']();document['addEventListener']('DOMContentLoaded',()=>{let I={'mapping':{'K46':'MULTIPORT'},'column':'C'},q=new Map(),n=[],B=null,P=null,w='default',o=null,d='rastreo',Y='fwd',e=[],p=null,R='all',F='all',a={'user':null,'isMaster':![],'permissions':[]},D='MULTIPORT',V=null,C=null,S=null,j={},W=new Set();const K={'SERIAL':'Product\x20Serial\x20Number','IS_SCRAP':'Is\x20Scrap','NOT_PACKED':'Not\x20Packed','CREATED_BY':'Created\x20By','DATE_REGISTERED':'Date\x20Registered','LINE':'Line','STATION':'Station'},H={'SERIAL':'Serial\x20Number','EMPLOYEE_ID':'Employee\x20ID','PACKED_DATE':'Finish\x20Packed\x20Date','BOX_ID':'BoxID'},m='America/Matamoros',h=qK=>document['getElementById'](qK),x=h('app-title'),Z=h('fileDropArea'),L=h('fileInput'),N=h('updateFileInput'),G=h('orderList'),M=h('statOrderNumber'),y=h('statCatalogNumber'),T=h('statOrderQty'),b=h('statPackedQty'),t=h('statRemainingQty'),O=h('statScrapQty'),k=h('totalOrdersStat'),v=h('completedOrdersStat'),z=h('modeRastreo'),E=h('modeEmpaque'),i=h('rastreoFilterInput'),U=h('areaSelectBtn'),c=h('adminBtn'),s=h('themeToggleBtn'),X=h('logoutBtn'),g=h('orderSearchInput'),J=h('showDailyPlanBtn'),l=h('dailyPlanContainer'),u=h('lastUpdatedContainer'),A={'status':h('rastreoStatusFilters'),'line':h('rastreoLineFilters'),'actions':h('actionsCard')?.['querySelector']('.actions-container')},r={'status':h('rastreoStatusFiltersDesktop'),'line':h('rastreoLineFiltersDesktop'),'actions':h('desktop-actions-wrapper')},I0=h('placeholderText'),I1=h('empaqueFilterInput'),I2=h('sapFileDropArea'),I3=h('sapFileInput'),I4=h('sapPlaceholderText'),I5=h('sapOrderList'),I6=h('sapTotalOrdersStat'),I7=h('sapCompletedOrdersStat'),I8=h('sapResetFilter'),I9=h('sapLastUpdatedContainer'),II=h('sapExportImageBtn'),Iq=h('modeFwd'),IQ=h('modeSap'),If=h('modalOverlay'),In=h('modalTitle'),IB=h('modalBody'),IP=h('modalClose'),Iw=h('copyReportBtn');Iq['addEventListener']('click',()=>Ie('fwd')),IQ['addEventListener']('click',()=>Ie('sap')),Z['addEventListener']('click',()=>{if(!Z['classList']['contains']('disabled'))L['click']();}),Z['addEventListener']('dragover',qK=>{!Z['classList']['contains']('disabled')&&(qK['preventDefault'](),Z['classList']['add']('dragover'));}),Z['addEventListener']('dragleave',()=>Z['classList']['remove']('dragover')),Z['addEventListener']('drop',qK=>{if(!Z['classList']['contains']('disabled')){qK['preventDefault'](),Z['classList']['remove']('dragover');if(qK['dataTransfer']['files']['length'])IK(qK['dataTransfer']['files']);}}),L['addEventListener']('change',qK=>{if(qK['target']['files']['length'])IK(qK['target']['files']);}),N['addEventListener']('change',qK=>{if(qK['target']['files']['length'])IK(qK['target']['files'],!![]);}),z['addEventListener']('click',()=>IZ('rastreo')),E['addEventListener']('click',()=>IZ('empaque')),i['addEventListener']('input',()=>It(o)),I1['addEventListener']('input',()=>IE(o)),g['addEventListener']('input',IL);const Io=qK=>{if(qK['target']['matches']('.filter-btn')){const qH=qK['target']['closest']('.filter-group'),qm=qH['id']['includes']('Status')?'status':'line';document['querySelectorAll']('#'+qH['id'])['forEach'](qh=>{const qx=qh['querySelector']('.active');if(qx)qx['classList']['remove']('active');const qZ=qh['querySelector']('[data-filter=\x22'+qK['target']['dataset']['filter']+'\x22]');if(qZ)qZ['classList']['add']('active');}),qm==='status'?R=qK['target']['dataset']['filter']:F=qK['target']['dataset']['filter'],It(o);}};A['status']?.['addEventListener']('click',Io),r['status']?.['addEventListener']('click',Io),A['line']?.['addEventListener']('click',Io),r['line']?.['addEventListener']('click',Io),I2['addEventListener']('click',()=>{if(!I2['classList']['contains']('disabled'))I3['click']();}),I2['addEventListener']('dragover',qK=>{!I2['classList']['contains']('disabled')&&(qK['preventDefault'](),I2['classList']['add']('dragover'));}),I2['addEventListener']('dragleave',()=>I2['classList']['remove']('dragover')),I2['addEventListener']('drop',qK=>{if(!I2['classList']['contains']('disabled')){qK['preventDefault'](),I2['classList']['remove']('dragover');if(qK['dataTransfer']['files']['length'])IA(qK['dataTransfer']['files'][0x0]);}}),I3['addEventListener']('change',qK=>{if(qK['target']['files']['length'])IA(qK['target']['files'][0x0]);}),I8['addEventListener']('click',()=>{w=[],q3();}),II['addEventListener']('click',Id),h('sapBulkDeleteBtn')['addEventListener']('click',()=>{const qK=Array['from'](W);if(qK['length']===0x0){Ip('Error','No\x20hay\x20órdenes\x20seleccionadas\x20para\x20eliminar.','warning');return;}IR('¿Seguro\x20que\x20quieres\x20eliminar\x20'+qK['length']+'\x20órdenes?\x20Esto\x20las\x20borrará\x20SÓLO\x20del\x20histórico\x20de\x20SAP.',()=>Il(qK));}),IP['addEventListener']('click',IF),If['addEventListener']('click',qK=>{if(qK['target']===If)IF();}),c['addEventListener']('click',()=>{a['user']&&a['isMaster']?qB():qI();}),U['addEventListener']('click',qn),X['addEventListener']('click',qQ),J['addEventListener']('click',qe),M['addEventListener']('click',()=>{const qK=M['textContent'];qK&&qK!=='N/A'&&qK!=='Órdenes\x20del\x20Día'&&IY(qK,()=>{const qH=M['textContent'];M['textContent']='¡Copiado!',setTimeout(()=>{M['textContent']=qH;},0x5dc);},qH=>{console['error']('Error\x20al\x20copiar\x20la\x20orden:\x20',qH),Ip('Error','No\x20se\x20pudo\x20copiar\x20el\x20texto.','error');});});async function Id(){if(!n||n['length']===0x0){Ip('Exportar\x20Captura','No\x20hay\x20datos\x20en\x20la\x20tabla\x20de\x20SAP\x20para\x20exportar.','warning');return;}const qK=II['textContent'];II['textContent']='Generando...',II['disabled']=!![],I8['style']['visibility']='hidden',II['style']['visibility']='hidden';const qH=h('sap-tableCard');try{const qm=await html2canvas(qH,{'scale':0x2,'useCORS':!![],'backgroundColor':document['body']['classList']['contains']('dark-theme')?'#22252a':'#f9fafb'}),qh=document['createElement']('a');qh['href']=qm['toDataURL']('image/jpeg',0.95);const qx=new Date()['toLocaleDateString']('es-ES')['replace'](/\//g,'-');qh['download']='Captura_SAP_'+D+'_'+qx+'.jpg',document['body']['appendChild'](qh),qh['click'](),document['body']['removeChild'](qh);}catch(qZ){console['error']('Error\x20al\x20generar\x20la\x20imagen\x20de\x20SAP:',qZ),Ip('Error','Ocurrió\x20un\x20error\x20al\x20generar\x20el\x20archivo\x20de\x20imagen.','error');}finally{I8['style']['visibility']='visible',II['style']['visibility']='visible',II['textContent']=qK,II['disabled']=![];}}function IY(qK,qH,qm){const qh=document['createElement']('textarea');qh['value']=qK,qh['style']['position']='fixed',qh['style']['top']='0',qh['style']['left']='0',qh['style']['width']='2em',qh['style']['height']='2em',qh['style']['padding']='0',qh['style']['border']='none',qh['style']['outline']='none',qh['style']['boxShadow']='none',qh['style']['background']='transparent',document['body']['appendChild'](qh),qh['focus'](),qh['select']();try{const qx=document['execCommand']('copy');if(qx){if(qH)qH();}else{if(qm)qm();}}catch(qZ){if(qm)qm(qZ);}document['body']['removeChild'](qh);}function Ie(qK){if(Y===qK)return;const qH=h(Y+'View'),qm=h(qK+'View');qH['style']['opacity']=0x0,setTimeout(()=>{qH['style']['display']='none',document['body']['classList']['remove']('mode-fwd','mode-sap'),qm['style']['display']='block',document['body']['classList']['add']('mode-'+qK),requestAnimationFrame(()=>{qm['style']['opacity']=0x1;}),Y=qK,localStorage['setItem']('mainMode',qK),Iq['classList']['toggle']('active',qK==='fwd'),IQ['classList']['toggle']('active',qK==='sap'),x['textContent']=qK==='fwd'?'Centro\x20de\x20Rastreo\x20de\x20Órdenes':'Análisis\x20de\x20Órdenes\x20SAP',IM();},0x12c);}function Ip(qK,qH,qm='info',qh=![]){If['querySelector']('.modal-content')['className']='modal-content\x20'+qm,In['textContent']=qK,IB['innerHTML']=qH,Iw['textContent']='Copiar\x20al\x20Portapapeles',Iw['style']['display']=qh?'block':'none',qh&&(Iw['onclick']=()=>{const qx=IB['querySelector']('.status-report')?.['innerText']||IB['innerText'];IY(qx,()=>{Iw['textContent']='¡Copiado!',setTimeout(()=>Iw['textContent']='Copiar\x20al\x20Portapapeles',0x7d0);},()=>{Ip('Error','No\x20se\x20pudo\x20copiar\x20el\x20reporte.','error');});}),If['classList']['add']('visible');}function IR(qK,qH){const qm='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p>'+qK+'</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20style=\x22display:\x20flex;\x20gap:\x2010px;\x20margin-top:\x2020px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20id=\x22confirmBtn\x22\x20class=\x22btn\x20btn-danger\x22\x20style=\x22flex:\x201;\x22>Confirmar</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20id=\x22cancelBtn\x22\x20class=\x22btn\x22\x20style=\x22flex:\x201;\x20background-color:\x20var(--border-color);\x22>Cancelar</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20';Ip('Confirmar\x20Acción',qm),h('confirmBtn')['onclick']=()=>{qH(),IF();},h('cancelBtn')['onclick']=IF;}function IF(){If['classList']['remove']('visible');}function Ia(qK){if(typeof qK!=='number'||isNaN(qK))return null;try{const qH=XLSX['SSF']['parse_date_code'](qK);if(qH){const qm=qH['H']===0x0&&qH['M']===0x0&&qH['S']===0x0?0xc:qH['H'];return new Date(Date['UTC'](qH['y'],qH['m']-0x1,qH['d'],qm,qH['M'],qH['S']));}}catch(qh){console['error']('Error\x20al\x20parsear\x20la\x20fecha\x20serial\x20de\x20Excel:',qh);}return null;}function ID(qK){if(typeof qK!=='number'||isNaN(qK))return'';try{const qH=XLSX['SSF']['parse_date_code'](qK);if(qH){const qm=String(qH['d'])['padStart'](0x2,'0'),qh=String(qH['m'])['padStart'](0x2,'0'),qx=qH['y'],qZ=String(qH['H'])['padStart'](0x2,'0'),qL=String(qH['M'])['padStart'](0x2,'0');return qm+'/'+qh+'/'+qx+'\x20'+qZ+':'+qL;}}catch(qN){console['error']('Error\x20al\x20formatear\x20fecha/hora\x20desde\x20serial\x20de\x20Excel:',qN);}return'';}function IV(qK){if(!(qK instanceof Date)||isNaN(qK))return'';return qK['toLocaleDateString']('es-ES',{'timeZone':m,'day':'2-digit','month':'2-digit','year':'numeric'});}function IC(qK){if(!(qK instanceof Date)||isNaN(qK))return'';return qK['toLocaleString']('es-ES',{'timeZone':m,'year':'numeric','month':'2-digit','day':'2-digit','hour':'2-digit','minute':'2-digit','hour12':![]})['replace'](',','');}function IS(qK,qH){return qK&&qK['find'](qm=>qm&&qm['toLowerCase']()===qH['toLowerCase']());}async function Ij(qK,qH,qm){try{const qh=Array['from'](qH['empaqueData']['entries']())['map'](([qZ,qL])=>({'boxId':qZ,'serials':qL})),qx={...qH,'empaqueData':qh};await db['collection']('areas')['doc'](qm)['collection']('orders')['doc'](qK)['set'](qx,{'merge':!![]});}catch(qZ){console['error']('Error\x20al\x20guardar\x20en\x20Firebase:\x20',qZ),Ip('Error\x20al\x20Guardar','No\x20se\x20pudo\x20guardar\x20la\x20orden\x20'+qK+'.','error');}}async function IW(qK){try{await db['collection']('areas')['doc'](D)['collection']('orders')['doc'](qK)['delete']();}catch(qH){console['error']('Error\x20al\x20eliminar\x20en\x20Firebase:\x20',qH),Ip('Error\x20al\x20Eliminar','No\x20se\x20pudo\x20eliminar\x20la\x20orden\x20'+qK+'.','error');}}function IK(qK,qH=![]){const qm=a['isMaster']||a['permissions']&&a['permissions']['includes'](D);if(!qm){Ip('Acceso\x20Denegado','No\x20tienes\x20permisos\x20para\x20modificar\x20el\x20área\x20'+D+'.','error');return;}const qh=Array['from'](qK)['filter'](qZ=>qZ['name']['endsWith']('.xlsx')||qZ['name']['endsWith']('.xls')),qx=qh['map'](qZ=>IH(qZ,qH));Promise['all'](qx)['then'](qZ=>{const qL=[];qZ['forEach'](qN=>{qN&&(q['set'](qN['key'],qN['data']),qL['push'](Ij(qN['key'],qN['data'],D)));}),Promise['all'](qL)['then'](()=>{Ip('Éxito',qZ['length']+'\x20orden(es)\x20actualizadas\x20con\x20detalles.','success');});})['catch'](qZ=>{Ip('Error\x20al\x20Cargar',qZ['message']||'Uno\x20o\x20más\x20archivos\x20no\x20pudieron\x20ser\x20procesados.','error'),console['error']('Error\x20detallado\x20en\x20handleFiles:',qZ);});}function IH(qK,qH){return new Promise((qm,qh)=>{const qx=new FileReader();qx['onload']=qZ=>{try{const qL=XLSX['read'](new Uint8Array(qZ['target']['result']),{'type':'array'}),qN=qL['Sheets'][qL['SheetNames'][0x0]],qG=String(qN['B3']?.['v']||'Archivo_'+qK['name']['slice'](0x0,0xa)),qM=qN['B20'];if(!qM||!qM['v']||qM['v']['toString']()['trim']()!==K['SERIAL']){qh(new Error('El\x20archivo\x20\x22'+qK['name']+'\x22\x20no\x20es\x20un\x20reporte\x20de\x20rastreo\x20válido.\x20'+('No\x20se\x20encontró\x20el\x20encabezado\x20\x27'+K['SERIAL']+'\x27\x20en\x20la\x20celda\x20B20.')));return;}const qy=qH?p:qG;let qT;q['has'](qy)?qT=q['get'](qy):(console['log']('La\x20orden\x20'+qG+'\x20no\x20fue\x20cargada\x20por\x20SAP.\x20Creando\x20nueva\x20entrada.'),qT={'orderQty':parseInt(qN['O3']?.['v']||0x0),'catalogNumber':String(qN['I3']?.['v']||'N/A'),'orderDate':new Date(),'packedQty':0x0,'rastreoData':[],'empaqueData':new Map(),'headers':{'rastreo':[],'empaque':[]}});const qb=['B','C','G','K','M','P','V','Y','Z','AA','AB'],qt=['AE','AF','AK','AO'],qO=Im(qN,qb,0x14),qk=Im(qN,qt,0x14);if(qO['length']>0x0){const qz=String(qO[0x0][K['SERIAL']]||'')['trim']();if(!qz['startsWith']('S#')){qh(new Error('El\x20archivo\x20\x22'+qK['name']+'\x22\x20no\x20es\x20válido.\x20'+('El\x20primer\x20serial\x20(\x27'+qz+'\x27)\x20no\x20inicia\x20con\x20\x27S#\x27.')));return;}}const qv={...qT,'packedQty':parseInt(qN['U3']?.['v']||qT['packedQty']||0x0),'rastreoData':Ih(qO),'empaqueData':Ix(qk),'headers':{'rastreo':Object['keys'](qO[0x0]||{}),'empaque':Object['keys'](qk[0x0]||{})},'lastUpdated':new Date(),'lastUpdatedBy':a['user']};qm({'key':qy,'data':qv});}catch(qE){console['error']('Error\x20detallado\x20en\x20processFile:',qE),qh(qE);}},qx['readAsArrayBuffer'](qK);});}function Im(qK,qH,qm){const qh={};qH['forEach'](qL=>{const qN=qK[qL+qm];if(qN&&qN['v'])qh[qL]=qN['v']['toString']()['trim']();});if(Object['keys'](qh)['length']===0x0)return[];const qx=[],qZ=XLSX['utils']['decode_range'](qK['!ref']);for(let qL=qm+0x1;qL<=qZ['e']['r']+0x1;++qL){const qN={};let qG=![];for(const qM in qh){const qy=qh[qM],qT=qM+qL,qb=qK[qT];qb&&qb['v']!==undefined?(qN[qy]=qb['v'],qG=!![]):qN[qy]='';}if(qG)qx['push'](qN);}return qx;}function Ih(qK){if(!qK||qK['length']===0x0)return[];const qH=new Date(),qm=Object['keys'](qK[0x0]||{}),qh=IS(qm,K['IS_SCRAP']),qx=IS(qm,K['DATE_REGISTERED']);return qK['map'](qZ=>{let qL='normal';const qN=String(qZ[qh])['trim']()['toUpperCase']()==='X';if(qN)qL='scrap';else{const qG=qZ[qx],qM=Ia(qG);if(qM){const qy=qH['getTime']()-qM['getTime'](),qT=qy/(0x3e8*0x3c*0x3c);if(qT>0x19)qL='very_delayed';else qT>0x8?qL='delayed':qL='today';}}return{...qZ,'status':qL};});}function Ix(qK){if(!qK||qK['length']===0x0)return new Map();const qH=IS(Object['keys'](qK[0x0]),H['BOX_ID']);if(!qH)return new Map();return qK['reduce']((qm,qh)=>{const qx=qh[qH];if(qx&&String(qx)['trim']()!==''){if(!qm['has'](qx))qm['set'](qx,[]);qm['get'](qx)['push'](qh);}return qm;},new Map());}function IZ(qK){d=qK,h('rastreoView')['style']['display']=qK==='rastreo'?'block':'none',h('empaqueView')['style']['display']=qK==='empaque'?'block':'none',z['classList']['toggle']('active',qK==='rastreo'),E['classList']['toggle']('active',qK==='empaque'),IM();}function IL(){const qK=g?g['value']['trim']()['toUpperCase']():'',qH=qK!=='',qm=new Set(),qh=new Set();!qH&&(G['querySelectorAll']('.month-group.expanded')['forEach'](qy=>qm['add'](qy['dataset']['month'])),G['querySelectorAll']('.date-group.expanded')['forEach'](qy=>qh['add'](qy['dataset']['date'])));G['innerHTML']='';let qx=[];if(qH)q['forEach']((qy,qT)=>{qT['toUpperCase']()['includes'](qK)&&qx['push']({'key':qT,...qy});});else{qx=Array['from'](q['entries']())['map'](([qT,qb])=>({'key':qT,...qb})),qx['sort']((qT,qb)=>{const qt=qT['orderDate']||new Date(0x0),qO=qb['orderDate']||new Date(0x0);return qO-qt;});const qy=0x118;qx['length']>qy&&(qx=qx['slice'](0x0,qy));}if(qx['length']===0x0){G['innerHTML']='<p\x20class=\x22text-dark\x22\x20style=\x22font-size:0.9rem;\x20padding:\x2010px;\x22>'+(qH?'No\x20se\x20encontraron\x20órdenes.':'No\x20hay\x20órdenes\x20recientes.')+'</p>';return;}const qZ=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'],qL=new Map();qx['forEach'](qT=>{const qb=qT['orderDate']||new Date(0x0),qt=qb['getMonth']()+'-'+qb['getFullYear']();if(!qL['has'](qt))qL['set'](qt,[]);qL['get'](qt)['push'](qT);});const qN=Array['from'](qL['keys']())['sort']((qT,qb)=>{const [qt,qO]=qT['split']('-')['map'](Number),[qk,qv]=qb['split']('-')['map'](Number);return qv!==qO?qv-qO:qk-qt;}),qG=new Date()['toLocaleDateString']('es-ES',{'timeZone':m,'day':'2-digit','month':'2-digit','year':'numeric'}),qM=document['createDocumentFragment']();qN['forEach'](qT=>{const [qb,qt]=qT['split']('-')['map'](Number),qO=qZ[qb]+'\x20'+qt,qk=qL['get'](qT),qv=document['createElement']('div');qv['className']='month-group',qv['dataset']['month']=qT;const qz=document['createElement']('button');qz['className']='month-header',qz['innerHTML']='<span>'+qO+'</span>\x20<span\x20class=\x22collapse-icon\x22>►</span>',qz['addEventListener']('click',()=>{qv['classList']['toggle']('expanded');});const qE=document['createElement']('div');qE['className']='dates-for-month';const qi=new Map();qk['forEach'](qc=>{const qs=IV(qc['orderDate']||new Date(0x0));if(!qi['has'](qs))qi['set'](qs,[]);qi['get'](qs)['push'](qc);});const qU=Array['from'](qi['keys']())['sort']((qc,qs)=>{const qX=new Date(qc['split']('/')['reverse']()['join']('-')),qg=new Date(qs['split']('/')['reverse']()['join']('-'));return qg-qX;});qU['forEach'](qc=>{const qs=qi['get'](qc),qX=qc===qG,qg=qs['filter'](Q2=>(Q2['packedQty']||0x0)<(Q2['orderQty']||0x0))['length'],qJ=qg>0x0?'<span\x20class=\x22incomplete-badge\x22\x20title=\x22'+qg+'\x20órdenes\x20incompletas\x22>'+qg+'</span>':'',ql=qs['length'],qu=ql===0x1?'orden':'órdenes',qA='('+ql+'\x20'+qu+')',qr=document['createElement']('div');qr['className']='date-group',qr['dataset']['date']=qc;const Q0=document['createElement']('button');Q0['className']='date-header',Q0['innerHTML']='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20style=\x22display:flex;\x20align-items:center;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+qJ+'\x20📅\x20'+qc+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22'+(qX?'status-indicator':'order-count')+'\x22\x20style=\x22font-size:\x200.8rem;\x22>'+qA+'</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22collapse-icon\x22>►</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20',Q0['addEventListener']('click',()=>{qr['classList']['toggle']('expanded');});const Q1=document['createElement']('div');Q1['className']='orders-for-date',qs['forEach'](Q2=>{Q1['appendChild'](IN(Q2['key'],Q2));}),qr['appendChild'](Q0),qr['appendChild'](Q1),qE['appendChild'](qr),(qH||qh['has'](qc))&&qr['classList']['add']('expanded');}),qv['appendChild'](qz),qv['appendChild'](qE),qM['appendChild'](qv),(qH||qm['has'](qT))&&qv['classList']['add']('expanded');}),G['appendChild'](qM);if(!qH&&q['size']>0xc8){const qT=document['createElement']('div');qT['style']['padding']='10px',qT['style']['textAlign']='center',qT['style']['color']='var(--text-secondary)',qT['style']['fontSize']='0.8rem',qT['innerText']='Mostrando\x20las\x20últimas\x20200\x20órdenes\x20de\x20'+q['size']+'.\x20Usa\x20el\x20buscador\x20para\x20ver\x20anteriores.',G['appendChild'](qT);}IG(o);}function IN(qK,qH){const qm=document['createElement']('div');qm['className']='order-item';const qh=document['createElement']('button');qh['className']='order-btn';const qx=qH['catalogNumber']||'';qh['innerHTML']='\x0a\x20\x20\x20\x20\x20\x20\x20\x20<div\x20style=\x22display:\x20flex;\x20flex-direction:\x20column;\x20width:\x20100%;\x20overflow:\x20hidden;\x20line-height:\x201.2;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20style=\x22font-weight:\x20700;\x20font-size:\x200.95rem;\x22>'+qK+'</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20style=\x22font-size:\x200.75rem;\x20opacity:\x200.75;\x20font-weight:\x20400;\x20white-space:\x20nowrap;\x20overflow:\x20hidden;\x20text-overflow:\x20ellipsis;\x22>'+qx+'</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20',qh['dataset']['key']=qK,qh['onclick']=()=>IG(qK);qH&&qH['orderQty']>0x0&&qH['orderQty']<=qH['packedQty']&&qh['classList']['add']('is-complete');const qZ=document['createElement']('div');qZ['className']='order-progress-bar';const qL=document['createElement']('div');qL['className']='order-progress-bar-inner';const qN=qH['orderQty']>0x0?qH['packedQty']/qH['orderQty']*0x64:0x0;qL['style']['width']=Math['min'](qN,0x64)+'%';if(qN<0x1e)qL['style']['backgroundColor']='var(--danger-color)';else{if(qN<0x46)qL['style']['backgroundColor']='var(--warning-color)';else qL['style']['backgroundColor']='var(--success-color)';}qZ['appendChild'](qL),qh['appendChild'](qZ),qm['appendChild'](qh);const qG=a['isMaster']||a['permissions']&&a['permissions']['includes'](D);if(qK!=='all'&&qG&&a['isMaster']){const qM=document['createElement']('button');qM['className']='icon-btn',qM['title']='Eliminar\x20orden',qM['innerHTML']='<svg\x20xmlns=\x22http://www.w3.org/2000/svg\x22\x20width=\x2218\x22\x20height=\x2218\x22\x20viewBox=\x220\x200\x2024\x2024\x22\x20fill=\x22none\x22\x20stroke=\x22currentColor\x22\x20stroke-width=\x222\x22\x20stroke-linecap=\x22round\x22\x20stroke-linejoin=\x22round\x22><polyline\x20points=\x223\x206\x205\x206\x2021\x206\x22></polyline><path\x20d=\x22M19\x206v14a2\x202\x200\x200\x201-2\x202H7a2\x202\x200\x200\x201-2-2V6m3\x200V4a2\x202\x200\x200\x201\x202-2h4a2\x202\x200\x200\x201\x202\x202v2\x22></path></svg>',qM['onclick']=()=>{IR('¿Estás\x20seguro\x20de\x20que\x20quieres\x20eliminar\x20la\x20orden\x20'+qK+'?',async()=>{await IW(qK);});},qm['appendChild'](qM);}return qm;}function IG(qK){o=qK,document['querySelectorAll']('.order-btn')['forEach'](qH=>{qH['classList']['toggle']('active',qH['dataset']['key']===qK);}),IM();}function IM(){if(Y==='fwd')Ib(),Iy(),IT(),d==='rastreo'?It(o):IE(o);else Y==='sap'&&q3();qF();}function Iy(){let qK=0x0,qH=0x0,qm=0x0,qh=[];u['textContent']='';if(o==='all'||o===null){const qx=new Date()['toLocaleDateString']('es-ES',{'timeZone':m,'day':'2-digit','month':'2-digit','year':'numeric'});qh=Array['from'](q['values']())['filter'](qZ=>IV(qZ['orderDate'])===qx);if(qh['length']>0x0){M['textContent']='Órdenes\x20del\x20Día';const qZ=qh[0x0]['catalogNumber'],qL=qh['every'](qN=>qN['catalogNumber']===qZ);y['textContent']=qL?qZ:'Múltiples\x20Catálogos';}else M['textContent']='N/A',y['textContent']='No\x20hay\x20órdenes\x20para\x20hoy';}else{if(q['has'](o)){qh=[q['get'](o)];const qN=qh[0x0];M['textContent']=o,y['textContent']=qN['catalogNumber'];if(qN['lastUpdated']){let qG='Última\x20actualización:\x20'+IC(qN['lastUpdated']);qN['lastUpdatedBy']&&(qG+='\x20por:\x20'+qN['lastUpdatedBy']),u['textContent']=qG;}}else{if(q['size']>0x0){IG(null);return;}else M['textContent']='N/A',y['textContent']='';}}qh['forEach'](qM=>{qK+=qM['orderQty']||0x0,qH+=qM['packedQty']||0x0,qM['rastreoData']&&(qm+=qM['rastreoData']['filter'](qy=>qy['status']==='scrap')['length']);}),T['textContent']=qK,b['textContent']=qH,t['textContent']=qK-qH,O['textContent']=qm;}function IT(){const qK=new Date()['toLocaleDateString']('es-ES',{'timeZone':m,'day':'2-digit','month':'2-digit','year':'numeric'});let qH=0x0,qm=0x0;for(const qh of q['values']()){const qx=IV(qh['orderDate']||new Date());if(qx===qK){qH++;if(qh['orderQty']>0x0&&qh['orderQty']<=qh['packedQty'])qm++;}}k['textContent']=qH,v['textContent']=qm;}function Ib(){const qK=q['size']>0x0,qH='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22filter-btn\x20'+(R==='all'?'active':'')+'\x22\x20data-filter=\x22all\x22>Todos</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22filter-btn\x20'+(R==='today'?'active':'')+'\x22\x20data-filter=\x22today\x22>En\x20Movimiento</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22filter-btn\x20'+(R==='delayed'?'active':'')+'\x22\x20data-filter=\x22delayed\x22>Sin\x20Movimiento</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22filter-btn\x20'+(R==='scrap'?'active':'')+'\x22\x20data-filter=\x22scrap\x22>Scrap</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20';A['status']['innerHTML']=qH,r['status']['innerHTML']=qH;const qm='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x22\x20id=\x22exportImageButtonMobile\x22\x20'+(!qK?'disabled':'')+'>Exportar\x20Captura</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x22\x20id=\x22exportStatusButtonMobile\x22\x20'+(!qK?'disabled':'')+'>Reporte\x20de\x20Estatus</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20',qh='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x22\x20id=\x22exportImageButtonDesktop\x22\x20'+(!qK?'disabled':'')+'>Captura</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x22\x20id=\x22exportStatusButtonDesktop\x22\x20'+(!qK?'disabled':'')+'>Reporte</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20';A['actions']['innerHTML']=qm,r['actions']['innerHTML']=qh,h('exportImageButtonMobile')['addEventListener']('click',Ic),h('exportImageButtonDesktop')['addEventListener']('click',Ic),h('exportStatusButtonMobile')['addEventListener']('click',Is),h('exportStatusButtonDesktop')['addEventListener']('click',Is);}async function It(qK){const qH=h('rastreoTable')['parentElement'];qH['style']['opacity']='0',await new Promise(qN=>setTimeout(qN,0x96));if(!qK){Ik([],[]),Iv([],[]),I0['textContent']='Selecciona\x20una\x20orden\x20de\x20la\x20lista\x20para\x20ver\x20sus\x20detalles.',I0['style']['display']='block',qH['style']['opacity']='1';return;}let qm=[],qh=[];if(qK==='all'){q['forEach'](qN=>{if(qN['rastreoData'])qm['push'](...qN['rastreoData']);});if(q['size']>0x0)qh=Array['from'](q['values']())['find'](qN=>qN['headers']['rastreo'])?.['headers']['rastreo'];}else{if(q['has'](qK)){const qN=q['get'](qK);qm=qN['rastreoData']||[],qh=qN['headers']['rastreo']||[];}}IO(qm,qh);let qx=qm;R!=='all'&&(R==='delayed'?qx=qm['filter'](qG=>qG['status']==='delayed'||qG['status']==='very_delayed'):qx=qm['filter'](qG=>qG['status']===R));const qZ=IS(qh,K['LINE']);if(F!=='all'&&qZ)qx=qx['filter'](qG=>qG[qZ]===F);const qL=i['value']['toLowerCase']();if(qL)qx=qx['filter'](qG=>Object['values'](qG)['some'](qM=>String(qM)['toLowerCase']()['includes'](qL)));e=qx,I0['style']['display']=qm['length']>0x0?'none':'block',Ik(qx,qh),Iv(qx,qh),qH['style']['opacity']='1';}function IO(qK,qH){if(!qH)qH=[];const qm=IS(qH,K['LINE']);let qh='';if(!qm||!qK||qK['length']===0x0)qh='<p\x20class=\x22text-dark\x22\x20style=\x22font-size:\x200.9rem;\x20margin:\x200;\x22>N/A</p>';else{const qx=[...new Set(qK['map'](qZ=>qZ[qm])['filter'](Boolean))]['sort']();qh+='<button\x20class=\x22filter-btn\x20'+(F==='all'?'active':'')+'\x22\x20data-filter=\x22all\x22>Todas</button>',qx['forEach'](qZ=>{qh+='<button\x20class=\x22filter-btn\x20'+(F===qZ?'active':'')+'\x22\x20data-filter=\x22'+qZ+'\x22>'+qZ+'</button>';});}A['line']['innerHTML']=qh,r['line']['innerHTML']=qh;}function Ik(qK,qH){const qm=h('rastreoTable');if(!qm)return;const qh=window['innerWidth']<=0x3e0,qx=qh?0x32:0x1f4;let qZ=qK,qL='';qK['length']>qx&&(qZ=qK['slice'](0x0,qx),qL='<tr\x20class=\x22limit-warning\x22><td\x20colspan=\x22100%\x22\x20style=\x22padding:15px;\x20font-weight:bold;\x20color:var(--warning-color);\x22>⚠️\x20Se\x20muestran\x20los\x20primeros\x20'+qx+'\x20registros\x20de\x20'+qK['length']+'\x20para\x20optimizar\x20rendimiento.\x20(Usa\x20filtros\x20para\x20ver\x20específicos)</td></tr>');const qN=window['innerWidth']<=0x3e0;let qG;const qM=IS(qH,K['SERIAL']);if(qN)qG=[IS(qH,K['SERIAL']),IS(qH,K['LINE']),IS(qH,K['STATION']),IS(qH,K['DATE_REGISTERED'])]['filter'](Boolean);else{const qy=[K['CREATED_BY'],K['NOT_PACKED'],K['IS_SCRAP']]['map'](qT=>IS(qH,qT))['filter'](Boolean);qG=qH?qH['filter'](qT=>!qy['includes'](qT)&&qT!=='status'):[];}if(!qZ||qZ['length']===0x0||!qG||qG['length']===0x0){qm['innerHTML']='<thead><tr><th></th></tr></thead><tbody></tbody>';return;}qm['innerHTML']='\x0a\x20\x20\x20\x20\x20\x20\x20\x20<thead><tr>'+qG['map'](qT=>'<th>'+qT+'</th>')['join']('')+'</tr></thead>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<tbody>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+qZ['map'](qT=>'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<tr\x20class=\x22is-'+qT['status']+'\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+qG['map'](qb=>{const qt=qb===qM,qO=qt?'serial-cell':'',qk=qt?'onclick=\x22copySerialNumber(this,\x20\x27'+String(qT[qb])['replace'](/'/g,'\x5c\x27')+'\x27)\x22':'';return'<td\x20class=\x22'+qO+'\x22\x20'+qk+'\x20data-label=\x22'+qb+'\x22>'+q8(qT[qb],qb,qb===IS(qH,K['DATE_REGISTERED']))+'</td>';})['join']('')+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</tr>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20')['join']('')+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+qL+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20</tbody>';}function Iv(qK,qH){if(!qH)qH=[];const qm=IS(qH,K['LINE']);if(!qm){lineCountsContainer['innerHTML']='';return;}const qh=qK['reduce']((qx,qZ)=>{const qL=qZ[qm];if(qL)qx[qL]=(qx[qL]||0x0)+0x1;return qx;},{});lineCountsContainer['innerHTML']=Object['entries'](qh)['sort']()['map'](([qx,qZ])=>'<div\x20class=\x22line-badge\x22>'+qx+':\x20<span>'+qZ+'</span></div>')['join']('');}async function Iz(qK,qH,qm){const qh=IS(qm,H['SERIAL']),qx=IS(qm,H['EMPLOYEE_ID']),qZ=IS(qm,H['PACKED_DATE']);let qL='N/A',qN='N/A',qG='N/A';try{const qT=await db['collection']('boxID_historico')['doc'](qK)['get']();if(qT['exists']){const qb=qT['data']();qL=qb['gr']||'N/A',qN=qb['orden']||'N/A',qG=qb['usuario']||'N/A';}}catch(qt){console['error']('Error\x20al\x20obtener\x20datos\x20del\x20BoxID:',qt),qL='Error',qN='Error',qG='Error';}let qM='';if(qH&&qH['length']>0x0){const qO=qH['reduce']((qi,qU)=>qU[qZ]>qi[qZ]?qU:qi,qH[0x0]),qk=qO[qx],qv='<span\x20class=\x22packer-info\x22>GR:\x20<strong\x20class=\x22copyable\x22\x20onclick=\x22copyGR(this,\x20\x27'+qL+'\x27)\x22\x20title=\x22Haz\x20clic\x20para\x20copiar\x22>'+qL+'</strong></span>',qz='<span\x20class=\x22packer-info\x22>Orden:\x20<strong\x20class=\x22copyable\x22\x20onclick=\x22copyGR(this,\x20\x27'+qN+'\x27)\x22\x20title=\x22Haz\x20clic\x20para\x20copiar\x22>'+qN+'</strong></span>',qE='<span\x20class=\x22packer-info\x22>Confirmado\x20por:\x20<strong>'+qG+'</strong></span>';qM='<div\x20class=\x22packing-modal-header\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22packer-info\x22>EMPACADOR:\x20<strong>'+(qk||'N/A')+'</strong></span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+qz+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+qv+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+qE+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>';}let qy=qM+'<ul\x20class=\x22packing-details-list\x22>';qH&&qH['length']>0x0?qH['forEach'](qi=>{qy+='<li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span>'+qi[qh]+'</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span>'+ID(qi[qZ])+'</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</li>';}):qy+='<li>No\x20hay\x20seriales\x20en\x20esta\x20caja.</li>',qy+='</ul>',Ip('Detalle\x20de\x20Caja:\x20'+qK,qy);}async function IE(qK){const qH=h('empaqueTableContainer');qH['style']['opacity']='0',await new Promise(qv=>setTimeout(qv,0x96));let qm=new Map(),qh=[];if(qK==='all'||qK===null)q['forEach'](qv=>{if(qv['empaqueData'])qv['empaqueData']['forEach']((qz,qE)=>{if(!qm['has'](qE))qm['set'](qE,[]);if(qz&&qz['length']>0x0)qm['get'](qE)['push'](...qz);});});else{if(q['has'](qK)){const qv=q['get'](qK);qm=qv['empaqueData']||new Map(),qh=qv['headers']['empaque']||[];}}if(!qm||qm['size']===0x0){qH['innerHTML']='<table\x20id=\x22empaqueTable\x22><thead><tr><th>No\x20hay\x20datos\x20de\x20empaque.</th></tr></thead></table>',qH['style']['opacity']='1';return;}const qx=Array['from'](qm['keys']());let qZ=new Map(),qL=new Map();if(qx['length']>0x0)try{const qz=qx['map'](qc=>db['collection']('boxID_historico')['doc'](qc)['get']()),qE=await Promise['all'](qz),qi=new Set();qE['forEach'](qc=>{if(qc['exists']){const qs=qc['data']();qZ['set'](qc['id'],qs),qs['gr']&&qs['gr']!=='N/A'&&qi['add'](String(qs['gr'])['trim']());}});const qU=Array['from'](qi);if(qU['length']>0x0){const qc=qU['map'](qX=>db['collection']('gr_historico')['doc'](qX)['get']()),qs=await Promise['all'](qc);qs['forEach'](qX=>{qX['exists']&&qL['set'](qX['id'],qX['data']());});}}catch(qX){console['error']('Error\x20al\x20obtener\x20datos\x20históricos\x20puntuales:',qX);}const qN=IS(qh,H['PACKED_DATE']),qG=I1['value']['toLowerCase']();let qM=0x0;const qy=Array['from'](qm['entries']())['reverse'](),qT=[];let qb='';for(const [qg,qJ]of qy){if(!qJ||qJ['length']===0x0)continue;const ql=qJ['some'](Q5=>String(Q5[IS(qh,H['SERIAL'])])['toLowerCase']()['includes'](qG));if(qG&&!String(qg)['toLowerCase']()['includes'](qG)&&!ql)continue;qM++;const qu=qJ['reduce']((Q5,Q6)=>Q6[qN]>Q5[qN]?Q6:Q5,qJ[0x0]),qA=qZ['get'](qg),qr=qA?'boxid-received':'boxid-missing',Q0=qA&&qA['receivedAt']?IU(qA['receivedAt']['toDate']()):'N/A',Q1=qA&&qA['gr']?String(qA['gr'])['trim']():'N/A';Q1!=='N/A'&&qT['push'](Q1);const Q2=qL['get'](Q1),Q3=Q2&&Q2['orden']?Q2['orden']:'N/A',Q4=Q2&&Q2['usuario']?Q2['usuario']:'N/A';qb+='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<tr\x20class=\x22box-row\x22\x20data-boxid=\x22'+qg+'\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20data-label=\x22BoxID\x22\x20class=\x22'+qr+'\x22>'+qg+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20data-label=\x22Cantidad\x22>'+qJ['length']+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20data-label=\x22Último\x20Empaque\x22>'+ID(qu[qN])+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20data-label=\x22Recibido\x20Logística\x22>'+Q0+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20data-label=\x22GR\x22\x20class=\x22copyable\x22\x20onclick=\x22copyGR(this,\x20\x27'+Q1+'\x27)\x22\x20title=\x22Haz\x20clic\x20para\x20copiar\x22>'+Q1+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20data-label=\x22Orden\x22>'+Q3+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20data-label=\x22Usuario\x22>'+Q4+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</tr>';}const qt=qT['join']('\x0a');let qO='<thead><tr>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<th><span>BoxID</span><input\x20type=\x22text\x22\x20class=\x22filter-input\x22\x20placeholder=\x22Filtrar...\x22\x20data-col-index=\x220\x22></th>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<th><span>Cantidad</span><input\x20type=\x22text\x22\x20class=\x22filter-input\x22\x20placeholder=\x22Filtrar...\x22\x20data-col-index=\x221\x22></th>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<th><span>Último\x20Empaque</span><input\x20type=\x22text\x22\x20class=\x22filter-input\x22\x20placeholder=\x22Filtrar...\x22\x20data-col-index=\x222\x22></th>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<th><span>Recibido\x20Logística</span><input\x20type=\x22text\x22\x20class=\x22filter-input\x22\x20placeholder=\x22Filtrar...\x22\x20data-col-index=\x223\x22></th>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<th\x20class=\x22copyable-header\x22\x20id=\x22header-gr-copy\x22\x20title=\x22Haz\x20clic\x20para\x20copiar\x20toda\x20la\x20columna\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span>GR</span><input\x20type=\x22text\x22\x20class=\x22filter-input\x22\x20placeholder=\x22Filtrar...\x22\x20data-col-index=\x224\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20</th>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<th><span>Orden</span><input\x20type=\x22text\x22\x20class=\x22filter-input\x22\x20placeholder=\x22Filtrar...\x22\x20data-col-index=\x225\x22></th>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<th><span>Usuario</span><input\x20type=\x22text\x22\x20class=\x22filter-input\x22\x20placeholder=\x22Filtrar...\x22\x20data-col-index=\x226\x22></th>\x0a\x20\x20\x20\x20</tr></thead>';qM===0x0?qH['innerHTML']='<table\x20id=\x22empaqueTable\x22><thead><tr><th>No\x20se\x20encontraron\x20resultados.</th></tr></thead></table>':qH['innerHTML']='<table\x20id=\x22empaqueTable\x22>'+qO+'<tbody>'+qb+'</tbody></table>';const qk=h('header-gr-copy');qk&&qk['addEventListener']('click',Q5=>{if(Q5['target']['tagName']==='INPUT')return;window['copyColumnData'](Q5['currentTarget'],qt);}),qH['querySelectorAll']('.box-row')['forEach'](Q5=>{Q5['addEventListener']('click',Q6=>{if(Q6['target']['classList']['contains']('copyable'))return;const Q7=Q5['dataset']['boxid'],Q8=qm['get'](Q7);Iz(Q7,Q8,qh);});}),qH['style']['opacity']='1',Ii(qH);}function Ii(qK){qK['querySelectorAll']('.filter-input')['forEach'](qH=>{qH['addEventListener']('click',qm=>qm['stopPropagation']()),qH['closest']('.copyable-header')&&qH['addEventListener']('click',qm=>qm['preventDefault']()),qH['addEventListener']('keyup',()=>{const qm=h('empaqueTable'),qh=Array['from'](qm['querySelectorAll']('thead\x20.filter-input')),qx=qm['querySelectorAll']('tbody\x20tr');qx['forEach'](qZ=>{let qL=!![];qh['forEach'](qN=>{const qG=qN['value']['toLowerCase'](),qM=parseInt(qN['dataset']['colIndex'],0xa);if(qG){const qy=qZ['cells'][qM],qT=qy?qy['textContent']['toLowerCase']():'';if(!qT['includes'](qG))qL=![];}}),qZ['style']['display']=qL?'':'none';});});});}window['copyColumnData']=function(qK,qH){if(!qH)return;IY(qH,()=>{const qm=qK['textContent'];qK['textContent']='¡COPIADO!',qK['style']['color']='var(--success-color)',setTimeout(()=>{qK['textContent']=qm,qK['style']['color']='';},0x7d0);},qm=>{console['error']('Error\x20al\x20copiar\x20la\x20columna:\x20',qm);const qh=qK['textContent'];qK['textContent']='ERROR',qK['style']['color']='var(--danger-color)',setTimeout(()=>{qK['textContent']=qh,qK['style']['color']='';},0x7d0);});};function IU(qK){if(!(qK instanceof Date)||isNaN(qK))return'';const qH=qK['getFullYear']()['toString']()['slice'](-0x2),qm=String(qK['getMonth']()+0x1)['padStart'](0x2,'0'),qh=String(qK['getDate']())['padStart'](0x2,'0'),qx=String(qK['getHours']())['padStart'](0x2,'0'),qZ=String(qK['getMinutes']())['padStart'](0x2,'0');return qh+'/'+qm+'/'+qH+'\x20'+qx+':'+qZ;}window['copyGR']=function(qK,qH){if(!qH||qH==='N/A')return;IY(qH,()=>{const qm=qK['textContent'];qK['textContent']='¡Copiado!',qK['style']['color']='var(--success-color)',setTimeout(()=>{qK['textContent']=qm,qK['style']['color']='';},0x5dc);},qm=>{console['error']('Error\x20al\x20copiar\x20el\x20GR:\x20',qm);});};async function Ic(qK){if(!e||e['length']===0x0){Ip('Exportar\x20Captura','No\x20hay\x20datos\x20en\x20la\x20vista\x20actual\x20para\x20exportar.','warning');return;}const qH=qK['target']['closest']('button'),qm=qH['textContent'];qH['textContent']='Generando...',qH['disabled']=!![];const qh=document['createElement']('div');qh['style']['position']='absolute',qh['style']['left']='-9999px',qh['style']['top']='0',qh['style']['display']='inline-block',qh['style']['background']='var(--surface-color)',qh['style']['padding']='20px',qh['style']['borderRadius']='16px';const qx=h('rastreoTable'),qZ=qx['cloneNode'](!![]);if(o&&o!=='all'){const qN=qZ['createCaption']();qN['textContent']=o;}const qL=document['createElement']('style');qL['innerHTML']='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20:root\x20{\x20--surface-color:\x20#1E293B;\x20--border-color:\x20#334155;\x20--danger-color:\x20#FB7185;\x20--warning-color:\x20#FBBF24;\x20--orange-color:\x20#F97316;\x20--success-color:\x20#34D399;\x20--text-primary:\x20#F8FAFC;\x20--text-secondary:\x20#94A3B8;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20table\x20{\x20color:\x20var(--text-primary);\x20background-color:\x20var(--surface-color);\x20border-collapse:\x20collapse;\x20font-family:\x20\x27Inter\x27,\x20sans-serif;\x20font-size:\x2014px;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20caption\x20{\x20caption-side:\x20top;\x20text-align:\x20center;\x20font-size:\x2024px;\x20font-weight:\x20700;\x20color:\x20var(--text-secondary);\x20margin-bottom:\x2020px;\x20font-family:\x20\x27Inter\x27,\x20sans-serif;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20th,\x20td\x20{\x20padding:\x2012px\x2024px;\x20text-align:\x20center\x20!important;\x20border:\x201px\x20solid\x20var(--border-color);\x20white-space:\x20nowrap;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20thead\x20{\x20display:\x20table-header-group\x20!important;\x20background-color:\x20#1a2436;\x20position:\x20static\x20!important;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20th\x20{\x20font-weight:\x20600;\x20color:\x20var(--text-secondary);\x20font-size:\x2012px;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20tr\x20{\x20display:\x20table-row\x20!important;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20td\x20{\x20display:\x20table-cell\x20!important;\x20background-color:\x20inherit\x20!important;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20td::before\x20{\x20display:\x20none\x20!important;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20tr.is-scrap\x20{\x20background-color:\x20rgba(251,\x20113,\x20133,\x200.1)\x20!important;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20tr.is-scrap\x20td\x20{\x20color:\x20var(--danger-color)\x20!important;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20tr.is-very_delayed\x20{\x20background-color:\x20rgba(249,\x20115,\x2022,\x200.1)\x20!important;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20tr.is-very_delayed\x20td\x20{\x20color:\x20var(--orange-color)\x20!important;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20tr.is-delayed\x20{\x20background-color:\x20rgba(251,\x20191,\x2036,\x200.1)\x20!important;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20tr.is-delayed\x20td\x20{\x20color:\x20var(--warning-color)\x20!important;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20tr.is-today\x20{\x20background-color:\x20rgba(52,\x20211,\x20153,\x200.1)\x20!important;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20tr.is-today\x20td\x20{\x20color:\x20var(--success-color)\x20!important;\x20}\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20',qh['appendChild'](qL),qh['appendChild'](qZ),document['body']['appendChild'](qh),await new Promise(qG=>setTimeout(qG,0x64));try{const qG=await html2canvas(qh,{'scale':0x2,'useCORS':!![],'backgroundColor':null}),qM=document['createElement']('a');qM['href']=qG['toDataURL']('image/jpeg',0.95);const qy=o&&o!=='all'?o:'Multiples_Ordenes',qT=new Date()['toLocaleDateString']('es-ES')['replace'](/\//g,'-');qM['download']='Captura_Rastreo_'+qy+'_'+qT+'.jpg',document['body']['appendChild'](qM),qM['click'](),document['body']['removeChild'](qM);}catch(qb){console['error']('Error\x20al\x20generar\x20la\x20imagen:',qb),Ip('Error','Ocurrió\x20un\x20error\x20al\x20generar\x20el\x20archivo\x20de\x20imagen.','error');}finally{document['body']['removeChild'](qh),qH['textContent']=qm,qH['disabled']=![];}}function Is(){const qK=Array['from'](q['entries']())['filter'](([qm,qh])=>qh['orderQty']>qh['packedQty']&&(qh['rastreoData']&&qh['rastreoData']['length']>0x0))['map'](([qm,qh])=>({'key':qm,...qh}));if(qK['length']===0x0){Ip('Reporte\x20de\x20Estatus','✅\x20No\x20hay\x20órdenes\x20incompletas\x20con\x20seriales\x20cargados\x20en\x20el\x20área\x20'+D+'.','success');return;}let qH='<div\x20class=\x22status-report\x22>';qH+='<p><strong>Fecha\x20del\x20Reporte:</strong>\x20'+new Date()['toLocaleString']('es-ES',{'dateStyle':'full','timeStyle':'short'})+'</p>',qK['forEach'](qm=>{const qh=new Set();qm['empaqueData']&&qm['empaqueData']['forEach'](qT=>{qT['forEach'](qb=>{const qt=IS(Object['keys'](qb),H['SERIAL']);if(qt)qh['add'](qb[qt]);});});const qx=IS(qm['headers']['rastreo'],K['SERIAL']),qZ=IS(qm['headers']['rastreo'],K['STATION']),qL=qx?qm['rastreoData']['filter'](qT=>!qh['has'](qT[qx])&&qT['status']!=='scrap'):[],qN=qL['filter'](qT=>qT['status']==='delayed'||qT['status']==='very_delayed'),qG=qL['filter'](qT=>qT['status']==='today'),qM=qm['orderQty']>0x0?qm['packedQty']/qm['orderQty']*0x64:0x0;let qy='var(--success-color)';if(qM<0x1e)qy='var(--danger-color)';else{if(qM<0x46)qy='var(--warning-color)';}qH+='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h4>📦\x20Orden:\x20'+qm['key']+'\x20('+(qm['packedQty']||0x0)+'/'+(qm['orderQty']||0x0)+')</h4>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22order-progress-bar\x22\x20style=\x22height:\x208px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22order-progress-bar-inner\x22\x20style=\x22width:\x20'+Math['min'](qM,0x64)+'%;\x20background-color:\x20'+qy+';\x22></div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20',qN['length']>0x0&&(qH+='<p\x20style=\x22margin-top:\x2015px;\x22><strong>⚠️\x20Sin\x20Movimiento\x20('+qN['length']+'):</strong></p><ul>',qN['forEach'](qT=>{qH+='<li>'+qT[qx]+'\x20-\x20(Estación:\x20'+(qT[qZ]||'N/A')+')</li>';}),qH+='</ul>'),qG['length']>0x0&&(qH+='<p><strong>✅\x20En\x20Proceso\x20('+qG['length']+'):</strong></p><ul>',qG['forEach'](qT=>{qH+='<li>'+qT[qx]+'\x20-\x20(Estación:\x20'+(qT[qZ]||'N/A')+')</li>';}),qH+='</ul>'),qL['length']===0x0&&(qH+='<p\x20style=\x22margin-top:\x2015px;\x22>No\x20hay\x20seriales\x20pendientes\x20de\x20empacar\x20para\x20esta\x20orden.</p>');}),qH+='</div>',Ip('Reporte\x20de\x20Estatus:\x20'+D,qH,'info',!![]);}async function IX(qK,qH){try{const qm={'orders':qK,'lastUpdated':new Date(),'lastUpdatedBy':a['user']};await db['collection']('areas')['doc'](qH)['collection']('sap_data')['doc']('current_data')['set'](qm);}catch(qh){console['error']('Error\x20al\x20guardar\x20datos\x20SAP\x20en\x20Firebase\x20para\x20'+qH+':\x20',qh),Ip('Error','No\x20se\x20pudieron\x20guardar\x20los\x20datos\x20de\x20SAP\x20en\x20la\x20nube\x20para\x20'+qH+'.','error');}}async function Ig(qK){if(!qK)return;const qH=a['isMaster']||a['permissions']&&a['permissions']['includes'](D);if(!qH){Ip('Acceso\x20Denegado','No\x20tienes\x20permisos\x20para\x20modificar\x20el\x20área\x20'+D+'.','error');return;}try{const qm=db['collection']('areas')['doc'](D)['collection']('sap_historico')['doc'](qK);await qm['delete'](),console['log']('Orden\x20'+qK+'\x20eliminada\x20de\x20\x27sap_historico\x27.');}catch(qh){console['error']('Error\x20al\x20eliminar\x20la\x20orden\x20SAP\x20de\x20Firebase:\x20',qh),Ip('Error\x20al\x20Eliminar','No\x20se\x20pudo\x20eliminar\x20la\x20orden\x20'+qK+'\x20del\x20histórico\x20de\x20SAP.','error');}}function IJ(){const qK=h('sapBulkDeleteBtn');if(qK){const qH=W['size'];qH>0x0?(qK['textContent']='Eliminar\x20('+qH+')',qK['style']['display']='inline-block'):qK['style']['display']='none';}}async function Il(qK){if(!qK||qK['length']===0x0)return;const qH=a['isMaster']||a['permissions']&&a['permissions']['includes'](D);if(!qH){Ip('Acceso\x20Denegado','No\x20tienes\x20permisos\x20para\x20modificar\x20el\x20área\x20'+D+'.','error');return;}const qm=db['batch'](),qh=db['collection']('areas')['doc'](D)['collection']('sap_historico');qK['forEach'](qx=>{const qZ=qh['doc'](qx);qm['delete'](qZ);});try{await qm['commit'](),console['log'](qK['length']+'\x20órdenes\x20eliminadas\x20de\x20\x27sap_historico\x27.'),W['clear'](),IJ();}catch(qx){console['error']('Error\x20en\x20el\x20borrado\x20múltiple\x20de\x20SAP:\x20',qx),Ip('Error\x20al\x20Eliminar','No\x20se\x20pudieron\x20eliminar\x20las\x20órdenes\x20seleccionadas\x20del\x20histórico\x20de\x20SAP.','error');}}async function Iu(qK){const qH=Object['values'](qK)['reduce']((qx,qZ)=>qx+qZ['length'],0x0),qm=Object['keys'](qK);Ip('Procesando...','Sincronizando\x20'+qH+'\x20órdenes\x20en\x20'+qm['length']+'\x20áreas...','info');const qh=[];for(const qx in qK){if(Object['hasOwnProperty']['call'](qK,qx)){const qZ=qK[qx];qh['push'](IX(qZ,qx)),qh['push'](q0(qZ,qx)),j[qx]=!![];}}await Promise['all'](qh),IF(),Ip('Éxito','Workshop\x20general\x20procesado.\x20Se\x20han\x20sincronizado\x20los\x20datos\x20para\x20las\x20áreas:\x20'+qm['join'](',\x20')+'.','success');}async function IA(qK){if(!qK)return;const qH=a['isMaster']||a['permissions']&&a['permissions']['includes'](D);if(!qH){Ip('Acceso\x20Denegado','No\x20tienes\x20permisos\x20para\x20modificar\x20el\x20área\x20'+D+'.','error');return;}Ip('Procesando\x20SAP...','<p>Leyendo\x20el\x20archivo\x20y\x20preparando\x20para\x20guardar\x20en\x20el\x20histórico.\x20Por\x20favor,\x20espere...</p>');const qm=new FileReader();qm['onload']=async qh=>{try{const qx=XLSX['read'](new Uint8Array(qh['target']['result']),{'type':'array'}),qZ=q1(qx,a['isMaster']);if(a['isMaster']&&qZ['isMultiArea']){const qL=Object['keys'](qZ['data']);Ip('Procesando\x20Múltiples\x20Áreas...','Sincronizando\x20órdenes\x20en\x20'+qL['length']+'\x20áreas...');const qN=[];for(const qG in qZ['data']){const qM=qZ['data'][qG];qN['push'](Ir(qM,qG)),qN['push'](q0(qM,qG));}await Promise['all'](qN),Ip('Éxito','Workshop\x20general\x20procesado.\x20Se\x20han\x20sincronizado\x20los\x20datos\x20para\x20las\x20áreas:\x20'+qL['join'](',\x20')+'.','success');}else{const qy=qZ['isMultiArea']?qZ['data'][D]||[]:qZ;if(qy['length']===0x0){Ip('Sin\x20Datos','El\x20archivo\x20no\x20contiene\x20órdenes\x20válidas\x20para\x20el\x20área\x20actual.','warning');return;}await Ir(qy,D),await q0(qy,D),Ip('Éxito','Archivo\x20SAP\x20cargado.\x20Se\x20han\x20creado/actualizado\x20'+qy['length']+'\x20órdenes\x20en\x20el\x20histórico\x20del\x20área\x20'+D+'.','success');}w=[];}catch(qT){console['error']('Error\x20procesando\x20archivo\x20SAP:',qT),Ip('Error','No\x20se\x20pudo\x20procesar\x20el\x20archivo\x20SAP.\x20<br><small>'+qT['message']+'</small>','error');}},qm['readAsArrayBuffer'](qK);}async function Ir(qK,qH){if(!qH||qK['length']===0x0)return;const qm=db['batch'](),qh=db['collection']('areas')['doc'](qH)['collection']('sap_historico');for(const qx of qK){const qZ=String(qx['Orden']),qL=qh['doc'](qZ),qN={...qx,'lastUpdated':new Date(),'lastUpdatedBy':a['user']};qm['set'](qL,qN,{'merge':!![]});}try{await qm['commit'](),console['log'](qK['length']+'\x20órdenes\x20de\x20SAP\x20guardadas\x20en\x20el\x20histórico\x20del\x20área\x20'+qH+'.');}catch(qG){console['error']('Error\x20al\x20guardar\x20en\x20el\x20histórico\x20de\x20SAP\x20para\x20'+qH+':',qG),Ip('Error\x20de\x20Guardado','No\x20se\x20pudo\x20actualizar\x20el\x20histórico\x20de\x20SAP\x20para\x20'+qH+'.','error');}}async function q0(qK,qH){if(!qH||qK['length']===0x0)return;const qm=[];for(let qx=0x0;qx<qK['length'];qx+=0x1f4){qm['push'](qK['slice'](qx,qx+0x1f4));}let qh=0x0;for(const qZ of qm){const qL=db['batch'](),qN=db['collection']('areas')['doc'](qH)['collection']('orders');qZ['forEach'](qG=>{const qM=String(qG['Orden']),qy=qN['doc'](qM),qT={'orderQty':qG['Total\x20orden']||0x0,'catalogNumber':qG['Catalogo']||'N/A','orderDate':Ia(qG['Finish'])||new Date(),'lastUpdated':new Date(),'lastUpdatedBy':a['user']};qL['set'](qy,qT,{'merge':!![]});});try{await qL['commit'](),qh+=qZ['length'];}catch(qG){console['error']('Error\x20lote\x20sincronización\x20SAP\x20'+qH+':',qG);}}console['log']('✅\x20Sincronización\x20SAP\x20completada.\x20'+qh+'\x20órdenes\x20actualizadas\x20en\x20FWD\x20sin\x20lecturas\x20masivas.');}function q1(qK,qH=![]){const qm=qK['Sheets'][qK['SheetNames'][0x0]];if(!qm)throw new Error('No\x20se\x20encontró\x20una\x20hoja\x20de\x20cálculo\x20en\x20el\x20archivo.');const qh=qL=>qm[qL]?qm[qL]['v']:null,qx=XLSX['utils']['decode_range'](qm['!ref']),qZ=new Date()['toLocaleDateString']('en-CA',{'timeZone':m});if(qH){const qL={};for(let qN=qx['s']['r']+0x1;qN<=qx['e']['r'];qN++){const qG=qN+0x1,qM=qh('A'+qG);if(!qM)continue;const qy=String(qM)['trim']();if(!qy['startsWith']('900'))continue;const qT=qh(I['column']+qG),qb=I['mapping'][qT];if(qb){!qL[qb]&&(qL[qb]=[]);const qt=q2(qm,qG,qZ);qL[qb]['push'](qt);}}return{'isMultiArea':!![],'data':qL};}else{const qO=[];for(let qk=qx['s']['r']+0x1;qk<=qx['e']['r'];qk++){const qv=qk+0x1,qz=qh('A'+qv);if(!qz)continue;const qE=String(qz)['trim']();if(!qE['startsWith']('900'))continue;qO['push'](q2(qm,qv,qZ));}return qO;}}function q2(qK,qH,qm){const qh=qt=>qK[qt]?qK[qt]['v']:null,qx=parseFloat(qh('I'+qH))||0x0,qZ=parseFloat(qh('J'+qH))||0x0,qL=qx-qZ,qN=qh('B'+qH)||'',qG=qh('L'+qH)||'';let qM='incomplete';const qy=qh('G'+qH),qT=Ia(qy),qb=qT?qT['toLocaleDateString']('en-CA',{'timeZone':m}):'';if(qL<=0x0)qM='complete';else qb&&qb<qm&&(qM='late');return{'Orden':qh('A'+qH),'Catalogo':qh('D'+qH)||null,'Material':qh('C'+qH)||null,'Special\x20Stock':[qN,qG]['filter'](Boolean)['join']('\x20/\x20')||null,'Finish':qy,'Total\x20orden':qx,'Total\x20confirmado':qZ,'Faltante':qL,'status':qM};}function q3(){const qK=a['isMaster']||a['permissions']&&a['permissions']['includes'](D);I2['classList']['toggle']('disabled',!qK);I2['querySelector']('p')&&(I2['querySelector']('p')['textContent']=qK?a['isMaster']?'Arrastra\x20un\x20archivo\x20maestro\x20SAP\x20(General\x20o\x20de\x20Área)':'Arrastra\x20un\x20archivo\x20maestro\x20SAP\x20(.xlsx)':'No\x20tienes\x20permisos\x20para\x20esta\x20área');const qH=n['length']>0x0;I4['style']['display']=qH?'none':'block',II['disabled']=!qH,q5(),q6(),q7(),I8['style']['display']=w['length']>0x0&&qH?'inline-block':'none';if(B){let qm='Última\x20actualización:\x20'+IC(B);P&&(qm+='\x20por:\x20'+P),I9['textContent']=qm;}else I9['textContent']='';}function q4(qK){const qH=new Date()['toLocaleDateString']('es-ES',{'timeZone':m,'day':'2-digit','month':'2-digit','year':'numeric'}),qm=Ia(qK['Finish']);return qm&&IV(qm)===qH;}function q5(){if(n['length']===0x0){I6['textContent']='0',I7['textContent']='0';return;}const qK=n['filter'](qm=>q4(qm))['length'],qH=n['filter'](qm=>qm['status']==='complete'&&q4(qm))['length'];I6['textContent']=qK,I7['textContent']=qH;}function q6(){if(n['length']===0x0){I5['innerHTML']='<p\x20class=\x22text-dark\x22\x20style=\x22font-size:0.9rem;\x22>Cargue\x20un\x20archivo\x20para\x20ver\x20las\x20órdenes.</p>';return;}!Array['isArray'](w)&&(w=w==='default'?[]:[w]);const qK=new Map();n['forEach'](qx=>{const qZ=Ia(qx['Finish'])||new Date(0x0),qL=IV(qZ);if(!qK['has'](qL))qK['set'](qL,0x0);qK['set'](qL,qK['get'](qL)+0x1);});const qH=Array['from'](qK['keys']())['sort']((qx,qZ)=>{const qL=new Date(qx['split']('/')['reverse']()['join']('-')),qN=new Date(qZ['split']('/')['reverse']()['join']('-'));return qN-qL;}),qm=new Date()['toLocaleDateString']('es-ES',{'timeZone':m,'day':'2-digit','month':'2-digit','year':'numeric'});let qh='';qH['forEach'](qx=>{const qZ=qK['get'](qx),qL=qx===qm,qN=qZ+'\x20'+(qZ===0x1?'orden':'órdenes');qh+='<div\x20class=\x22order-item\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22date-header\x22\x20data-date=\x22'+qx+'\x22\x20style=\x22width:100%;\x20justify-content:\x20space-between;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span>📅\x20'+qx+'</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+(qL?'<span\x20class=\x22status-indicator\x22>('+qN+')</span>':'<span\x20class=\x22order-count\x22>('+qN+')</span>')+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>';}),I5['innerHTML']=qh,I5['querySelectorAll']('.date-header')['forEach'](qx=>{w['includes'](qx['dataset']['date'])&&qx['classList']['add']('active'),qx['addEventListener']('click',()=>{const qZ=qx['dataset']['date'],qL=w['indexOf'](qZ);qL>-0x1?w['splice'](qL,0x1):w['push'](qZ),q3();});});}function q7(){const qK=h('sapTable');if(n['length']===0x0){qK['innerHTML']='',W['clear'](),IJ();return;}let qH=[];w['length']===0x0?qH=n['filter'](qG=>qG['status']==='late'||q4(qG)):qH=n['filter'](qG=>{const qM=IV(Ia(qG['Finish']));return w['includes'](qM);});if(qH['length']===0x0){qK['innerHTML']='<thead><tr><th>No\x20hay\x20órdenes\x20para\x20la\x20selección\x20actual.</th></tr></thead>',IJ();return;}const qm=a['isMaster']||a['permissions']&&a['permissions']['includes'](D),qh=['Orden','Catalogo','Material','Special\x20Stock','Finish','Total\x20orden','Total\x20confirmado','Faltante'],qx=qH['map'](qG=>String(qG['Orden']))['join']('\x0a');let qZ='';qm&&(qZ+='<th><input\x20type=\x22checkbox\x22\x20id=\x22sap-select-all-checkbox\x22\x20title=\x22Seleccionar\x20Todo\x22></th>');qZ+='<th\x20class=\x22copyable-header\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20id=\x22sap-copy-order-header\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20title=\x22Clic\x20para\x20copiar\x20TODA\x20la\x20columna\x20\x27Orden\x27\x22>Orden</th>',qh['slice'](0x1)['forEach'](qG=>{qZ+='<th>'+qG['replace'](/_/g,'\x20')+'</th>';});qm&&(qh['push']('Acciones'),qZ+='<th>Acciones</th>');qK['innerHTML']='\x0a\u00a0\x20\u00a0\x20\u00a0\x20\u00a0\x20<thead><tr>'+qZ+'</tr></thead>\x0a\u00a0\x20\u00a0\x20\u00a0\x20\u00a0\x20<tbody>\x0a\u00a0\x20\u00a0\x20\u00a0\x20\u00a0\x20\u00a0\x20\u00a0\x20'+qH['map'](qG=>{const qM=String(qG['Orden']),qy=W['has'](qM);let qT='',qb='';return qm&&(qb='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20style=\x22text-align:\x20center;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22checkbox\x22\x20class=\x22sap-select-row-checkbox\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20data-order-key=\x22'+qM+'\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+(qy?'checked':'')+'>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</td>',qT='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20data-label=\x22Acciones\x22\x20style=\x22text-align:\x20center;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22icon-btn\x20sap-delete-btn\x22\x20title=\x22Eliminar\x20orden\x20SAP\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20data-order-key=\x22'+qM+'\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20style=\x22font-size:\x201rem;\x20filter:\x20grayscale(0)\x20opacity(0.6);\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<svg\x20xmlns=\x22http://www.w3.org/2000/svg\x22\x20width=\x2218\x22\x20height=\x2218\x22\x20viewBox=\x220\x200\x2024\x2024\x22\x20fill=\x22none\x22\x20stroke=\x22currentColor\x22\x20stroke-width=\x222\x22\x20stroke-linecap=\x22round\x22\x20stroke-linejoin=\x22round\x22><polyline\x20points=\x223\x206\x205\x206\x2021\x206\x22></polyline><path\x20d=\x22M19\x206v14a2\x202\x200\x200\x201-2\x202H7a2\x202\x200\x200\x201-2-2V6m3\x200V4a2\x202\x200\x200\x201\x202-2h4a2\x202\x200\x200\x201\x202\x202v2\x22></path></svg>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</td>'),'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<tr\x20class=\x22is-'+qG['status']+'-sap\x20'+(qy?'is-selected-row':'')+'\x22>\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+qb+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20data-label=\x22Orden\x22\x20class=\x22serial-cell\x20sap-copy-cell\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20title=\x22Clic\x20para\x20copiar\x20orden\x20'+qM+'\x22\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20data-order-key=\x22'+qM+'\x22>'+qM+'</td>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20data-label=\x22Catalogo\x22>'+qG['Catalogo']+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20data-label=\x22Material\x22>'+qG['Material']+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20data-label=\x22Special\x20Stock\x22>'+qG['Special\x20Stock']+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20data-label=\x22Finish\x22>'+IV(Ia(qG['Finish']))+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20data-label=\x22Total\x20orden\x22>'+qG['Total\x20orden']+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20data-label=\x22Total\x20confirmado\x22>'+qG['Total\x20confirmado']+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<td\x20data-label=\x22Faltante\x22>'+qG['Faltante']+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+qT+'\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</tr>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20';})['join']('')+'\x0a\u00a0\x20\u00a0\x20\u00a0\x20\u00a0\x20</tbody>',qK['querySelectorAll']('.sap-delete-btn')['forEach'](qG=>{qG['addEventListener']('click',qM=>{const qy=qM['currentTarget']['dataset']['orderKey'];IR('¿Seguro\x20que\x20quieres\x20eliminar\x20la\x20orden\x20SAP\x20'+qy+'?\x20Esto\x20la\x20borrará\x20SÓLO\x20del\x20histórico\x20de\x20SAP\x20(No\x20afectará\x20la\x20vista\x20FWD).',()=>Ig(qy));});}),qK['querySelectorAll']('.sap-copy-cell')['forEach'](qG=>{qG['addEventListener']('click',qM=>{qM['stopPropagation']();const qy=qM['currentTarget']['dataset']['orderKey'];copySerialNumber(qM['currentTarget'],qy);});});const qL=h('sap-copy-order-header');qL&&qL['addEventListener']('click',qG=>{window['copyColumnData'](qG['currentTarget'],qx);});const qN=h('sap-select-all-checkbox');qN&&qN['addEventListener']('click',qG=>{const qM=qG['currentTarget']['checked'],qy=qK['querySelectorAll']('.sap-select-row-checkbox');qy['forEach'](qT=>{const qb=qT['dataset']['orderKey'];qT['checked']=qM,qM?W['add'](qb):W['delete'](qb),qT['closest']('tr')['classList']['toggle']('is-selected-row',qM);}),IJ();}),qK['querySelectorAll']('.sap-select-row-checkbox')['forEach'](qG=>{qG['addEventListener']('click',qM=>{qM['stopPropagation']();const qy=qM['currentTarget']['dataset']['orderKey'],qT=qM['currentTarget']['checked'];qT?W['add'](qy):W['delete'](qy);qM['currentTarget']['closest']('tr')['classList']['toggle']('is-selected-row',qT),IJ();if(qN){const qb=qK['querySelectorAll']('.sap-select-row-checkbox'),qt=Array['from'](qb)['every'](qO=>qO['checked']);qN['checked']=qt;}});}),IJ();}function q8(qK,qH,qm=![]){if(qm)return ID(qK);if(qH&&qH['toLowerCase']()['includes']('date'))return IV(Ia(qK));return qK===undefined||qK===null?'':qK;}function q9(){if(q['size']===0x0||n['length']===0x0)return;const qK=new Map(n['map'](qH=>[String(qH['Orden']),qH['Finish']]));q['forEach']((qH,qm)=>{if(qK['has'](qm)){const qh=qK['get'](qm),qx=Ia(qh);qx&&(qH['orderDate']=qx);}});}function qI(){let qK='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p>Introduce\x20tus\x20credenciales\x20para\x20acceder.</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20id=\x22userInput\x22\x20placeholder=\x22Usuario\x22\x20style=\x22text-transform:uppercase\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22password\x22\x20id=\x22passwordInput\x22\x20placeholder=\x22Contraseña\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20id=\x22loginBtn\x22\x20class=\x22btn\x22\x20style=\x22margin-top:\x2016px;\x22>Autenticar</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20';Ip('Inicio\x20de\x20Sesión',qK),h('loginBtn')['addEventListener']('click',qq),h('passwordInput')['addEventListener']('keyup',qH=>{if(qH['key']==='Enter')qq();}),h('userInput')['addEventListener']('keyup',qH=>{if(qH['key']==='Enter')qq();});}async function qq(){const qK=h('userInput')['value']['trim']()['toUpperCase'](),qH=h('passwordInput')['value'];if(!qK||!qH){Ip('Error','Debes\x20ingresar\x20el\x20usuario\x20y\x20la\x20contraseña.','error');return;}try{const qm=await db['collection']('users')['doc'](qK)['get']();if(!qm['exists']){Ip('Error','El\x20usuario\x20no\x20existe.','error');return;}const qh=qm['data']();qh['password']===qH?(a={'user':qh['username'],'isMaster':qh['isMaster']||![],'permissions':qh['permissions']||[]},sessionStorage['setItem']('appSession',JSON['stringify'](a)),IF(),qf()):Ip('Error','Contraseña\x20incorrecta.','error');}catch(qx){console['error']('Error\x20de\x20autenticación:\x20',qx),Ip('Error','Ocurrió\x20un\x20error\x20al\x20verificar\x20las\x20credenciales.','error');}}function qQ(){a={'user':null,'isMaster':![],'permissions':[]},sessionStorage['removeItem']('appSession'),qf();}function qf(){const qK=!!a['user'],qH=qK&&(a['isMaster']||a['permissions']&&a['permissions']['includes'](D));Z['classList']['toggle']('disabled',!qH),Z['querySelector']('p')['textContent']=qH?'Arrastra\x20archivos\x20de\x20detalle\x20(.xlsx)':'No\x20tienes\x20permisos\x20para\x20esta\x20área',I2['classList']['toggle']('disabled',!qH),I2['querySelector']('p')&&(I2['querySelector']('p')['textContent']=qH?a['isMaster']?'Arrastra\x20un\x20archivo\x20maestro\x20SAP\x20(General\x20o\x20de\x20Área)':'Arrastra\x20un\x20archivo\x20maestro\x20SAP\x20(.xlsx)':'No\x20tienes\x20permisos\x20para\x20esta\x20área'),qK?(X['style']['display']='flex',a['isMaster']?(c['style']['display']='flex',c['innerHTML']='<svg\x20xmlns=\x22http://www.w3.org/2000/svg\x22\x20width=\x2220\x22\x20height=\x2220\x22\x20viewBox=\x220\x200\x2024\x2024\x22\x20fill=\x22none\x22\x20stroke=\x22currentColor\x22\x20stroke-width=\x222\x22\x20stroke-linecap=\x22round\x22\x20stroke-linejoin=\x22round\x22><path\x20d=\x22M14.7\x206.3a1\x201\x200\x200\x200\x200\x201.4l1.6\x201.6a1\x201\x200\x200\x200\x201.4\x200l3.77-3.77a6\x206\x200\x200\x201-7.94\x207.94l-6.91\x206.91a2.12\x202.12\x200\x200\x201-3-3l6.91-6.91a6\x206\x200\x200\x201\x207.94-7.94l-3.76\x203.76z\x22></path></svg>\x20'+a['user']):c['style']['display']='none'):(X['style']['display']='none',c['style']['display']='flex',c['innerHTML']='<svg\x20xmlns=\x22http://www.w3.org/2000/svg\x22\x20width=\x2220\x22\x20height=\x2220\x22\x20viewBox=\x220\x200\x2024\x2024\x22\x20fill=\x22none\x22\x20stroke=\x22currentColor\x22\x20stroke-width=\x222\x22\x20stroke-linecap=\x22round\x22\x20stroke-linejoin=\x22round\x22><path\x20d=\x22M14.7\x206.3a1\x201\x200\x200\x200\x200\x201.4l1.6\x201.6a1\x201\x200\x200\x200\x201.4\x200l3.77-3.77a6\x206\x200\x200\x201-7.94\x207.94l-6.91\x206.91a2.12\x202.12\x200\x200\x201-3-3l6.91-6.91a6\x206\x200\x200\x201\x207.94-7.94l-3.76\x203.76z\x22></path></svg>'),l['style']['display']=a['isMaster']?'flex':'none',U['textContent']='Área:\x20'+D,IL(),IM();}async function qn(){const qK=await getCachedAreas();let qH=qK['map'](qh=>({'id':qh,'name':qh})),qm='<h3>Selecciona\x20un\x20Área\x20para\x20Visualizar</h3><ul\x20class=\x22area-list\x22\x20style=\x22grid-template-columns:\x201fr\x20auto;\x22>';qH['forEach'](qh=>{qm+='<li><span>'+qh['name']+'</span>\x20<button\x20class=\x22btn\x20select-area-btn\x22\x20data-area=\x22'+qh['id']+'\x22\x20style=\x22width:\x20auto;\x20padding:\x205px\x2010px;\x22>Seleccionar</button></li>';}),qm+='</ul>',Ip('Selector\x20de\x20Área',qm),h('modalBody')['querySelectorAll']('.select-area-btn')['forEach'](qh=>{qh['addEventListener']('click',qx=>{const qZ=qx['target']['dataset']['area'];qZ!==D&&(D=qZ,localStorage['setItem']('currentArea',D),U['textContent']='Área:\x20'+D,qa(D)),qf(),IF();});});}async function qB(){const [qK,qH]=await Promise['all']([db['collection']('areas')['get'](),db['collection']('users')['get']()]);let qm=[];qK['forEach'](qL=>{if(qL['id']!=='CONFIG')qm['push']({'id':qL['id'],...qL['data']()});}),qm['sort']((qL,qN)=>qL['id']['localeCompare'](qN['id']));let qh=[];qH['forEach'](qL=>qh['push']({'id':qL['id'],...qL['data']()})),qh['sort']((qL,qN)=>qL['id']['localeCompare'](qN['id']));let qx='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22admin-section\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h3\x20class=\x22admin-section-header\x22>Gestionar\x20Usuarios</h3>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22admin-section-content\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<ul\x20class=\x22area-list\x20user-list\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+qh['map'](qL=>'<li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20style=\x22font-weight:\x20bold;\x22>'+qL['username']+'\x20'+(qL['isMaster']?'\x20(Admin)':'')+'</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22permissions-display\x22>'+(qL['permissions']||[])['join'](',\x20')+'</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+(qL['username']!=='MULTIPORT'?'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20edit-user-btn\x22\x20data-id=\x22'+qL['id']+'\x22\x20style=\x22width:\x20auto;\x20padding:\x205px\x2010px;\x22>Editar</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-danger\x20delete-user-btn\x22\x20data-id=\x22'+qL['id']+'\x22\x20style=\x22width:\x20auto;\x20padding:\x205px\x2010px;\x20margin-left:\x205px;\x22>Eliminar</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20':'')+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</li>')['join']('')+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</ul>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20id=\x22createUserBtn\x22\x20class=\x22btn\x22\x20style=\x22margin-top:\x2020px;\x22>Crear\x20Nuevo\x20Usuario</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22admin-section\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h3\x20class=\x22admin-section-header\x22>Gestionar\x20Áreas\x20y\x20Contraseñas</h3>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22admin-section-content\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<ul\x20class=\x22area-list\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+qm['map'](qL=>'<li>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20class=\x22area-name-input\x22\x20data-id=\x22'+qL['id']+'\x22\x20value=\x22'+qL['name']+'\x22\x20disabled>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20class=\x22area-password-input\x22\x20data-id=\x22'+qL['id']+'\x22\x20value=\x22'+(qL['password']||'')+'\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20save-area-btn\x22\x20data-id=\x22'+qL['id']+'\x22\x20style=\x22width:\x20auto;\x20padding:\x205px\x2010px;\x22>Guardar</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+(!qL['isMaster']?'<button\x20class=\x22btn\x20btn-danger\x20delete-area-btn\x22\x20data-id=\x22'+qL['id']+'\x22\x20style=\x22width:\x20auto;\x20padding:\x205px\x2010px;\x20margin-left:\x205px;\x22>Eliminar</button>':'')+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</li>')['join']('')+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</ul>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h4\x20style=\x22margin-top:\x2020px;\x22>Crear\x20Nueva\x20Área</h4>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20id=\x22newAreaInput\x22\x20placeholder=\x22Nombre\x20de\x20Área\x20(ej.\x20ENSAMBLE)\x22\x20style=\x22text-transform:uppercase\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20id=\x22newPasswordInput\x22\x20placeholder=\x22Contraseña\x20para\x20la\x20nueva\x20área\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20id=\x22createAreaBtn\x22\x20class=\x22btn\x22\x20style=\x22margin-top:\x2010px;\x22>Crear\x20Área</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20id=\x22masterConfigSection\x22\x20class=\x22admin-section\x22\x20style=\x22display:\x20block;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h3\x20class=\x22admin-section-header\x22>Configuración\x20de\x20Workshop\x20General</h3>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22admin-section-content\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22config-item\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20for=\x22masterColumnInput\x22>Columna\x20de\x20Código\x20de\x20Área:</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20id=\x22masterColumnInput\x22\x20value=\x22'+I['column']+'\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h4>Mapeo\x20de\x20Códigos\x20a\x20Áreas</h4>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<ul\x20id=\x22areaMappingList\x22\x20class=\x22area-list\x22></ul>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20id=\x22addMappingBtn\x22\x20class=\x22btn\x22\x20style=\x22width:\x20auto;\x20padding:\x205px\x2010px;\x20margin-top:\x2010px;\x22>Añadir\x20Mapeo</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20id=\x22saveWorkshopConfigBtn\x22\x20class=\x22btn\x22\x20style=\x22margin-top:\x2020px;\x22>Guardar\x20Configuración\x20General</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>';Ip('Panel\x20de\x20Administrador',qx),h('createUserBtn')['addEventListener']('click',()=>qP(null)),h('modalBody')['querySelectorAll']('.edit-user-btn')['forEach'](qL=>{qL['addEventListener']('click',qN=>{const qG=qN['target']['dataset']['id'],qM=qh['find'](qy=>qy['id']===qG);qP(qM);});}),h('modalBody')['querySelectorAll']('.delete-user-btn')['forEach'](qL=>{qL['addEventListener']('click',qN=>{const qG=qN['target']['dataset']['id'];IR('¿Seguro\x20que\x20quieres\x20eliminar\x20al\x20usuario\x20\x22'+qG+'\x22?',async()=>{await db['collection']('users')['doc'](qG)['delete'](),qB();});});}),h('modalBody')['querySelectorAll']('.admin-section-header')['forEach'](qL=>{qL['addEventListener']('click',()=>{qL['parentElement']['classList']['toggle']('expanded');});});const qZ=h('areaMappingList');qZ['innerHTML']='';for(const qL in I['mapping']){const qN=I['mapping'][qL];qZ['appendChild'](qo(qL,qN));}h('addMappingBtn')['addEventListener']('click',()=>{qZ['appendChild'](qo('',''));}),h('saveWorkshopConfigBtn')['addEventListener']('click',qd),h('createAreaBtn')['addEventListener']('click',async()=>{const qG=h('newAreaInput')['value']['trim']()['toUpperCase'](),qM=h('newPasswordInput')['value']['trim']();qG&&qM?(await db['collection']('areas')['doc'](qG)['set']({'name':qG,'password':qM,'isMaster':![],'createdAt':new Date()}),qB()):Ip('Atención','Debes\x20especificar\x20un\x20nombre\x20y\x20una\x20contraseña\x20para\x20la\x20nueva\x20área.','warning');}),h('modalBody')['querySelectorAll']('.save-area-btn')['forEach'](qG=>{qG['addEventListener']('click',async qM=>{const qy=qM['target']['dataset']['id'],qT=h('modalBody')['querySelector']('.area-password-input[data-id=\x22'+qy+'\x22]')['value']['trim']();qT&&(await db['collection']('areas')['doc'](qy)['update']({'password':qT}),qB());});}),h('modalBody')['querySelectorAll']('.delete-area-btn')['forEach'](qG=>{qG['addEventListener']('click',qM=>{const qy=qM['target']['dataset']['id'];IR('¿Seguro\x20que\x20quieres\x20eliminar\x20el\x20área\x20\x22'+qy+'\x22\x20y\x20todos\x20sus\x20datos?',async()=>{await qw(qy),qB();});});});}async function qP(qK=null){const qH=qK!==null,qm=qH?'Editar\x20Usuario:\x20'+qK['username']:'Crear\x20Nuevo\x20Usuario',qh=await db['collection']('areas')['get']();let qx=[];qh['forEach'](qL=>{if(qL['id']!=='CONFIG')qx['push']({'id':qL['id'],...qL['data']()});}),qx['sort']((qL,qN)=>qL['id']['localeCompare'](qN['id']));let qZ='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20id=\x22modalUserInput\x22\x20placeholder=\x22Nombre\x20de\x20Usuario\x22\x20style=\x22text-transform:uppercase\x22\x20value=\x22'+(qH?qK['username']:'')+'\x22\x20'+(qH?'disabled':'')+'>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20id=\x22modalPasswordInput\x22\x20placeholder=\x22'+(qH?'Nueva\x20contraseña\x20(dejar\x20en\x20blanco\x20para\x20no\x20cambiar)':'Contraseña')+'\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<h5\x20style=\x22margin-top:16px;\x20margin-bottom:\x208px;\x22>Permisos\x20de\x20Área:</h5>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20id=\x22modalPermissions\x22\x20class=\x22permissions-list\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20'+qx['map'](qL=>{const qN=qH&&qK['permissions']&&qK['permissions']['includes'](qL['id']);return'<label><input\x20type=\x22checkbox\x22\x20value=\x22'+qL['id']+'\x22\x20'+(qN?'checked':'')+'>'+qL['name']+'</label>';})['join']('')+'\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20style=\x22margin-top:\x2016px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<label\x20style=\x22display:\x20flex;\x20align-items:\x20center;\x20gap:\x208px;\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22checkbox\x22\x20id=\x22modalIsMasterInput\x22\x20style=\x22width:\x20auto;\x20margin:\x200;\x22\x20'+(qH&&qK['isMaster']?'checked':'')+'>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20Asignar\x20permisos\x20de\x20Administrador\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</label>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20id=\x22saveUserBtn\x22\x20class=\x22btn\x22\x20style=\x22margin-top:\x2020px;\x22>'+(qH?'Guardar\x20Cambios':'Crear\x20Usuario')+'</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20';Ip(qm,qZ),h('saveUserBtn')['onclick']=async()=>{const qL=h('modalUserInput')['value']['trim']()['toUpperCase'](),qN=h('modalPasswordInput')['value']['trim']();if(!qL||!qH&&!qN){Ip('Error','El\x20nombre\x20de\x20usuario\x20y\x20la\x20contraseña\x20son\x20obligatorios.','error');return;}const qG=Array['from'](h('modalPermissions')['querySelectorAll']('input:checked'))['map'](qT=>qT['value']),qM=h('modalIsMasterInput')['checked'],qy={'username':qL,'permissions':qG,'isMaster':qM};qN&&(qy['password']=qN),await db['collection']('users')['doc'](qL)['set'](qy,{'merge':!![]}),qB();};}async function qw(qK){const qH=['orders','sap_data'];for(const qm of qH){const qh=await db['collection']('areas')['doc'](qK)['collection'](qm)['get'](),qx=db['batch']();qh['docs']['forEach'](qZ=>qx['delete'](qZ['ref'])),await qx['commit']();}await db['collection']('areas')['doc'](qK)['delete']();}function qo(qK,qH){const qm=document['createElement']('li');return qm['className']='mapping-item',qm['innerHTML']='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20class=\x22mapping-code\x22\x20placeholder=\x22Código\x20(ej.\x20K46)\x22\x20value=\x22'+qK+'\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<input\x20type=\x22text\x22\x20class=\x22mapping-area\x22\x20placeholder=\x22Nombre\x20de\x20Área\x22\x20value=\x22'+qH+'\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-danger\x22\x20style=\x22width:\x20auto;\x20padding:\x205px\x2010px;\x22\x20onclick=\x22this.parentElement.remove()\x22>X</button>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20',qm;}async function qd(){const qK=h('masterColumnInput')['value']['trim']()['toUpperCase']()||'C',qH={};h('areaMappingList')['querySelectorAll']('.mapping-item')['forEach'](qh=>{const qx=qh['querySelector']('.mapping-code')['value']['trim']()['toUpperCase'](),qZ=qh['querySelector']('.mapping-area')['value']['trim']()['toUpperCase']();qx&&qZ&&(qH[qx]=qZ);});const qm={'column':qK,'mapping':qH};try{await db['collection']('areas')['doc']('CONFIG')['set']({'general_workshop':qm},{'merge':!![]}),I=qm,Ip('Éxito','La\x20configuración\x20del\x20workshop\x20general\x20ha\x20sido\x20guardada.','success');}catch(qh){console['error']('Error\x20guardando\x20configuración:',qh),Ip('Error','No\x20se\x20pudo\x20guardar\x20la\x20configuración.','error');}}async function qY(){try{const qK=await db['collection']('areas')['doc']('CONFIG')['get']();qK['exists']&&qK['data']()['general_workshop']?(I=qK['data']()['general_workshop'],console['log']('Configuración\x20de\x20workshop\x20cargada\x20desde\x20Firebase.')):console['log']('No\x20se\x20encontró\x20configuración\x20de\x20workshop,\x20usando\x20valores\x20por\x20defecto.');}catch(qH){console['error']('Error\x20cargando\x20configuración\x20de\x20workshop:',qH);}}async function qe(){Ip('Plan\x20del\x20Día','<h4\x20style=\x22text-align:\x20center;\x22>Cargando\x20reporte...</h4>');try{const qK=new Date()['toLocaleDateString']('es-ES',{'timeZone':m,'day':'2-digit','month':'2-digit','year':'numeric'}),qH=await db['collection']('areas')['get'](),qm=qH['docs']['filter'](qG=>qG['id']!=='CONFIG'),qh=qm['map'](qG=>qG['ref']['collection']('sap_data')['doc']('current_data')['get']()),qx=await Promise['all'](qh);let qZ={},qL=0x0;qx['forEach']((qG,qM)=>{if(qG['exists']){const qy=qm[qM]['id'],qT=qG['data']()['orders']||[],qb=qT['filter'](qO=>q4(qO)&&qO['status']!=='complete'),qt=qb['length'];qt>0x0&&(qZ[qy]=qt,qL+=qt);}});let qN='\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22daily-plan-modal\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22plan-header\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22plan-stat\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span>Órdenes\x20Pendientes</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p>'+qL+'</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22plan-date\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span>Fecha</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p>'+qK+'</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<div\x20class=\x22plan-title-separator\x22>Plan\x20de\x20Trabajo\x20por\x20Área</div>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<ul\x20class=\x22plan-area-list\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20';if(qL>0x0){const qG=Object['keys'](qZ)['sort']();for(const qM of qG){qN+='<li\x20class=\x22plan-area-item\x22>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22area-name\x22>'+qM+'</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<span\x20class=\x22area-count\x22>'+qZ[qM]+'</span>\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20</li>';}}else qN+='<li\x20class=\x22plan-area-item-empty\x22>No\x20hay\x20órdenes\x20pendientes\x20para\x20el\x20día\x20de\x20hoy.</li>';qN+='</ul></div>',Ip('Plan\x20del\x20Día',qN);}catch(qy){console['error']('Error\x20al\x20generar\x20el\x20reporte\x20del\x20plan\x20diario:',qy),Ip('Error','No\x20se\x20pudo\x20generar\x20el\x20reporte\x20del\x20plan\x20diario.','error');}}let qp=localStorage['getItem']('theme')||'dark';function qR(qK){document['body']['className']=qK+'-theme';const qH='<svg\x20xmlns=\x22http://www.w3.org/2000/svg\x22\x20width=\x2220\x22\x20height=\x2220\x22\x20viewBox=\x220\x200\x2024\x2024\x22\x20fill=\x22none\x22\x20stroke=\x22currentColor\x22\x20stroke-width=\x222\x22\x20stroke-linecap=\x22round\x22\x20stroke-linejoin=\x22round\x22><circle\x20cx=\x2212\x22\x20cy=\x2212\x22\x20r=\x225\x22></circle><line\x20x1=\x2212\x22\x20y1=\x221\x22\x20x2=\x2212\x22\x20y2=\x223\x22></line><line\x20x1=\x2212\x22\x20y1=\x2221\x22\x20x2=\x2212\x22\x20y2=\x2223\x22></line><line\x20x1=\x224.22\x22\x20y1=\x224.22\x22\x20x2=\x225.64\x22\x20y2=\x225.64\x22></line><line\x20x1=\x2218.36\x22\x20y1=\x2218.36\x22\x20x2=\x2219.78\x22\x20y2=\x2219.78\x22></line><line\x20x1=\x221\x22\x20y1=\x2212\x22\x20x2=\x223\x22\x20y2=\x2212\x22></line><line\x20x1=\x2221\x22\x20y1=\x2212\x22\x20x2=\x2223\x22\x20y2=\x2212\x22></line><line\x20x1=\x224.22\x22\x20y1=\x2219.78\x22\x20x2=\x225.64\x22\x20y2=\x2218.36\x22></line><line\x20x1=\x2218.36\x22\x20y1=\x225.64\x22\x20x2=\x2219.78\x22\x20y2=\x224.22\x22></line></svg>',qm='<svg\x20xmlns=\x22http://www.w3.org/2000/svg\x22\x20width=\x2220\x22\x20height=\x2220\x22\x20viewBox=\x220\x200\x2024\x2024\x22\x20fill=\x22none\x22\x20stroke=\x22currentColor\x22\x20stroke-width=\x222\x22\x20stroke-linecap=\x22round\x22\x20stroke-linejoin=\x22round\x22><path\x20d=\x22M21\x2012.79A9\x209\x200\x201\x201\x2011.21\x203\x207\x207\x200\x200\x200\x2021\x2012.79z\x22></path></svg>';s['innerHTML']=qK==='light'?qm:qH;}function qF(){requestAnimationFrame(()=>{const qK=window['innerWidth']<=0x3e0;if(qK)return;const qH=document['querySelector']('#fwdView\x20.header'),qm=document['getElementById']('table-controls-header'),qh=document['querySelector']('#sapView\x20.global-header'),qx=document['getElementById']('sap-controls-header');if(qH&&qm){const qZ=qH['offsetHeight'],qL=0x10+qZ;qm['style']['top']=qL+'px';}if(qh&&qx){const qN=qh['offsetHeight'],qG=0x10+qN;qx['style']['top']=qG+'px';}});}s['addEventListener']('click',()=>{qp=qp==='light'?'dark':'light',localStorage['setItem']('theme',qp),qR(qp);});function qa(qK){if(!qK)return;if(V)V();if(C)C();const qH=new Date();qH['setDate'](qH['getDate']()-0x1f),console['log']('📡\x20Iniciando\x20listeners\x20para\x20'+qK+'\x20(Datos\x20desde:\x20'+qH['toLocaleDateString']()+')'),V=db['collection']('areas')['doc'](qK)['collection']('orders')['where']('orderDate','>=',qH)['onSnapshot'](qm=>{const qh=new Map();qm['forEach'](qx=>{const qZ=qx['data']();qZ['orderDate']&&qZ['orderDate']['toDate']&&(qZ['orderDate']=qZ['orderDate']['toDate']());qZ['lastUpdated']&&qZ['lastUpdated']['toDate']&&(qZ['lastUpdated']=qZ['lastUpdated']['toDate']());const qL=new Map();qZ['empaqueData']&&Array['isArray'](qZ['empaqueData'])&&qZ['empaqueData']['forEach'](qN=>{qL['set'](qN['boxId'],qN['serials']);}),qZ['empaqueData']=qL,qh['set'](qx['id'],qZ);}),q=qh,q9(),IL();if(Y==='fwd')IM();},qm=>{console['error']('Error\x20escuchando\x20datos\x20de\x20FWD:\x20',qm),qm['code']==='failed-precondition'?Ip('Requiere\x20Índice','Abre\x20la\x20consola\x20del\x20navegador\x20(F12)\x20y\x20haz\x20clic\x20en\x20el\x20link\x20de\x20Firebase\x20para\x20crear\x20el\x20índice\x20de\x20orderDate.','warning'):Ip('Error\x20de\x20Conexión','No\x20se\x20pudo\x20conectar\x20a\x20los\x20datos\x20del\x20área\x20'+qK+'.','error');}),C=db['collection']('areas')['doc'](qK)['collection']('sap_historico')['where']('lastUpdated','>=',qH)['onSnapshot'](qm=>{let qh=[],qx=null,qZ=null;qm['forEach'](qL=>{const qN=qL['data']();qh['push'](qN);const qG=qN['lastUpdated']?qN['lastUpdated']['toDate']():null;qG&&(!qx||qG>qx)&&(qx=qG,qZ=qN['lastUpdatedBy']);}),n=qh,B=qx,P=qZ,q9(),IL(),Y==='sap'&&IM();},qm=>{console['error']('Error\x20escuchando\x20datos\x20del\x20histórico\x20de\x20SAP:\x20',qm);});}let qD=window['innerWidth']<=0x3e0;const qV=['uploadCard','orderListCard','filtersCard','actionsCard','sap-uploadCard','sap-orderListCard'];function qC(){qV['forEach'](qK=>{const qH=h(qK);if(!qH)return;qH['classList']['add']('mobile-collapsible');const qm=qH['querySelector']('h3');qm&&(qm['classList']['add']('mobile-trigger'),!qm['dataset']['mobileListener']&&(qm['addEventListener']('click',qh=>{window['innerWidth']<=0x3e0&&qh['currentTarget']['closest']('.card')['classList']['toggle']('expanded');}),qm['dataset']['mobileListener']='true'));});}function qS(){qV['forEach'](qK=>{const qH=h(qK);if(!qH)return;qH['classList']['remove']('mobile-collapsible','expanded');const qm=qH['querySelector']('h3');if(qm)qm['classList']['remove']('mobile-trigger');});}let qj;window['addEventListener']('resize',()=>{clearTimeout(qj),qj=setTimeout(()=>{const qK=window['innerWidth']<=0x3e0;if(qK!==qD){qD=qK;if(qD)qC();else qS();IM();}qF();},0xc8);}),window['copySerialNumber']=function(qK,qH){if(!qH)return;const qm=qH['startsWith']('S#')?qH['substring'](0x2):qH;IY(qm,()=>{const qh=qK['textContent'];qK['textContent']='¡Copiado!',qK['style']['fontWeight']='bold',qK['style']['color']='var(--success-color)',setTimeout(()=>{qK['textContent']=qh,qK['style']['fontWeight']='',qK['style']['color']='';},0x5dc);},qh=>{console['error']('Error\x20al\x20copiar\x20el\x20número\x20de\x20serie:\x20',qh);const qx=qK['textContent'];qK['textContent']='Error',setTimeout(()=>{qK['textContent']=qx;},0x5dc);});};async function qW(){await qY();const qK=db['collection']('users')['doc']('MULTIPORT'),qH=await qK['get']();!qH['exists']&&(await qK['set']({'username':'MULTIPORT','password':'CORNING25','isMaster':!![],'permissions':[]}),console['log']('Usuario\x20maestro\x20\x27MULTIPORT\x27\x20creado.'));const qm=db['collection']('areas')['doc']('MULTIPORT'),qh=await qm['get']();!qh['exists']&&(await qm['set']({'name':'MULTIPORT','password':'CORNING25','isMaster':!![]},{'merge':!![]}),console['log']('Área\x20maestra\x20\x27MULTIPORT\x27\x20verificada\x20y\x20asegurada.'));Y=localStorage['getItem']('mainMode')||'fwd',D=localStorage['getItem']('currentArea')||'MULTIPORT',qR(qp),Iq['classList']['toggle']('active',Y==='fwd'),IQ['classList']['toggle']('active',Y==='sap'),h('fwdView')['style']['display']=Y==='fwd'?'block':'none',h('sapView')['style']['display']=Y==='sap'?'block':'none',h('fwdView')['style']['opacity']=Y==='fwd'?'1':'0',h('sapView')['style']['opacity']=Y==='sap'?'1':'0';if(qD)qC();const qx=sessionStorage['getItem']('appSession');qx&&(a=JSON['parse'](qx)),qf(),qa(D),setTimeout(qF,0x1f4);}'serviceWorker'in navigator&&window['addEventListener']('load',()=>{navigator['serviceWorker']['register']('sw.js')['then'](qK=>{console['log']('✅\x20Service\x20Worker\x20registrado\x20con\x20éxito.\x20Alcance:',qK['scope']);})['catch'](qK=>{console['log']('❌\x20Error\x20al\x20registrar\x20el\x20Service\x20Worker:',qK);});}),qW();});
+const firebaseConfig = {
+            apiKey: "AIzaSyDtlj3ppT9WBGMR60SZx0TZmAo3BXQWDX0",
+            authDomain: "rastreador-de-ordenes.firebaseapp.com",
+            projectId: "rastreador-de-ordenes",
+            storageBucket: "rastreador-de-ordenes.appspot.com",
+            messagingSenderId: "956052823395",
+            appId: "1:956052823395:web:2ba74d9591d2b24c3cc756"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // State variables
+            let workshopConfig = {
+                mapping: { 'K46': 'MULTIPORT' },
+                column: 'C'
+            };
+            let loadedOrders = new Map();
+            let sapData = [];
+            let sapLastUpdated = null;
+            let sapLastUpdatedBy = null;
+            let sapDateFilter = 'default';
+            let activeOrderKey = null;
+            let currentMode = 'rastreo';
+            let mainMode = 'fwd';
+            let currentVisibleData = [];
+            let orderToUpdateKey = null;
+            let rastreoStatusFilter = 'all';
+            let rastreoLineFilter = 'all';
+            let session = { user: null, isMaster: false, permissions: [] };
+            let currentArea = 'MULTIPORT';
+            let fwdListener = null;
+            let sapListener = null;
+            let globalAreasCache = null;
+            let initialSyncDoneForArea = {};
+            let selectedSapOrders = new Set(); // <-- AGREGA ESTA LÍNEA
+
+            // Key Maps
+            const TRACKING_KEYS = { SERIAL: 'Product Serial Number', IS_SCRAP: 'Is Scrap', NOT_PACKED: 'Not Packed', CREATED_BY: 'Created By', DATE_REGISTERED: 'Date Registered', LINE: 'Line', STATION: 'Station' };
+            const PACKING_KEYS = { SERIAL: 'Serial Number', EMPLOYEE_ID: 'Employee ID', PACKED_DATE: 'Finish Packed Date', BOX_ID: 'BoxID' };
+            
+            const REYNOSA_TIMEZONE = 'America/Matamoros';
+
+            // Element cache
+            // === ELEMENT CACHE ===
+const doc = (id) => document.getElementById(id);
+const appTitle = doc('app-title');
+const fileDropArea = doc('fileDropArea');
+const fileInput = doc('fileInput');
+const updateFileInput = doc('updateFileInput');
+const orderList = doc('orderList');
+const statOrderNumber = doc('statOrderNumber');
+const statCatalogNumber = doc('statCatalogNumber');
+const statOrderQty = doc('statOrderQty');
+const statPackedQty = doc('statPackedQty');
+const statRemainingQty = doc('statRemainingQty');
+const statScrapQty = doc('statScrapQty');
+const totalOrdersStat = doc('totalOrdersStat');
+const completedOrdersStat = doc('completedOrdersStat');
+const modeRastreo = doc('modeRastreo');
+const modeEmpaque = doc('modeEmpaque');
+const rastreoFilterInput = doc('rastreoFilterInput');
+const areaSelectBtn = doc('areaSelectBtn');
+const adminBtn = doc('adminBtn');
+const themeToggleBtn = doc('themeToggleBtn');
+const logoutBtn = doc('logoutBtn');
+const orderSearchInput = doc('orderSearchInput');
+const showDailyPlanBtn = doc('showDailyPlanBtn');
+const dailyPlanContainer = doc('dailyPlanContainer');
+const lastUpdatedContainer = doc('lastUpdatedContainer');
+
+const mobileControls = {
+    status: doc('rastreoStatusFilters'),
+    line: doc('rastreoLineFilters'),
+    actions: doc('actionsCard')?.querySelector('.actions-container')
+};
+const desktopControls = {
+    status: doc('rastreoStatusFiltersDesktop'),
+    line: doc('rastreoLineFiltersDesktop'),
+    actions: doc('desktop-actions-wrapper')
+};
+
+const placeholderText = doc('placeholderText');
+const empaqueFilterInput = doc('empaqueFilterInput');
+const sapFileDropArea = doc('sapFileDropArea');
+const sapFileInput = doc('sapFileInput');
+const sapPlaceholderText = doc('sapPlaceholderText');
+const sapOrderList = doc('sapOrderList');
+const sapTotalOrdersStat = doc('sapTotalOrdersStat');
+const sapCompletedOrdersStat = doc('sapCompletedOrdersStat');
+const sapResetFilterBtn = doc('sapResetFilter');
+const sapLastUpdatedContainer = doc('sapLastUpdatedContainer');
+const sapExportImageBtn = doc('sapExportImageBtn'); // <-- ¡AQUÍ ESTÁ LA LÍNEA QUE FALTABA!
+const modeFwd = doc('modeFwd');
+const modeSap = doc('modeSap');
+const modalOverlay = doc('modalOverlay');
+const modalTitle = doc('modalTitle');
+const modalBody = doc('modalBody');
+const modalClose = doc('modalClose');
+const copyReportBtn = doc('copyReportBtn');
+
+
+            // === EVENT LISTENERS ===
+            modeFwd.addEventListener('click', () => switchMainMode('fwd'));
+            modeSap.addEventListener('click', () => switchMainMode('sap'));
+            fileDropArea.addEventListener('click', () => { if(!fileDropArea.classList.contains('disabled')) fileInput.click(); });
+            fileDropArea.addEventListener('dragover', (e) => { if(!fileDropArea.classList.contains('disabled')) { e.preventDefault(); fileDropArea.classList.add('dragover'); }});
+            fileDropArea.addEventListener('dragleave', () => fileDropArea.classList.remove('dragover'));
+            fileDropArea.addEventListener('drop', (e) => {
+                if(!fileDropArea.classList.contains('disabled')) {
+                    e.preventDefault(); fileDropArea.classList.remove('dragover');
+                    if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+                }
+            });
+            fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFiles(e.target.files); });
+            updateFileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFiles(e.target.files, true); });
+            modeRastreo.addEventListener('click', () => switchMode('rastreo'));
+            modeEmpaque.addEventListener('click', () => switchMode('empaque'));
+            rastreoFilterInput.addEventListener('input', () => renderRastreoView(activeOrderKey));
+            empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
+            orderSearchInput.addEventListener('input', updateOrderList); // <-- ¡AGREGA ESTA LÍNEA!
+
+            
+            const handleFilterClick = (e) => {
+                if (e.target.matches('.filter-btn')) {
+                    const group = e.target.closest('.filter-group');
+                    const filterType = group.id.includes('Status') ? 'status' : 'line';
+                    
+                    document.querySelectorAll(`#${group.id}`).forEach(g => {
+                        const active = g.querySelector('.active');
+                        if(active) active.classList.remove('active');
+                        const btnToActivate = g.querySelector(`[data-filter="${e.target.dataset.filter}"]`);
+                        if(btnToActivate) btnToActivate.classList.add('active');
+                    });
+
+                    if (filterType === 'status') {
+                        rastreoStatusFilter = e.target.dataset.filter;
+                    } else {
+                        rastreoLineFilter = e.target.dataset.filter;
+                    }
+                    renderRastreoView(activeOrderKey);
+                }
+            };
+            
+            mobileControls.status?.addEventListener('click', handleFilterClick);
+            desktopControls.status?.addEventListener('click', handleFilterClick);
+            mobileControls.line?.addEventListener('click', handleFilterClick);
+            desktopControls.line?.addEventListener('click', handleFilterClick);
+
+            sapFileDropArea.addEventListener('click', () => { if (!sapFileDropArea.classList.contains('disabled')) sapFileInput.click(); });
+sapFileDropArea.addEventListener('dragover', (e) => { if (!sapFileDropArea.classList.contains('disabled')) { e.preventDefault(); sapFileDropArea.classList.add('dragover'); }});
+sapFileDropArea.addEventListener('dragleave', () => sapFileDropArea.classList.remove('dragover'));
+sapFileDropArea.addEventListener('drop', (e) => {
+    if (!sapFileDropArea.classList.contains('disabled')) {
+        e.preventDefault(); sapFileDropArea.classList.remove('dragover');
+        // --- CORRECCIÓN ---
+        // Volvemos a pasar solo el PRIMER archivo (files[0])
+        if (e.dataTransfer.files.length) handleSapFile(e.dataTransfer.files[0]);
+    }
+});
+sapFileInput.addEventListener('change', (e) => { 
+    // --- CORRECCIÓN ---
+    // Volvemos a pasar solo el PRIMER archivo (files[0])
+    if (e.target.files.length) handleSapFile(e.target.files[0]); 
+});
+
+sapResetFilterBtn.addEventListener('click', () => {
+    sapDateFilter = []; // Vaciamos el array para volver a la vista default
+    renderSapView();
+});
+
+sapExportImageBtn.addEventListener('click', handleSapImageExport);
+
+// --- AGREGA ESTE LISTENER ---
+doc('sapBulkDeleteBtn').addEventListener('click', () => {
+    const ordersToDelete = Array.from(selectedSapOrders);
+    if (ordersToDelete.length === 0) {
+        showModal('Error', 'No hay órdenes seleccionadas para eliminar.', 'warning');
+        return;
+    }
+
+    showConfirmationModal(
+        `¿Seguro que quieres eliminar ${ordersToDelete.length} órdenes? Esto las borrará SÓLO del histórico de SAP.`,
+        () => deleteMultipleSapOrders(ordersToDelete)
+    );
+});
+// --- FIN DE AGREGAR ---
+
+modalClose.addEventListener('click', hideModal);
+modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) hideModal(); });
+
+adminBtn.addEventListener('click', () => {
+    if (session.user && session.isMaster) {
+        showAdminPanel();
+    } else {
+        showLogin();
+    }
+});
+            areaSelectBtn.addEventListener('click', showAreaSelector);
+            logoutBtn.addEventListener('click', logout);
+            showDailyPlanBtn.addEventListener('click', generateDailyPlanReport);
+
+            statOrderNumber.addEventListener('click', () => {
+                const orderNumberText = statOrderNumber.textContent;
+                if (orderNumberText && orderNumberText !== 'N/A' && orderNumberText !== 'Órdenes del Día') {
+                    copyTextToClipboard(orderNumberText,
+                        () => { // Success
+                            const originalText = statOrderNumber.textContent;
+                            statOrderNumber.textContent = '¡Copiado!';
+                            setTimeout(() => {
+                                statOrderNumber.textContent = originalText;
+                            }, 1500);
+                        },
+                        (err) => { // Error
+                            console.error('Error al copiar la orden: ', err);
+                            showModal('Error', 'No se pudo copiar el texto.', 'error');
+                        }
+                    );
+                }
+            });
+
+async function handleSapImageExport() {
+    if (!sapData || sapData.length === 0) {
+        showModal('Exportar Captura', 'No hay datos en la tabla de SAP para exportar.', 'warning');
+        return;
+    }
+
+    const originalButtonText = sapExportImageBtn.textContent;
+    sapExportImageBtn.textContent = 'Generando...';
+    sapExportImageBtn.disabled = true;
+
+    // Ocultamos botones temporalmente para que no salgan en la captura
+    sapResetFilterBtn.style.visibility = 'hidden';
+    sapExportImageBtn.style.visibility = 'hidden';
+
+    // El elemento que queremos capturar
+    const elementToCapture = doc('sap-tableCard'); 
+
+    try {
+        const canvas = await html2canvas(elementToCapture, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: document.body.classList.contains('dark-theme') ? '#22252a' : '#f9fafb'
+        });
+
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/jpeg', 0.95);
+        const dateStamp = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
+        a.download = `Captura_SAP_${currentArea}_${dateStamp}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+    } catch (e) {
+        console.error("Error al generar la imagen de SAP:", e);
+        showModal('Error', 'Ocurrió un error al generar el archivo de imagen.', 'error');
+    } finally {
+        // Volvemos a mostrar los botones y restauramos el estado del botón de exportar
+        sapResetFilterBtn.style.visibility = 'visible';
+        sapExportImageBtn.style.visibility = 'visible';
+        sapExportImageBtn.textContent = originalButtonText;
+        sapExportImageBtn.disabled = false;
+    }
+}
+
+            // ===================================
+            // === CORE APP CONTROL & UTILITIES ===
+            // ===================================
+            function copyTextToClipboard(text, successCallback, errorCallback) {
+                // Fallback for older browsers or insecure contexts (like iframes)
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed"; // Avoid scrolling to bottom
+                textArea.style.top = "0";
+                textArea.style.left = "0";
+                textArea.style.width = "2em";
+                textArea.style.height = "2em";
+                textArea.style.padding = "0";
+                textArea.style.border = "none";
+                textArea.style.outline = "none";
+                textArea.style.boxShadow = "none";
+                textArea.style.background = "transparent";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        if(successCallback) successCallback();
+                    } else {
+                        if(errorCallback) errorCallback();
+                    }
+                } catch (err) {
+                    if(errorCallback) errorCallback(err);
+                }
+                document.body.removeChild(textArea);
+            }
+
+            function switchMainMode(mode) {
+                if (mainMode === mode) return;
+                const oldView = doc(`${mainMode}View`);
+                const newView = doc(`${mode}View`);
+                oldView.style.opacity = 0;
+                setTimeout(() => {
+                    oldView.style.display = 'none';
+                    document.body.classList.remove('mode-fwd', 'mode-sap');
+                    newView.style.display = 'block';
+                    document.body.classList.add(`mode-${mode}`);
+                    requestAnimationFrame(() => { newView.style.opacity = 1; });
+                    mainMode = mode;
+                    localStorage.setItem('mainMode', mode);
+                    modeFwd.classList.toggle('active', mode === 'fwd');
+                    modeSap.classList.toggle('active', mode === 'sap');
+                    appTitle.textContent = mode === 'fwd' ? 'Centro de Rastreo de Órdenes' : 'Análisis de Órdenes SAP';
+                    render();
+                }, 300);
+            }
+            
+            function showModal(title, content, type = 'info', showCopyBtn = false) {
+                modalOverlay.querySelector('.modal-content').className = `modal-content ${type}`;
+                modalTitle.textContent = title;
+                modalBody.innerHTML = content;
+                copyReportBtn.textContent = 'Copiar al Portapapeles';
+                copyReportBtn.style.display = showCopyBtn ? 'block' : 'none';
+                if (showCopyBtn) {
+                    copyReportBtn.onclick = () => {
+                        const reportContent = modalBody.querySelector('.status-report')?.innerText || modalBody.innerText;
+                        copyTextToClipboard(reportContent,
+                            () => {
+                                copyReportBtn.textContent = '¡Copiado!';
+                                setTimeout(() => copyReportBtn.textContent = 'Copiar al Portapapeles', 2000);
+                            },
+                            () => {
+                                showModal('Error', 'No se pudo copiar el reporte.', 'error');
+                            }
+                        );
+                    };
+                }
+                modalOverlay.classList.add('visible');
+            }
+
+            function showConfirmationModal(message, onConfirmCallback) {
+                const content = `
+                    <p>${message}</p>
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button id="confirmBtn" class="btn btn-danger" style="flex: 1;">Confirmar</button>
+                        <button id="cancelBtn" class="btn" style="flex: 1; background-color: var(--border-color);">Cancelar</button>
+                    </div>
+                `;
+                showModal('Confirmar Acción', content);
+                doc('confirmBtn').onclick = () => {
+                    onConfirmCallback();
+                    hideModal();
+                };
+                doc('cancelBtn').onclick = hideModal;
+            }
+
+            function hideModal() { modalOverlay.classList.remove('visible'); }
+
+            function excelSerialToDate(serial) {
+                if (typeof serial !== 'number' || isNaN(serial)) return null;
+                try {
+                    const decoded = XLSX.SSF.parse_date_code(serial);
+                    if (decoded) {
+                        const hours = (decoded.H === 0 && decoded.M === 0 && decoded.S === 0) ? 12 : decoded.H;
+                        return new Date(Date.UTC(decoded.y, decoded.m - 1, decoded.d, hours, decoded.M, decoded.S));
+                    }
+                } catch(e) { console.error("Error al parsear la fecha serial de Excel:", e); }
+                return null;
+            }
+            
+            function formatDateTimeFromSerial(serial) {
+                if (typeof serial !== 'number' || isNaN(serial)) return '';
+                try {
+                    const decoded = XLSX.SSF.parse_date_code(serial);
+                    if (decoded) {
+                        const day = String(decoded.d).padStart(2, '0');
+                        const month = String(decoded.m).padStart(2, '0');
+                        const year = decoded.y;
+                        const hours = String(decoded.H).padStart(2, '0');
+                        const minutes = String(decoded.M).padStart(2, '0');
+                        return `${day}/${month}/${year} ${hours}:${minutes}`;
+                    }
+                } catch(e) { console.error("Error al formatear fecha/hora desde serial de Excel:", e); }
+                return '';
+            }
+
+            function formatDate(date) {
+                if (!(date instanceof Date) || isNaN(date)) return '';
+                return date.toLocaleDateString('es-ES', { timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' });
+            }
+            function formatDateTime(date) {
+                if (!(date instanceof Date) || isNaN(date)) return '';
+                return date.toLocaleString('es-ES', {
+                    timeZone: REYNOSA_TIMEZONE,
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit', hour12: false
+                }).replace(',', '');
+            }
+            function findHeader(headers, keyText) { return headers && headers.find(h => h && h.toLowerCase() === keyText.toLowerCase()); }
+            
+            // =========================
+            // === FWD VIEW FUNCTIONS ===
+            // =========================
+            async function saveOrderToFirebase(orderKey, orderData, area) {
+                try {
+                    const empaqueDataForDB = Array.from(orderData.empaqueData.entries()).map(([boxId, serials]) => ({ boxId, serials }));
+                    const dataToSave = { ...orderData, empaqueData: empaqueDataForDB };
+                    await db.collection('areas').doc(area).collection('orders').doc(orderKey).set(dataToSave, { merge: true });
+                } catch (e) {
+                    console.error("Error al guardar en Firebase: ", e);
+                    showModal('Error al Guardar', `No se pudo guardar la orden ${orderKey}.`, 'error');
+                }
+            }
+
+            async function deleteOrderFromFirebase(orderKey) {
+                try {
+                    await db.collection('areas').doc(currentArea).collection('orders').doc(orderKey).delete();
+                } catch (e) {
+                    console.error("Error al eliminar en Firebase: ", e);
+                    showModal('Error al Eliminar', `No se pudo eliminar la orden ${orderKey}.`, 'error');
+                }
+            }
+
+            function handleFiles(files, isUpdate = false) {
+                const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+                if (!canEdit) {
+                    showModal('Acceso Denegado', `No tienes permisos para modificar el área ${currentArea}.`, 'error');
+                    return;
+                }
+
+                const excelFiles = Array.from(files).filter(f => f.name.endsWith('.xlsx') || f.name.endsWith('.xls'));
+                const filePromises = excelFiles.map(file => processFile(file, isUpdate));
+
+                Promise.all(filePromises)
+                    .then(results => {
+                        const updatePromises = [];
+                        results.forEach(result => {
+                            if (result) {
+                                loadedOrders.set(result.key, result.data);
+                                updatePromises.push(saveOrderToFirebase(result.key, result.data, currentArea));
+                            }
+                        });
+                        
+                        Promise.all(updatePromises).then(() => {
+                            showModal('Éxito', `${results.length} orden(es) actualizadas con detalles.`, 'success');
+                        });
+                    })
+                    .catch(err => {
+                        showModal('Error al Cargar', err.message || 'Uno o más archivos no pudieron ser procesados.', 'error');
+                        console.error("Error detallado en handleFiles:", err);
+                    });
+            }
+
+            function processFile(file, isUpdate) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const orderNumber = String(worksheet['B3']?.v || `Archivo_${file.name.slice(0, 10)}`);
+
+                // --- 🔒 INICIO DEL CANDADO DE SEGURIDAD 🔒 ---
+                // 1. Validamos la ESTRUCTURA (que el header esté donde debe)
+                const serialHeaderCell = worksheet['B20'];
+                if (!serialHeaderCell || !serialHeaderCell.v || serialHeaderCell.v.toString().trim() !== TRACKING_KEYS.SERIAL) {
+                    reject(new Error(
+                        `El archivo "${file.name}" no es un reporte de rastreo válido. ` +
+                        `No se encontró el encabezado '${TRACKING_KEYS.SERIAL}' en la celda B20.`
+                    ));
+                    return; // Detenemos la ejecución aquí
+                }
+                // --- FIN DEL CANDADO 1 ---
+
+                const keyToUse = isUpdate ? orderToUpdateKey : orderNumber;
+                let existingOrderData;
+
+                if (loadedOrders.has(keyToUse)) {
+                    // La orden ya existe, la tomamos para actualizarla.
+                    existingOrderData = loadedOrders.get(keyToUse);
+                } else {
+                    // La orden es nueva. Creamos una estructura base con las celdas correctas.
+                    console.log(`La orden ${orderNumber} no fue cargada por SAP. Creando nueva entrada.`);
+                    existingOrderData = {
+                        // AJUSTE: Leemos la cantidad total de la celda O3
+                        orderQty: parseInt(worksheet['O3']?.v || 0),
+                        // AJUSTE: Leemos el catálogo de la celda I3
+                        catalogNumber: String(worksheet['I3']?.v || 'N/A'),
+
+                        orderDate: new Date(),
+                        packedQty: 0,
+                        rastreoData: [],
+                        empaqueData: new Map(),
+                        headers: { rastreo: [], empaque: [] }
+                    };
+                }
+
+                const TRACKING_COLS = ['B', 'C', 'G', 'K', 'M', 'P', 'V', 'Y', 'Z', 'AA', 'AB'];
+                const PACKING_COLS = ['AE', 'AF', 'AK', 'AO'];
+                const rastreoRawData = extractTableData(worksheet, TRACKING_COLS, 20);
+                const packingRawData = extractTableData(worksheet, PACKING_COLS, 20);
+
+                // --- 🔒 INICIO DEL CANDADO 2 🔒 ---
+                // 2. Validamos los DATOS (si es que hay datos)
+                if (rastreoRawData.length > 0) {
+                    // Como ya validamos el header, podemos usar la KEY con confianza
+                    const firstSerial = String(rastreoRawData[0][TRACKING_KEYS.SERIAL] || '').trim();
+                    if (!firstSerial.startsWith('S#')) {
+                        reject(new Error(
+                            `El archivo "${file.name}" no es válido. ` +
+                            `El primer serial ('${firstSerial}') no inicia con 'S#'.`
+                        ));
+                        return; // Detenemos la ejecución
+                    }
+                }
+                // --- FIN DEL CANDADO 2 ---
+
+                const orderData = {
+                    ...existingOrderData,
+                    // Confirmado: Leemos la cantidad empacada de la celda U3
+                    packedQty: parseInt(worksheet['U3']?.v || existingOrderData.packedQty || 0),
+                    rastreoData: processRastreoData(rastreoRawData),
+                    empaqueData: groupEmpaqueData(packingRawData),
+                    headers: {
+                        rastreo: Object.keys(rastreoRawData[0] || {}),
+                        empaque: Object.keys(packingRawData[0] || {})
+                    },
+                    lastUpdated: new Date(),
+                    lastUpdatedBy: session.user
+                };
+
+                resolve({ key: keyToUse, data: orderData });
+            } catch (err) {
+                console.error("Error detallado en processFile:", err);
+                reject(err);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+}
+            function extractTableData(worksheet, cols, startRow) {
+                const headers = {};
+                cols.forEach(col => {
+                    const cell = worksheet[col + startRow];
+                    if(cell && cell.v) headers[col] = cell.v.toString().trim();
+                });
+
+                if (Object.keys(headers).length === 0) return [];
+                
+                const jsonData = [];
+                const range = XLSX.utils.decode_range(worksheet['!ref']);
+                for (let rowNum = startRow + 1; rowNum <= range.e.r + 1; ++rowNum) {
+                    const row = {};
+                    let hasData = false;
+                    for(const col in headers) {
+                        const headerName = headers[col];
+                        const cellAddress = col + rowNum;
+                        const cell = worksheet[cellAddress];
+                        if(cell && cell.v !== undefined) {
+                            row[headerName] = cell.v;
+                            hasData = true;
+                        } else {
+                            row[headerName] = '';
+                        }
+                    }
+                    if (hasData) jsonData.push(row);
+                }
+                return jsonData;
+            }
+            
+            function processRastreoData(data) {
+                if (!data || data.length === 0) return [];
+                const now = new Date();
+                const headers = Object.keys(data[0] || {});
+                const scrapHeader = findHeader(headers, TRACKING_KEYS.IS_SCRAP);
+                const dateHeader = findHeader(headers, TRACKING_KEYS.DATE_REGISTERED);
+
+                return data.map(row => {
+                    let status = 'normal';
+                    const isScrap = String(row[scrapHeader]).trim().toUpperCase() === 'X';
+
+                    if (isScrap) {
+                        status = 'scrap';
+                    } else {
+                        const dateSerial = row[dateHeader];
+                        const registeredDate = excelSerialToDate(dateSerial);
+                        if (registeredDate) {
+                            const ageInMillis = now.getTime() - registeredDate.getTime();
+                            const ageInHours = ageInMillis / (1000 * 60 * 60);
+
+                            if (ageInHours > 25) {
+                                status = 'very_delayed';
+                            } else if (ageInHours > 8) {
+                                status = 'delayed';
+                            } else {
+                                status = 'today';
+                            }
+                        }
+                    }
+                    return { ...row, status };
+                });
+            }
+
+            function groupEmpaqueData(data) {
+                if (!data || data.length === 0) return new Map();
+                const boxIdHeader = findHeader(Object.keys(data[0]), PACKING_KEYS.BOX_ID);
+                if (!boxIdHeader) return new Map();
+
+                return data.reduce((acc, row) => {
+                    const boxId = row[boxIdHeader];
+                    if (boxId && String(boxId).trim() !== '') {
+                        if (!acc.has(boxId)) acc.set(boxId, []);
+                        acc.get(boxId).push(row);
+                    }
+                    return acc;
+                }, new Map());
+            }
+            
+            function switchMode(mode) {
+                currentMode = mode;
+                doc('rastreoView').style.display = mode === 'rastreo' ? 'block' : 'none';
+                doc('empaqueView').style.display = mode === 'empaque' ? 'block' : 'none';
+
+                modeRastreo.classList.toggle('active', mode === 'rastreo');
+                modeEmpaque.classList.toggle('active', mode === 'empaque');
+                render();
+            }
+
+            function updateOrderList() {
+    // 1. Obtener texto de búsqueda
+    const searchText = orderSearchInput ? orderSearchInput.value.trim().toUpperCase() : '';
+    const isSearching = searchText !== '';
+
+    // 2. Guardar estado de carpetas expandidas
+    const expandedMonths = new Set();
+    const expandedDates = new Set();
+    if (!isSearching) {
+        orderList.querySelectorAll('.month-group.expanded').forEach(g => expandedMonths.add(g.dataset.month));
+        orderList.querySelectorAll('.date-group.expanded').forEach(g => expandedDates.add(g.dataset.date));
+    }
+
+    orderList.innerHTML = '';
+
+    // 3. Filtrar órdenes
+    let filteredOrders = [];
+    if (isSearching) {
+        loadedOrders.forEach((value, key) => {
+            if (key.toUpperCase().includes(searchText)) {
+                filteredOrders.push({ key, ...value });
+            }
+        });
+    } else {
+        filteredOrders = Array.from(loadedOrders.entries()).map(([key, value]) => ({ key, ...value }));
+        
+        filteredOrders.sort((a, b) => {
+            const dateA = a.orderDate || new Date(0);
+            const dateB = b.orderDate || new Date(0);
+            return dateB - dateA; 
+        });
+
+        // Límite de 200 como pediste
+        const MAX_SIDEBAR_ITEMS = 280; 
+        if (filteredOrders.length > MAX_SIDEBAR_ITEMS) {
+            filteredOrders = filteredOrders.slice(0, MAX_SIDEBAR_ITEMS);
+        }
+    }
+
+    if (filteredOrders.length === 0) {
+        orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem; padding: 10px;">${isSearching ? 'No se encontraron órdenes.' : `No hay órdenes recientes.`}</p>`;
+        return;
+    }
+
+    // 4. Agrupación
+    const MONTH_NAMES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+    const groupedByMonth = new Map();
+
+    filteredOrders.forEach(order => {
+        const date = order.orderDate || new Date(0);
+        const monthYearKey = `${date.getMonth()}-${date.getFullYear()}`;
+        if (!groupedByMonth.has(monthYearKey)) groupedByMonth.set(monthYearKey, []);
+        groupedByMonth.get(monthYearKey).push(order);
+    });
+
+    const sortedMonths = Array.from(groupedByMonth.keys()).sort((a, b) => {
+        const [mA, yA] = a.split('-').map(Number);
+        const [mB, yB] = b.split('-').map(Number);
+        return yB !== yA ? yB - yA : mB - mA;
+    });
+
+    const todayString = new Date().toLocaleDateString('es-ES', { timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' });
+    const fragment = document.createDocumentFragment();
+
+    sortedMonths.forEach(monthYearKey => {
+        const [monthIndex, year] = monthYearKey.split('-').map(Number);
+        const monthName = `${MONTH_NAMES[monthIndex]} ${year}`;
+        const ordersInMonth = groupedByMonth.get(monthYearKey);
+
+        const monthGroupDiv = document.createElement('div');
+        monthGroupDiv.className = 'month-group';
+        monthGroupDiv.dataset.month = monthYearKey;
+
+        const monthHeaderBtn = document.createElement('button');
+        monthHeaderBtn.className = 'month-header';
+        monthHeaderBtn.innerHTML = `<span>${monthName}</span> <span class="collapse-icon">►</span>`;
+        
+        monthHeaderBtn.addEventListener('click', () => {
+            monthGroupDiv.classList.toggle('expanded');
+        });
+
+        const datesContainer = document.createElement('div');
+        datesContainer.className = 'dates-for-month';
+
+        const groupedByDate = new Map();
+        ordersInMonth.forEach(order => {
+            const dateString = formatDate(order.orderDate || new Date(0));
+            if (!groupedByDate.has(dateString)) groupedByDate.set(dateString, []);
+            groupedByDate.get(dateString).push(order);
+        });
+
+        const sortedDates = Array.from(groupedByDate.keys()).sort((a, b) => {
+            const da = new Date(a.split('/').reverse().join('-'));
+            const db = new Date(b.split('/').reverse().join('-'));
+            return db - da;
+        });
+
+        sortedDates.forEach(dateString => {
+            const ordersOnDate = groupedByDate.get(dateString);
+            const isToday = dateString === todayString;
+            
+            // --- NUEVA LÓGICA DEL CONTADOR (CON CLASE CSS) ---
+            const incompleteCount = ordersOnDate.filter(o => (o.packedQty || 0) < (o.orderQty || 0)).length;
+            
+            // Ahora usamos la clase .incomplete-badge que tiene el efecto de semáforo
+            const warningDotHTML = incompleteCount > 0 
+                ? `<span class="incomplete-badge" title="${incompleteCount} órdenes incompletas">${incompleteCount}</span>` 
+                : '';
+            // -----------------------------------------------
+
+            const count = ordersOnDate.length;
+            const countLabel = count === 1 ? 'orden' : 'órdenes';
+            const countText = `(${count} ${countLabel})`;
+
+            const dateGroupDiv = document.createElement('div');
+            dateGroupDiv.className = 'date-group';
+            dateGroupDiv.dataset.date = dateString;
+
+            const dateHeaderBtn = document.createElement('button');
+            dateHeaderBtn.className = 'date-header';
+            
+            dateHeaderBtn.innerHTML = `
+                <span style="display:flex; align-items:center;">
+                    ${warningDotHTML} 📅 ${dateString}
+                </span>
+                <span class="${isToday ? 'status-indicator' : 'order-count'}" style="font-size: 0.8rem;">${countText}</span>
+                <span class="collapse-icon">►</span>
+            `;
+
+            dateHeaderBtn.addEventListener('click', () => {
+                dateGroupDiv.classList.toggle('expanded');
+            });
+
+            const ordersContainer = document.createElement('div');
+            ordersContainer.className = 'orders-for-date';
+            
+            ordersOnDate.forEach(order => {
+                ordersContainer.appendChild(createOrderButton(order.key, order));
+            });
+
+            dateGroupDiv.appendChild(dateHeaderBtn);
+            dateGroupDiv.appendChild(ordersContainer);
+            datesContainer.appendChild(dateGroupDiv);
+
+            if (isSearching || expandedDates.has(dateString)) {
+                dateGroupDiv.classList.add('expanded');
+            }
+        });
+
+        monthGroupDiv.appendChild(monthHeaderBtn);
+        monthGroupDiv.appendChild(datesContainer);
+        fragment.appendChild(monthGroupDiv);
+
+        if (isSearching || expandedMonths.has(monthYearKey)) {
+            monthGroupDiv.classList.add('expanded');
+        }
+    });
+
+    orderList.appendChild(fragment);
+    
+    if (!isSearching && loadedOrders.size > 200) {
+        const infoMsg = document.createElement('div');
+        infoMsg.style.padding = "10px";
+        infoMsg.style.textAlign = "center";
+        infoMsg.style.color = "var(--text-secondary)";
+        infoMsg.style.fontSize = "0.8rem";
+        infoMsg.innerText = `Mostrando las últimas 200 órdenes de ${loadedOrders.size}. Usa el buscador para ver anteriores.`;
+        orderList.appendChild(infoMsg);
+    }
+
+    setActiveOrder(activeOrderKey);
+}
+
+            function createOrderButton(key, orderData) {
+    const item = document.createElement('div');
+    item.className = 'order-item';
+
+    const btn = document.createElement('button');
+    btn.className = 'order-btn';
+    
+    // --- CAMBIO: AHORA USAMOS HTML PARA MOSTRAR ORDEN Y CATÁLOGO ---
+    const catalog = orderData.catalogNumber || ''; // Si no hay catálogo, dejamos vacío
+    
+    // Usamos un contenedor flex vertical para alinear bien los textos
+    // El estilo inline asegura que se vea bien sin tocar tu CSS
+    btn.innerHTML = `
+        <div style="display: flex; flex-direction: column; width: 100%; overflow: hidden; line-height: 1.2;">
+            <span style="font-weight: 700; font-size: 0.95rem;">${key}</span>
+            <span style="font-size: 0.75rem; opacity: 0.75; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${catalog}</span>
+        </div>
+    `;
+    // -------------------------------------------------------------
+
+    btn.dataset.key = key;
+    btn.onclick = () => setActiveOrder(key);
+    
+    // Lógica de completado (igual que antes)
+    if (orderData && orderData.orderQty > 0 && orderData.orderQty <= orderData.packedQty) {
+        btn.classList.add('is-complete');
+    }
+    
+    // Barra de progreso (igual que antes)
+    const progressBar = document.createElement('div');
+    progressBar.className = 'order-progress-bar';
+    const progressBarInner = document.createElement('div');
+    progressBarInner.className = 'order-progress-bar-inner';
+    const percentage = (orderData.orderQty > 0) ? (orderData.packedQty / orderData.orderQty) * 100 : 0;
+    progressBarInner.style.width = `${Math.min(percentage, 100)}%`;
+
+    if (percentage < 30) progressBarInner.style.backgroundColor = 'var(--danger-color)';
+    else if (percentage < 70) progressBarInner.style.backgroundColor = 'var(--warning-color)';
+    else progressBarInner.style.backgroundColor = 'var(--success-color)';
+    
+    progressBar.appendChild(progressBarInner);
+    btn.appendChild(progressBar);
+    item.appendChild(btn);
+
+    // Botón de eliminar (igual que antes)
+    const canManageThisArea = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+    
+    if (key !== 'all' && canManageThisArea && session.isMaster) {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'icon-btn';
+        deleteBtn.title = 'Eliminar orden';
+        deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+        deleteBtn.onclick = () => {
+            showConfirmationModal(`¿Estás seguro de que quieres eliminar la orden ${key}?`, async () => {
+                await deleteOrderFromFirebase(key);
+            });
+        };
+        item.appendChild(deleteBtn);
+    }
+    return item;
+}
+
+            function setActiveOrder(key) {
+                activeOrderKey = key;
+                document.querySelectorAll('.order-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.key === key);
+                });
+                render();
+            }
+
+            function render() {
+                if (mainMode === 'fwd') {
+                    renderControls();
+                    renderSummary();
+                    updateGlobalDashboard();
+                    if (currentMode === 'rastreo') {
+                        renderRastreoView(activeOrderKey);
+                    } else {
+                        renderEmpaqueView(activeOrderKey);
+                    }
+                } else if (mainMode === 'sap') {
+                    renderSapView();
+                }
+                adjustStickyTops();
+            }
+
+            function renderSummary() {
+                let orderQty = 0, packedQty = 0, scrapCount = 0; let ordersToProcess = [];
+                lastUpdatedContainer.textContent = '';
+                
+                if (activeOrderKey === 'all' || activeOrderKey === null) {
+                    const todayString = new Date().toLocaleDateString('es-ES', {
+                        timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric'
+                    });
+                    ordersToProcess = Array.from(loadedOrders.values()).filter(order => formatDate(order.orderDate) === todayString);
+                    
+                    if (ordersToProcess.length > 0) {
+                        statOrderNumber.textContent = 'Órdenes del Día';
+                        const firstCatalog = ordersToProcess[0].catalogNumber;
+                        const allSameCatalog = ordersToProcess.every(o => o.catalogNumber === firstCatalog);
+                        statCatalogNumber.textContent = allSameCatalog ? firstCatalog : 'Múltiples Catálogos';
+                    } else {
+                        statOrderNumber.textContent = 'N/A';
+                        statCatalogNumber.textContent = 'No hay órdenes para hoy';
+                    }
+                
+                } else if (loadedOrders.has(activeOrderKey)) {
+                    ordersToProcess = [loadedOrders.get(activeOrderKey)];
+                    const order = ordersToProcess[0];
+                    statOrderNumber.textContent = activeOrderKey;
+                    statCatalogNumber.textContent = order.catalogNumber;
+                    
+                    if (order.lastUpdated) {
+                        let updatedText = `Última actualización: ${formatDateTime(order.lastUpdated)}`;
+                        if (order.lastUpdatedBy) {
+                            updatedText += ` por: ${order.lastUpdatedBy}`;
+                        }
+                        lastUpdatedContainer.textContent = updatedText;
+                    }
+
+                } else if (loadedOrders.size > 0) {
+                    setActiveOrder(null);
+                    return;
+                } else {
+                    statOrderNumber.textContent = 'N/A';
+                    statCatalogNumber.textContent = '';
+                }
+                
+                ordersToProcess.forEach(order => {
+                    orderQty += order.orderQty || 0;
+                    packedQty += order.packedQty || 0;
+                    if(order.rastreoData) {
+                       scrapCount += order.rastreoData.filter(row => row.status === 'scrap').length;
+                    }
+                });
+
+                statOrderQty.textContent = orderQty;
+                statPackedQty.textContent = packedQty;
+                statRemainingQty.textContent = orderQty - packedQty;
+                statScrapQty.textContent = scrapCount;
+            }
+
+            function updateGlobalDashboard() {
+                const todayString = new Date().toLocaleDateString('es-ES', {
+                    timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric'
+                });
+                let todaysOrdersCount = 0; let completedOrdersToday = 0;
+                for (const order of loadedOrders.values()) {
+                    const orderDateString = formatDate(order.orderDate || new Date());
+                    if (orderDateString === todayString) {
+                        todaysOrdersCount++;
+                        if (order.orderQty > 0 && order.orderQty <= order.packedQty) completedOrdersToday++;
+                    }
+                }
+                totalOrdersStat.textContent = todaysOrdersCount;
+                completedOrdersStat.textContent = completedOrdersToday;
+            }
+            
+            function renderControls() {
+                const hasOrders = loadedOrders.size > 0;
+                const statusHTML = `
+                    <button class="filter-btn ${rastreoStatusFilter === 'all' ? 'active' : ''}" data-filter="all">Todos</button>
+                    <button class="filter-btn ${rastreoStatusFilter === 'today' ? 'active' : ''}" data-filter="today">En Movimiento</button>
+                    <button class="filter-btn ${rastreoStatusFilter === 'delayed' ? 'active' : ''}" data-filter="delayed">Sin Movimiento</button>
+                    <button class="filter-btn ${rastreoStatusFilter === 'scrap' ? 'active' : ''}" data-filter="scrap">Scrap</button>
+                `;
+                mobileControls.status.innerHTML = statusHTML;
+                desktopControls.status.innerHTML = statusHTML;
+
+                const actionsHTML = `
+                    <button class="btn" id="exportImageButtonMobile" ${!hasOrders ? 'disabled' : ''}>Exportar Captura</button>
+                    <button class="btn" id="exportStatusButtonMobile" ${!hasOrders ? 'disabled' : ''}>Reporte de Estatus</button>
+                `;
+                const desktopActionsHTML = `
+                    <button class="btn" id="exportImageButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Captura</button>
+                    <button class="btn" id="exportStatusButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Reporte</button>
+                `;
+                mobileControls.actions.innerHTML = actionsHTML;
+                desktopControls.actions.innerHTML = desktopActionsHTML;
+
+                doc('exportImageButtonMobile').addEventListener('click', handleImageExport);
+                doc('exportImageButtonDesktop').addEventListener('click', handleImageExport);
+                doc('exportStatusButtonMobile').addEventListener('click', handleStatusReport);
+                doc('exportStatusButtonDesktop').addEventListener('click', handleStatusReport);
+            }
+
+            async function renderRastreoView(key) {
+                const tableWrapper = doc('rastreoTable').parentElement;
+                tableWrapper.style.opacity = '0';
+                await new Promise(res => setTimeout(res, 150));
+                
+                if (!key) {
+                    updateRastreoTable([], []);
+                    updateLineCounts([], []);
+                    placeholderText.textContent = 'Selecciona una orden de la lista para ver sus detalles.';
+                    placeholderText.style.display = 'block';
+                    tableWrapper.style.opacity = '1';
+                    return;
+                }
+                
+                let dataToShow = []; let headers = [];
+                if (key === 'all') {
+                    loadedOrders.forEach(order => { if(order.rastreoData) dataToShow.push(...order.rastreoData) });
+                    if (loadedOrders.size > 0) headers = Array.from(loadedOrders.values()).find(o => o.headers.rastreo)?.headers.rastreo;
+                } else if (loadedOrders.has(key)) {
+                    const order = loadedOrders.get(key);
+                    dataToShow = order.rastreoData || []; headers = order.headers.rastreo || [];
+                }
+                
+                createRastreoLineFilters(dataToShow, headers);
+
+                let filteredData = dataToShow;
+                if (rastreoStatusFilter !== 'all') {
+                    if (rastreoStatusFilter === 'delayed') {
+                        filteredData = dataToShow.filter(row => row.status === 'delayed' || row.status === 'very_delayed');
+                    } else {
+                        filteredData = dataToShow.filter(row => row.status === rastreoStatusFilter);
+                    }
+                }
+                
+                const lineHeader = findHeader(headers, TRACKING_KEYS.LINE);
+                if (rastreoLineFilter !== 'all' && lineHeader) filteredData = filteredData.filter(row => row[lineHeader] === rastreoLineFilter);
+                const searchText = rastreoFilterInput.value.toLowerCase();
+                if (searchText) filteredData = filteredData.filter(row => Object.values(row).some(val => String(val).toLowerCase().includes(searchText)));
+                currentVisibleData = filteredData;
+                
+                placeholderText.style.display = (dataToShow.length > 0) ? 'none' : 'block';
+
+                updateRastreoTable(filteredData, headers);
+                updateLineCounts(filteredData, headers);
+                
+                tableWrapper.style.opacity = '1';
+            }
+
+            function createRastreoLineFilters(data, headers) {
+                if (!headers) headers = [];
+                const lineHeader = findHeader(headers, TRACKING_KEYS.LINE);
+                
+                let lineHTML = '';
+                if (!lineHeader || !data || data.length === 0) {
+                    lineHTML = `<p class="text-dark" style="font-size: 0.9rem; margin: 0;">N/A</p>`;
+                } else {
+                    const uniqueLines = [...new Set(data.map(row => row[lineHeader]).filter(Boolean))].sort();
+                    lineHTML += `<button class="filter-btn ${rastreoLineFilter === 'all' ? 'active' : ''}" data-filter="all">Todas</button>`;
+                    uniqueLines.forEach(line => {
+                        lineHTML += `<button class="filter-btn ${rastreoLineFilter === line ? 'active' : ''}" data-filter="${line}">${line}</button>`;
+                    });
+                }
+                
+                mobileControls.line.innerHTML = lineHTML;
+                desktopControls.line.innerHTML = lineHTML;
+            }
+            
+            function updateRastreoTable(data, headers) {
+    const table = doc('rastreoTable');
+    if (!table) return;
+    
+    // --- OPTIMIZACIÓN MÓVIL ---
+    // Si es móvil, limitamos a 50 filas iniciales para evitar crash
+    const isMobile = window.innerWidth <= 992; 
+    const MAX_ROWS = isMobile ? 50 : 500; 
+    
+    let dataToRender = data;
+    let limitMessage = '';
+
+    if (data.length > MAX_ROWS) {
+        dataToRender = data.slice(0, MAX_ROWS);
+        limitMessage = `<tr class="limit-warning"><td colspan="100%" style="padding:15px; font-weight:bold; color:var(--warning-color);">⚠️ Se muestran los primeros ${MAX_ROWS} registros de ${data.length} para optimizar rendimiento. (Usa filtros para ver específicos)</td></tr>`;
+    }
+    // ---------------------------
+
+    const isMobileView = window.innerWidth <= 992; // Usar variable local para evitar conflictos
+    let headersToRender;
+    const serialHeader = findHeader(headers, TRACKING_KEYS.SERIAL);
+
+    if (isMobileView) {
+        headersToRender = [
+            findHeader(headers, TRACKING_KEYS.SERIAL), findHeader(headers, TRACKING_KEYS.LINE),
+            findHeader(headers, TRACKING_KEYS.STATION), findHeader(headers, TRACKING_KEYS.DATE_REGISTERED)
+        ].filter(Boolean);
+    } else {
+        const headersToHide = [TRACKING_KEYS.CREATED_BY, TRACKING_KEYS.NOT_PACKED, TRACKING_KEYS.IS_SCRAP].map(h => findHeader(headers, h)).filter(Boolean);
+        headersToRender = headers ? headers.filter(h => !headersToHide.includes(h) && h !== 'status') : [];
+    }
+
+    if (!dataToRender || dataToRender.length === 0 || !headersToRender || headersToRender.length === 0) {
+        table.innerHTML = `<thead><tr><th></th></tr></thead><tbody></tbody>`;
+        return;
+    }
+    
+    // Renderizado del HTML
+    table.innerHTML = `
+        <thead><tr>${headersToRender.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+        <tbody>
+            ${dataToRender.map(row => `
+                <tr class="is-${row.status}">
+                    ${headersToRender.map(h => {
+                        const isSerialColumn = h === serialHeader;
+                        const cellClass = isSerialColumn ? 'serial-cell' : '';
+                        // Nota: Sanitizar strings es buena práctica, pero aquí lo mantenemos simple
+                        const clickHandler = isSerialColumn ? `onclick="copySerialNumber(this, '${String(row[h]).replace(/'/g, "\\'")}')"` : '';
+                        return `<td class="${cellClass}" ${clickHandler} data-label="${h}">${formatCell(row[h], h, h === findHeader(headers, TRACKING_KEYS.DATE_REGISTERED))}</td>`
+                    }).join('')}
+                </tr>
+            `).join('')}
+            ${limitMessage}
+        </tbody>`;
+}
+
+            function updateLineCounts(data, headers) {
+                if (!headers) headers = [];
+                const lineHeader = findHeader(headers, TRACKING_KEYS.LINE);
+                if (!lineHeader) { lineCountsContainer.innerHTML = ''; return; }
+                const counts = data.reduce((acc, row) => {
+                    const line = row[lineHeader];
+                    if (line) acc[line] = (acc[line] || 0) + 1;
+                    return acc;
+                }, {});
+                
+                lineCountsContainer.innerHTML = Object.entries(counts).sort().map(([line, count]) =>
+                    `<div class="line-badge">${line}: <span>${count}</span></div>`
+                ).join('');
+            }
+            
+            async function showPackingDetailsModal(boxId, serials, headers) {
+    const serialHeader = findHeader(headers, PACKING_KEYS.SERIAL);
+    const employeeIdHeader = findHeader(headers, PACKING_KEYS.EMPLOYEE_ID);
+    const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
+    
+    let grValue = "N/A", ordenValue = "N/A", usuarioValue = "N/A";
+    try {
+        const docSnap = await db.collection('boxID_historico').doc(boxId).get();
+        
+        // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
+        // Cambiamos docSnap.exists() por docSnap.exists (sin los paréntesis)
+        if (docSnap.exists) { 
+            const data = docSnap.data();
+            grValue = data.gr || "N/A";
+            ordenValue = data.orden || "N/A";
+            usuarioValue = data.usuario || "N/A";
+        }
+    } catch (e) {
+        console.error("Error al obtener datos del BoxID:", e);
+        grValue = "Error"; ordenValue = "Error"; usuarioValue = "Error";
+    }
+
+    let packerInfo = '';
+    if (serials && serials.length > 0) {
+        const latestSerial = serials.reduce((latest, current) => (current[packedDateHeader] > latest[packedDateHeader]) ? current : latest, serials[0]);
+        const packerId = latestSerial[employeeIdHeader];
+        
+        const grHTML = `<span class="packer-info">GR: <strong class="copyable" onclick="copyGR(this, '${grValue}')" title="Haz clic para copiar">${grValue}</strong></span>`;
+        const ordenHTML = `<span class="packer-info">Orden: <strong class="copyable" onclick="copyGR(this, '${ordenValue}')" title="Haz clic para copiar">${ordenValue}</strong></span>`;
+        const usuarioHTML = `<span class="packer-info">Confirmado por: <strong>${usuarioValue}</strong></span>`;
+        
+        packerInfo = `<div class="packing-modal-header">
+                        <span class="packer-info">EMPACADOR: <strong>${packerId || 'N/A'}</strong></span>
+                        ${ordenHTML}
+                        ${grHTML}
+                        ${usuarioHTML}
+                    </div>`;
+    }
+    
+    let content = `${packerInfo}<ul class="packing-details-list">`;
+    if (serials && serials.length > 0) {
+        serials.forEach(serial => {
+            content += `<li>
+                <span>${serial[serialHeader]}</span>
+                <span>${formatDateTimeFromSerial(serial[packedDateHeader])}</span>
+            </li>`;
+        });
+    } else {
+        content += '<li>No hay seriales en esta caja.</li>';
+    }
+    content += '</ul>';
+
+    showModal(`Detalle de Caja: ${boxId}`, content);
+}
+
+            // --- OPTIMIZACIÓN 2: ESTRATEGIA FRANCOTIRADOR (SOLO LEER LO NECESARIO) ---
+async function renderEmpaqueView(key) {
+    const tableWrapper = doc('empaqueTableContainer');
+    tableWrapper.style.opacity = '0';
+    await new Promise(res => setTimeout(res, 150));
+
+    // 1. Identificar qué datos vamos a mostrar (SIN leer Firebase todavía)
+    let dataToShow = new Map();
+    let headers = [];
+
+    if (key === 'all' || key === null) {
+        loadedOrders.forEach(order => {
+            if (order.empaqueData) order.empaqueData.forEach((serials, boxId) => {
+                if (!dataToShow.has(boxId)) dataToShow.set(boxId, []);
+                if (serials && serials.length > 0) dataToShow.get(boxId).push(...serials);
+            });
+        });
+    } else if (loadedOrders.has(key)) {
+        const order = loadedOrders.get(key);
+        dataToShow = order.empaqueData || new Map();
+        headers = order.headers.empaque || [];
+    }
+
+    if (!dataToShow || dataToShow.size === 0) {
+        tableWrapper.innerHTML = `<table id="empaqueTable"><thead><tr><th>No hay datos de empaque.</th></tr></thead></table>`;
+        tableWrapper.style.opacity = '1';
+        return;
+    }
+
+    // 2. FRANCOTIRADOR: Identificar IDs únicos que necesitamos consultar
+    const boxIdsToFetch = Array.from(dataToShow.keys());
+    let receivedBoxData = new Map();
+    let grDataMap = new Map();
+
+    if (boxIdsToFetch.length > 0) {
+        try {
+            // A. Consultar solo las cajas de ESTA orden
+            const boxPromises = boxIdsToFetch.map(id => db.collection('boxID_historico').doc(id).get());
+            const boxSnapshots = await Promise.all(boxPromises);
+
+            const grsToFetch = new Set();
+
+            boxSnapshots.forEach(docSnap => {
+                if (docSnap.exists) {
+                    const data = docSnap.data();
+                    receivedBoxData.set(docSnap.id, data);
+                    if (data.gr && data.gr !== 'N/A') {
+                        grsToFetch.add(String(data.gr).trim());
+                    }
+                }
+            });
+
+            // B. Consultar solo los GRs relacionados a ESTAS cajas
+            const uniqueGRs = Array.from(grsToFetch);
+            if (uniqueGRs.length > 0) {
+                const grPromises = uniqueGRs.map(id => db.collection('gr_historico').doc(id).get());
+                const grSnapshots = await Promise.all(grPromises);
+
+                grSnapshots.forEach(docSnap => {
+                    if (docSnap.exists) {
+                        grDataMap.set(docSnap.id, docSnap.data());
+                    }
+                });
+            }
+
+        } catch (e) {
+            console.error("Error al obtener datos históricos puntuales:", e);
+        }
+    }
+
+    const packedDateHeader = findHeader(headers, PACKING_KEYS.PACKED_DATE);
+    const filterText = empaqueFilterInput.value.toLowerCase();
+
+    let entriesFound = 0;
+    const reversedEntries = Array.from(dataToShow.entries()).reverse();
+
+    const grsToCopy = [];
+    let tableBodyHTML = '';
+
+    for (const [boxId, serials] of reversedEntries) {
+        if (!serials || serials.length === 0) continue;
+        const serialsMatchFilter = serials.some(s => String(s[findHeader(headers, PACKING_KEYS.SERIAL)]).toLowerCase().includes(filterText));
+        if (filterText && !String(boxId).toLowerCase().includes(filterText) && !serialsMatchFilter) continue;
+        entriesFound++;
+        const latestSerial = serials.reduce((latest, current) => (current[packedDateHeader] > latest[packedDateHeader]) ? current : latest, serials[0]);
+
+        const boxData = receivedBoxData.get(boxId);
+        const statusClass = boxData ? 'boxid-received' : 'boxid-missing';
+        const receivedDateText = boxData && boxData.receivedAt ? formatShortDateTime(boxData.receivedAt.toDate()) : 'N/A';
+        const grValue = boxData && boxData.gr ? String(boxData.gr).trim() : 'N/A';
+
+        if (grValue !== 'N/A') {
+            grsToCopy.push(grValue);
+        }
+
+        const grInfo = grDataMap.get(grValue);
+        const ordenValue = grInfo && grInfo.orden ? grInfo.orden : 'N/A';
+        const usuarioValue = grInfo && grInfo.usuario ? grInfo.usuario : 'N/A';
+
+        tableBodyHTML += `
+            <tr class="box-row" data-boxid="${boxId}">
+                <td data-label="BoxID" class="${statusClass}">${boxId}</td>
+                <td data-label="Cantidad">${serials.length}</td>
+                <td data-label="Último Empaque">${formatDateTimeFromSerial(latestSerial[packedDateHeader])}</td>
+                <td data-label="Recibido Logística">${receivedDateText}</td>
+                <td data-label="GR" class="copyable" onclick="copyGR(this, '${grValue}')" title="Haz clic para copiar">${grValue}</td>
+                <td data-label="Orden">${ordenValue}</td>
+                <td data-label="Usuario">${usuarioValue}</td>
+            </tr>`;
+    }
+
+    const grColumnString = grsToCopy.join('\n');
+
+    // --- CORRECCIÓN 1: Quitamos el onclick inline y añadimos ID ---
+    let tableHeaderHTML = `<thead><tr>
+        <th><span>BoxID</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="0"></th>
+        <th><span>Cantidad</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="1"></th>
+        <th><span>Último Empaque</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="2"></th>
+        <th><span>Recibido Logística</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="3"></th>
+        <th class="copyable-header" id="header-gr-copy" title="Haz clic para copiar toda la columna">
+            <span>GR</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="4">
+        </th>
+        <th><span>Orden</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="5"></th>
+        <th><span>Usuario</span><input type="text" class="filter-input" placeholder="Filtrar..." data-col-index="6"></th>
+    </tr></thead>`;
+
+    if (entriesFound === 0) {
+        tableWrapper.innerHTML = `<table id="empaqueTable"><thead><tr><th>No se encontraron resultados.</th></tr></thead></table>`;
+    } else {
+        tableWrapper.innerHTML = `<table id="empaqueTable">${tableHeaderHTML}<tbody>${tableBodyHTML}</tbody></table>`;
+    }
+
+    // --- CORRECCIÓN 2: Agregamos el listener de JS puro aquí ---
+    const grHeaderBtn = doc('header-gr-copy');
+    if (grHeaderBtn) {
+        grHeaderBtn.addEventListener('click', (e) => {
+            // Evitamos que se dispare si das clic en el input de filtro
+            if (e.target.tagName === 'INPUT') return;
+            // Usamos la variable grColumnString que está en memoria
+            window.copyColumnData(e.currentTarget, grColumnString);
+        });
+    }
+    // -------------------------------------------------------------
+
+    tableWrapper.querySelectorAll('.box-row').forEach(row => {
+        row.addEventListener('click', (e) => {
+            if (e.target.classList.contains('copyable')) return;
+            const boxId = row.dataset.boxid;
+            const serialsForBox = dataToShow.get(boxId);
+            showPackingDetailsModal(boxId, serialsForBox, headers);
+        });
+    });
+
+    tableWrapper.style.opacity = '1';
+    applyInternalTableFilters(tableWrapper);
+}
+
+// Helper para no perder la lógica de los filtros de columna que ya tenías
+function applyInternalTableFilters(tableWrapper) {
+    tableWrapper.querySelectorAll('.filter-input').forEach(input => {
+        input.addEventListener('click', (e) => e.stopPropagation()); 
+        if (input.closest('.copyable-header')) {
+            input.addEventListener('click', (e) => e.preventDefault());
+        }
+        input.addEventListener('keyup', () => {
+            const table = doc('empaqueTable');
+            const filters = Array.from(table.querySelectorAll('thead .filter-input')); 
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                let shouldShow = true;
+                filters.forEach(filter => {
+                    const filterValue = filter.value.toLowerCase();
+                    const colIndex = parseInt(filter.dataset.colIndex, 10); 
+                    if (filterValue) {
+                        const cell = row.cells[colIndex];
+                        const cellValue = cell ? cell.textContent.toLowerCase() : '';
+                        if (!cellValue.includes(filterValue)) shouldShow = false;
+                    }
+                });
+                row.style.display = shouldShow ? '' : 'none';
+            });
+        });
+    });
+}
+
+// Función para copiar una columna completa de datos
+window.copyColumnData = function(element, data) {
+    if (!data) return;
+    
+    copyTextToClipboard(data,
+        () => { // Success
+            const originalText = element.textContent;
+            element.textContent = '¡COPIADO!';
+            element.style.color = 'var(--success-color)';
+            setTimeout(() => {
+                element.textContent = originalText;
+                element.style.color = '';
+            }, 2000);
+        },
+        (err) => { // Error
+            console.error('Error al copiar la columna: ', err);
+            const originalText = element.textContent;
+            element.textContent = 'ERROR';
+            element.style.color = 'var(--danger-color)';
+             setTimeout(() => {
+                element.textContent = originalText;
+                element.style.color = '';
+            }, 2000);
+        }
+    );
+}
+
+
+// Función para formatear la fecha como DD/MM/YY HH:MM
+function formatShortDateTime(date) {
+    if (!(date instanceof Date) || isNaN(date)) return '';
+    const year = date.getFullYear().toString().slice(-2);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hour}:${minute}`;
+}
+
+// Función para copiar el GR con feedback visual
+window.copyGR = function(element, gr) {
+    if (!gr || gr === 'N/A') return;
+    
+    copyTextToClipboard(gr,
+        () => { // Success
+            const originalText = element.textContent;
+            element.textContent = '¡Copiado!';
+            element.style.color = 'var(--success-color)';
+            setTimeout(() => {
+                element.textContent = originalText;
+                element.style.color = '';
+            }, 1500);
+        },
+        (err) => { // Error
+            console.error('Error al copiar el GR: ', err);
+        }
+    );
+}
+
+            
+            async function handleImageExport(event) {
+                if (!currentVisibleData || currentVisibleData.length === 0) {
+                    showModal('Exportar Captura', 'No hay datos en la vista actual para exportar.', 'warning');
+                    return;
+                }
+
+                const button = event.target.closest('button');
+                const originalButtonText = button.textContent;
+                button.textContent = 'Generando...';
+                button.disabled = true;
+
+                const cloneContainer = document.createElement('div');
+                cloneContainer.style.position = 'absolute';
+                cloneContainer.style.left = '-9999px';
+                cloneContainer.style.top = '0';
+                cloneContainer.style.display = 'inline-block';
+                cloneContainer.style.background = 'var(--surface-color)';
+                cloneContainer.style.padding = '20px';
+                cloneContainer.style.borderRadius = '16px';
+
+                const tableToClone = doc('rastreoTable');
+                const clonedTable = tableToClone.cloneNode(true);
+                
+                if (activeOrderKey && activeOrderKey !== 'all') {
+                    const caption = clonedTable.createCaption();
+                    caption.textContent = activeOrderKey;
+                }
+                
+                const style = document.createElement('style');
+                style.innerHTML = `
+                    :root { --surface-color: #1E293B; --border-color: #334155; --danger-color: #FB7185; --warning-color: #FBBF24; --orange-color: #F97316; --success-color: #34D399; --text-primary: #F8FAFC; --text-secondary: #94A3B8; }
+                    table { color: var(--text-primary); background-color: var(--surface-color); border-collapse: collapse; font-family: 'Inter', sans-serif; font-size: 14px; }
+                    caption { caption-side: top; text-align: center; font-size: 24px; font-weight: 700; color: var(--text-secondary); margin-bottom: 20px; font-family: 'Inter', sans-serif; }
+                    th, td { padding: 12px 24px; text-align: center !important; border: 1px solid var(--border-color); white-space: nowrap; }
+                    thead { display: table-header-group !important; background-color: #1a2436; position: static !important; }
+                    th { font-weight: 600; color: var(--text-secondary); font-size: 12px; }
+                    tr { display: table-row !important; }
+                    td { display: table-cell !important; background-color: inherit !important; }
+                    td::before { display: none !important; }
+                    tr.is-scrap { background-color: rgba(251, 113, 133, 0.1) !important; }
+                    tr.is-scrap td { color: var(--danger-color) !important; }
+                    tr.is-very_delayed { background-color: rgba(249, 115, 22, 0.1) !important; }
+                    tr.is-very_delayed td { color: var(--orange-color) !important; }
+                    tr.is-delayed { background-color: rgba(251, 191, 36, 0.1) !important; }
+                    tr.is-delayed td { color: var(--warning-color) !important; }
+                    tr.is-today { background-color: rgba(52, 211, 153, 0.1) !important; }
+                    tr.is-today td { color: var(--success-color) !important; }
+                `;
+                
+                cloneContainer.appendChild(style);
+                cloneContainer.appendChild(clonedTable);
+                document.body.appendChild(cloneContainer);
+
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                try {
+                    const canvas = await html2canvas(cloneContainer, {
+                        scale: 2,
+                        useCORS: true,
+                        backgroundColor: null,
+                    });
+
+                    const a = document.createElement('a');
+                    a.href = canvas.toDataURL('image/jpeg', 0.95);
+                    const orderName = (activeOrderKey && activeOrderKey !== 'all') ? activeOrderKey : 'Multiples_Ordenes';
+                    const dateStamp = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
+                    a.download = `Captura_Rastreo_${orderName}_${dateStamp}.jpg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+
+                } catch (e) {
+                    console.error("Error al generar la imagen:", e);
+                    showModal('Error', 'Ocurrió un error al generar el archivo de imagen.', 'error');
+                } finally {
+                    document.body.removeChild(cloneContainer);
+                    button.textContent = originalButtonText;
+                    button.disabled = false;
+                }
+            }
+
+            function handleStatusReport() {
+                const incompleteOrders = Array.from(loadedOrders.entries())
+                    .filter(([key, order]) =>
+                        (order.orderQty > order.packedQty) &&
+                        (order.rastreoData && order.rastreoData.length > 0)
+                    )
+                    .map(([key, order]) => ({ key, ...order }));
+
+                if (incompleteOrders.length === 0) {
+                    showModal('Reporte de Estatus', `✅ No hay órdenes incompletas con seriales cargados en el área ${currentArea}.`, 'success');
+                    return;
+                }
+
+                let reportHTML = `<div class="status-report">`;
+                reportHTML += `<p><strong>Fecha del Reporte:</strong> ${new Date().toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'short' })}</p>`;
+
+                incompleteOrders.forEach(order => {
+                    const packedSerials = new Set();
+                    if (order.empaqueData) {
+                        order.empaqueData.forEach(serialsInBox => {
+                            serialsInBox.forEach(serialData => {
+                                const serialHeader = findHeader(Object.keys(serialData), PACKING_KEYS.SERIAL);
+                                if(serialHeader) packedSerials.add(serialData[serialHeader]);
+                            });
+                        });
+                    }
+
+                    const serialHeader = findHeader(order.headers.rastreo, TRACKING_KEYS.SERIAL);
+                    const stationHeader = findHeader(order.headers.rastreo, TRACKING_KEYS.STATION);
+
+                    const pendingSerials = serialHeader ? order.rastreoData.filter(rastreoItem =>
+                        !packedSerials.has(rastreoItem[serialHeader]) && rastreoItem.status !== 'scrap'
+                    ) : [];
+
+                    const delayedSerials = pendingSerials.filter(s => s.status === 'delayed' || s.status === 'very_delayed');
+                    const inProgressSerials = pendingSerials.filter(s => s.status === 'today');
+                    
+                    const percentage = (order.orderQty > 0) ? (order.packedQty / order.orderQty) * 100 : 0;
+                    let progressBarColor = 'var(--success-color)';
+                    if (percentage < 30) progressBarColor = 'var(--danger-color)';
+                    else if (percentage < 70) progressBarColor = 'var(--warning-color)';
+
+                    reportHTML += `
+                        <h4>📦 Orden: ${order.key} (${order.packedQty || 0}/${order.orderQty || 0})</h4>
+                        <div class="order-progress-bar" style="height: 8px;">
+                            <div class="order-progress-bar-inner" style="width: ${Math.min(percentage, 100)}%; background-color: ${progressBarColor};"></div>
+                        </div>
+                    `;
+
+                    if (delayedSerials.length > 0) {
+                        reportHTML += `<p style="margin-top: 15px;"><strong>⚠️ Sin Movimiento (${delayedSerials.length}):</strong></p><ul>`;
+                        delayedSerials.forEach(serial => {
+                            reportHTML += `<li>${serial[serialHeader]} - (Estación: ${serial[stationHeader] || 'N/A'})</li>`;
+                        });
+                        reportHTML += `</ul>`;
+                    }
+                    
+                    if (inProgressSerials.length > 0) {
+                        reportHTML += `<p><strong>✅ En Proceso (${inProgressSerials.length}):</strong></p><ul>`;
+                        inProgressSerials.forEach(serial => {
+                            reportHTML += `<li>${serial[serialHeader]} - (Estación: ${serial[stationHeader] || 'N/A'})</li>`;
+                        });
+                        reportHTML += `</ul>`;
+                    }
+
+                    if(pendingSerials.length === 0){
+                        reportHTML += `<p style="margin-top: 15px;">No hay seriales pendientes de empacar para esta orden.</p>`;
+                    }
+                });
+
+                reportHTML += `</div>`;
+                showModal(`Reporte de Estatus: ${currentArea}`, reportHTML, 'info', true);
+            }
+            
+            // ========================
+            // === SAP VIEW FUNCTIONS ===
+            // ========================
+            async function saveSapDataToFirebase(data, area) {
+                try {
+                    const dataToSave = {
+                        orders: data,
+                        lastUpdated: new Date(),
+                        lastUpdatedBy: session.user
+                    };
+                    await db.collection('areas').doc(area).collection('sap_data').doc('current_data').set(dataToSave);
+                } catch (e) {
+                    console.error(`Error al guardar datos SAP en Firebase para ${area}: `, e);
+                    showModal('Error', `No se pudieron guardar los datos de SAP en la nube para ${area}.`, 'error');
+                }
+            }
+            
+            // --- NUEVA FUNCIÓN ---
+        // --- FUNCIÓN MODIFICADA (YA NO BORRA DE FWD) ---
+            async function deleteSapOrderFromFirebase(orderKey) {
+                if (!orderKey) return;
+                const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+                if (!canEdit) {
+                    showModal('Acceso Denegado', `No tienes permisos para modificar el área ${currentArea}.`, 'error');
+                    return;
+                }
+
+                try {
+                    // Borra ÚNICAMENTE del histórico de SAP
+                    const sapDocRef = db.collection('areas').doc(currentArea).collection('sap_historico').doc(orderKey);
+                    await sapDocRef.delete();
+                    
+                    // El listener de snapshot se encargará de refrescar la UI.
+                    console.log(`Orden ${orderKey} eliminada de 'sap_historico'.`);
+
+                } catch (e) {
+                    console.error("Error al eliminar la orden SAP de Firebase: ", e);
+                    showModal('Error al Eliminar', `No se pudo eliminar la orden ${orderKey} del histórico de SAP.`, 'error');
+                }
+            }
+
+        // --- AGREGA ESTAS DOS NUEVAS FUNCIONES ---
+
+        function updateSapBulkDeleteButton() {
+            const bulkDeleteBtn = doc('sapBulkDeleteBtn');
+            if (bulkDeleteBtn) {
+                const selectedCount = selectedSapOrders.size;
+                if (selectedCount > 0) {
+                    bulkDeleteBtn.textContent = `Eliminar (${selectedCount})`;
+                    bulkDeleteBtn.style.display = 'inline-block';
+                } else {
+                    bulkDeleteBtn.style.display = 'none';
+                }
+            }
+        }
+
+        async function deleteMultipleSapOrders(orderKeys) {
+            if (!orderKeys || orderKeys.length === 0) return;
+            const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+            if (!canEdit) {
+                showModal('Acceso Denegado', `No tienes permisos para modificar el área ${currentArea}.`, 'error');
+                return;
+            }
+
+            const batch = db.batch();
+            const collectionRef = db.collection('areas').doc(currentArea).collection('sap_historico');
+            
+            orderKeys.forEach(key => {
+                const docRef = collectionRef.doc(key);
+                batch.delete(docRef);
+            });
+
+            try {
+                await batch.commit();
+                console.log(`${orderKeys.length} órdenes eliminadas de 'sap_historico'.`);
+                selectedSapOrders.clear(); // Limpiamos la selección
+                updateSapBulkDeleteButton(); // Ocultamos el botón
+                // El listener de snapshot se encargará de refrescar la UI
+            } catch (e) {
+                console.error("Error en el borrado múltiple de SAP: ", e);
+                showModal('Error al Eliminar', `No se pudieron eliminar las órdenes seleccionadas del histórico de SAP.`, 'error');
+            }
+        }
+            
+            
+            async function syncMultiAreaSapData(groupedData) {
+                const totalOrders = Object.values(groupedData).reduce((sum, arr) => sum + arr.length, 0);
+                const areasAffected = Object.keys(groupedData);
+
+                showModal('Procesando...', `Sincronizando ${totalOrders} órdenes en ${areasAffected.length} áreas...`, 'info');
+
+                const promises = [];
+                for (const areaName in groupedData) {
+                    if (Object.hasOwnProperty.call(groupedData, areaName)) {
+                        const ordersForArea = groupedData[areaName];
+                        promises.push(saveSapDataToFirebase(ordersForArea, areaName));
+                        promises.push(syncSapOrdersToFwd(ordersForArea, areaName));
+                        initialSyncDoneForArea[areaName] = true;
+                    }
+                }
+
+                await Promise.all(promises);
+                hideModal();
+                showModal('Éxito', `Workshop general procesado. Se han sincronizado los datos para las áreas: ${areasAffected.join(', ')}.`, 'success');
+            }
+
+            async function handleSapFile(file) {
+    if (!file) return;
+
+    const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+    if (!canEdit) {
+        showModal('Acceso Denegado', `No tienes permisos para modificar el área ${currentArea}.`, 'error');
+        return;
+    }
+
+    showModal('Procesando SAP...', `<p>Leyendo el archivo y preparando para guardar en el histórico. Por favor, espere...</p>`);
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+            
+            // 1. Procesa el archivo y obtiene los datos de las órdenes
+            const processedData = processSapFile(workbook, session.isMaster);
+            
+            // Si es un archivo maestro, manejamos múltiples áreas
+            if (session.isMaster && processedData.isMultiArea) {
+                const areasAfectadas = Object.keys(processedData.data);
+                showModal('Procesando Múltiples Áreas...', `Sincronizando órdenes en ${areasAfectadas.length} áreas...`);
+                
+                const promises = [];
+                for (const areaName in processedData.data) {
+                    const ordersForArea = processedData.data[areaName];
+                    promises.push(saveSapOrdersToHistoric(ordersForArea, areaName)); // Guardamos en el histórico
+                    promises.push(syncSapOrdersToFwd(ordersForArea, areaName));   // Sincronizamos con FWD
+                }
+                await Promise.all(promises);
+                
+                showModal('Éxito', `Workshop general procesado. Se han sincronizado los datos para las áreas: ${areasAfectadas.join(', ')}.`, 'success');
+
+            } else { // Si es un archivo de una sola área
+                const orders = processedData.isMultiArea ? processedData.data[currentArea] || [] : processedData;
+                if(orders.length === 0) {
+                    showModal('Sin Datos', 'El archivo no contiene órdenes válidas para el área actual.', 'warning');
+                    return;
+                }
+                
+                // 2. Guarda las órdenes en el nuevo histórico
+                await saveSapOrdersToHistoric(orders, currentArea);
+                
+                // 3. Sincroniza los datos con la vista FWD como antes
+                await syncSapOrdersToFwd(orders, currentArea);
+
+                showModal('Éxito', `Archivo SAP cargado. Se han creado/actualizado ${orders.length} órdenes en el histórico del área ${currentArea}.`, 'success');
+            }
+            
+            sapDateFilter = [];
+
+        } catch (err) {
+            console.error("Error procesando archivo SAP:", err);
+            showModal('Error', `No se pudo procesar el archivo SAP. <br><small>${err.message}</small>`, 'error');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+
+async function saveSapOrdersToHistoric(sapOrders, areaName) {
+    if (!areaName || sapOrders.length === 0) return;
+    
+    const batch = db.batch();
+    const historicCollectionRef = db.collection('areas').doc(areaName).collection('sap_historico');
+
+    for (const sapOrder of sapOrders) {
+        const orderId = String(sapOrder['Orden']);
+        const orderRef = historicCollectionRef.doc(orderId);
+        
+        // Creamos un objeto con la info a guardar
+        const dataToSave = {
+            ...sapOrder,
+            lastUpdated: new Date(), // Le añadimos una fecha de última actualización
+            lastUpdatedBy: session.user
+        };
+
+        // set con merge:true es la clave. Si no existe, lo crea. Si ya existe, lo actualiza.
+        batch.set(orderRef, dataToSave, { merge: true });
+    }
+
+    try {
+        await batch.commit();
+        console.log(`${sapOrders.length} órdenes de SAP guardadas en el histórico del área ${areaName}.`);
+    } catch (e) {
+        console.error(`Error al guardar en el histórico de SAP para ${areaName}:`, e);
+        showModal('Error de Guardado', `No se pudo actualizar el histórico de SAP para ${areaName}.`, 'error');
+    }
+}
+
+            // --- OPTIMIZACIÓN FINAL: SINCRONIZACIÓN SAP -> FWD (CERO LECTURAS) ---
+// Pégalo en tu Rastreador de Órdenes
+async function syncSapOrdersToFwd(sapOrders, areaName) {
+    if (!areaName || sapOrders.length === 0) return;
+    
+    // Procesamos en lotes de 500 (límite de Firebase)
+    const chunks = [];
+    for (let i = 0; i < sapOrders.length; i += 500) {
+        chunks.push(sapOrders.slice(i, i + 500));
+    }
+
+    let totalUpdated = 0;
+
+    for (const chunk of chunks) {
+        const batch = db.batch();
+        const ordersCollectionRef = db.collection('areas').doc(areaName).collection('orders');
+
+        chunk.forEach(sapOrder => {
+            const orderId = String(sapOrder['Orden']);
+            const orderRef = ordersCollectionRef.doc(orderId);
+            
+            // Datos Maestros que SIEMPRE manda SAP
+            const masterData = {
+                orderQty: sapOrder['Total orden'] || 0,
+                catalogNumber: sapOrder['Catalogo'] || 'N/A',
+                orderDate: excelSerialToDate(sapOrder['Finish']) || new Date(),
+                // Agregamos esto para asegurar que el filtro 'lastUpdated' detecte el cambio
+                lastUpdated: new Date(),
+                lastUpdatedBy: session.user
+            };
+
+            // TRUCO DE ORO: 'merge: true'
+            // Si el documento existe, solo actualiza masterData.
+            // Si NO existe, lo crea con masterData.
+            // NOTA: Para no sobrescribir packedQty con 0 si ya existe, NO lo incluimos aquí.
+            
+            batch.set(orderRef, masterData, { merge: true });
+        });
+
+        try {
+            await batch.commit();
+            totalUpdated += chunk.length;
+        } catch (e) {
+            console.error(`Error lote sincronización SAP ${areaName}:`, e);
+        }
+    }
+    
+    console.log(`✅ Sincronización SAP completada. ${totalUpdated} órdenes actualizadas en FWD sin lecturas masivas.`);
+}
+
+
+            function processSapFile(workbook, isMasterUpload = false) {
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                if (!worksheet) throw new Error("No se encontró una hoja de cálculo en el archivo.");
+                const getCellValue = (cellAddress) => (worksheet[cellAddress] ? worksheet[cellAddress].v : null);
+                
+                const range = XLSX.utils.decode_range(worksheet['!ref']);
+                const reynosaTodayString = new Date().toLocaleDateString('en-CA', { timeZone: REYNOSA_TIMEZONE });
+                
+                if (isMasterUpload) {
+                    const resultsByArea = {};
+                    for (let i = range.s.r + 1; i <= range.e.r; i++) {
+                        const rowNum = i + 1;
+                        const orderId = getCellValue('A' + rowNum);
+                        if (!orderId) continue;
+                        
+                        const orderIdStr = String(orderId).trim();
+                        if (!orderIdStr.startsWith('900')) {
+                            continue;
+                        }
+
+                        const areaCode = getCellValue(workshopConfig.column + rowNum);
+                        const areaName = workshopConfig.mapping[areaCode];
+
+                        if (areaName) {
+                            if (!resultsByArea[areaName]) {
+                                resultsByArea[areaName] = [];
+                            }
+                            const orderData = extractSapRow(worksheet, rowNum, reynosaTodayString);
+                            resultsByArea[areaName].push(orderData);
+                        }
+                    }
+                    return { isMultiArea: true, data: resultsByArea };
+                } else {
+                    const processedData = [];
+                    for (let i = range.s.r + 1; i <= range.e.r; i++) {
+                        const rowNum = i + 1;
+                        const orderId = getCellValue('A' + rowNum);
+                        if (!orderId) continue;
+
+                        const orderIdStr = String(orderId).trim();
+                        if (!orderIdStr.startsWith('900')) {
+                            continue;
+                        }
+
+                        processedData.push(extractSapRow(worksheet, rowNum, reynosaTodayString));
+                    }
+                    return processedData;
+                }
+            }
+
+            function extractSapRow(worksheet, rowNum, reynosaTodayString){
+                const getCellValue = (cellAddress) => (worksheet[cellAddress] ? worksheet[cellAddress].v : null);
+                const total = parseFloat(getCellValue('I' + rowNum)) || 0;
+                const confirmed = parseFloat(getCellValue('J' + rowNum)) || 0;
+                const faltante = total - confirmed;
+                const stock1 = getCellValue('B' + rowNum) || '';
+                const stock2 = getCellValue('L' + rowNum) || '';
+                let status = 'incomplete';
+                const finishDateSerial = getCellValue('G' + rowNum);
+                const finishDate = excelSerialToDate(finishDateSerial);
+                const finishDateStringCA = finishDate ? finishDate.toLocaleDateString('en-CA', { timeZone: REYNOSA_TIMEZONE }) : '';
+                
+                if (faltante <= 0) {
+                    status = 'complete';
+                } else if (finishDateStringCA && finishDateStringCA < reynosaTodayString) {
+                    status = 'late';
+                }
+
+                return {
+                    'Orden': getCellValue('A' + rowNum),
+                    'Catalogo': getCellValue('D' + rowNum) || null,
+                    'Material': getCellValue('C' + rowNum) || null,
+                    'Special Stock': [stock1, stock2].filter(Boolean).join(' / ') || null,
+                    'Finish': finishDateSerial,
+                    'Total orden': total,
+                    'Total confirmado': confirmed,
+                    'Faltante': faltante,
+                    'status': status
+                };
+            }
+
+            function renderSapView() {
+    const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+    sapFileDropArea.classList.toggle('disabled', !canEdit);
+    if(sapFileDropArea.querySelector('p')) {
+        sapFileDropArea.querySelector('p').textContent = canEdit
+            ? (session.isMaster ? 'Arrastra un archivo maestro SAP (General o de Área)' : 'Arrastra un archivo maestro SAP (.xlsx)')
+            : 'No tienes permisos para esta área';
+    }
+    
+    const hasData = sapData.length > 0;
+    sapPlaceholderText.style.display = hasData ? 'none' : 'block';
+    sapExportImageBtn.disabled = !hasData;
+
+    updateSapDashboard();
+    updateSapOrderList();
+    updateSapTable();
+
+    // El botón "Mostrar Hoy/Tarde" ahora limpia el array de filtros
+    sapResetFilterBtn.style.display = (sapDateFilter.length > 0 && hasData) ? 'inline-block' : 'none';
+    
+    if (sapLastUpdated) {
+        let updatedText = `Última actualización: ${formatDateTime(sapLastUpdated)}`;
+        if (sapLastUpdatedBy) {
+            updatedText += ` por: ${sapLastUpdatedBy}`;
+        }
+        sapLastUpdatedContainer.textContent = updatedText;
+    } else {
+        sapLastUpdatedContainer.textContent = '';
+    }
+}
+            
+            function isSapOrderForToday(order) {
+                const todayString = new Date().toLocaleDateString('es-ES', {
+                    timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric'
+                });
+                const finishDate = excelSerialToDate(order['Finish']);
+                return finishDate && formatDate(finishDate) === todayString;
+            }
+
+            function updateSapDashboard() {
+                if(sapData.length === 0) {
+                    sapTotalOrdersStat.textContent = '0';
+                    sapCompletedOrdersStat.textContent = '0';
+                    return;
+                }
+                const ordersToday = sapData.filter(row => isSapOrderForToday(row)).length;
+                const ordersCompletedToday = sapData.filter(row => row.status === 'complete' && isSapOrderForToday(row)).length;
+
+                sapTotalOrdersStat.textContent = ordersToday;
+                sapCompletedOrdersStat.textContent = ordersCompletedToday;
+            }
+
+            function updateSapOrderList() {
+    if (sapData.length === 0) {
+        sapOrderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem;">Cargue un archivo para ver las órdenes.</p>`;
+        return;
+    }
+    
+    // Si el filtro no es un array (es 'default' o un solo día de antes), lo convertimos en array para facilitar
+    if (!Array.isArray(sapDateFilter)) {
+        sapDateFilter = sapDateFilter === 'default' ? [] : [sapDateFilter];
+    }
+
+    const groupedByDate = new Map();
+    sapData.forEach(order => {
+        const date = excelSerialToDate(order['Finish']) || new Date(0);
+        const dateString = formatDate(date);
+        if (!groupedByDate.has(dateString)) groupedByDate.set(dateString, 0);
+        groupedByDate.set(dateString, groupedByDate.get(dateString) + 1);
+    });
+
+    const sortedDates = Array.from(groupedByDate.keys()).sort((a, b) => {
+        const dateA = new Date(a.split('/').reverse().join('-'));
+        const dateB = new Date(b.split('/').reverse().join('-'));
+        return dateB - dateA;
+    });
+
+    const todayString = new Date().toLocaleDateString('es-ES', { timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric' });
+    
+    let html = '';
+    sortedDates.forEach(dateString => {
+        const orderCount = groupedByDate.get(dateString);
+        const isToday = dateString === todayString;
+        const countText = `${orderCount} ${orderCount === 1 ? 'orden' : 'órdenes'}`;
+
+        html += `<div class="order-item">
+                    <button class="date-header" data-date="${dateString}" style="width:100%; justify-content: space-between;">
+                        <span>📅 ${dateString}</span>
+                        ${isToday ? `<span class="status-indicator">(${countText})</span>` : `<span class="order-count">(${countText})</span>`}
+                    </button>
+                 </div>`;
+    });
+    
+    sapOrderList.innerHTML = html;
+    
+    sapOrderList.querySelectorAll('.date-header').forEach(header => {
+        // Marcamos como activos todos los que estén en nuestro array de filtros
+        if (sapDateFilter.includes(header.dataset.date)) {
+            header.classList.add('active');
+        }
+        
+        header.addEventListener('click', () => {
+            const clickedDate = header.dataset.date;
+            const dateIndex = sapDateFilter.indexOf(clickedDate);
+
+            // Lógica de Toggling: Si ya está, lo quitamos. Si no está, lo agregamos.
+            if (dateIndex > -1) {
+                sapDateFilter.splice(dateIndex, 1); // Quitar del array
+            } else {
+                sapDateFilter.push(clickedDate); // Agregar al array
+            }
+            
+            // Volvemos a renderizar todo para reflejar los cambios
+            renderSapView();
+        });
+    });
+}
+            
+            function updateSapTable() {
+    const table = doc('sapTable');
+    if (sapData.length === 0) {
+        table.innerHTML = '';
+        selectedSapOrders.clear(); // Limpiamos por si acaso
+        updateSapBulkDeleteButton(); // Ocultamos el botón
+        return;
+    }
+
+    let dataToDisplay = [];
+    // Si el array de filtros está vacío, usamos la lógica de "Hoy/Tarde"
+    if (sapDateFilter.length === 0) {
+        dataToDisplay = sapData.filter(row => row.status === 'late' || isSapOrderForToday(row));
+    } else {
+        // Si el array tiene fechas, filtramos por todas las fechas incluidas en él
+        dataToDisplay = sapData.filter(row => {
+            const orderDate = formatDate(excelSerialToDate(row['Finish']));
+            return sapDateFilter.includes(orderDate);
+        });
+    }
+
+    // El resto de la función para pintar la tabla no cambia...
+    if (dataToDisplay.length === 0) {
+        table.innerHTML = `<thead><tr><th>No hay órdenes para la selección actual.</th></tr></thead>`;
+        // Aunque no haya datos visibles, puede haber selecciones de otros filtros
+        updateSapBulkDeleteButton(); 
+        return;
+    }
+
+    const canManageThisArea = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
+    
+    // --- INICIO CAMBIO DE HEADERS ---
+    const headers = ['Orden', 'Catalogo', 'Material', 'Special Stock', 'Finish', 'Total orden', 'Total confirmado', 'Faltante'];
+    
+    // Preparamos los strings para copiar columnas
+    const allVisibleOrderKeys = dataToDisplay.map(row => String(row['Orden'])).join('\n'); // <-- El \n aquí es el que tronaba el onclick
+
+    let headersHTML = '';
+    // 1. Checkbox de "Seleccionar Todo" (si hay permisos)
+    if (canManageThisArea) {
+        headersHTML += `<th><input type="checkbox" id="sap-select-all-checkbox" title="Seleccionar Todo"></th>`;
+    }
+    
+    // 2. Encabezado de "Orden" (AHORA CON ID Y SIN ONCLICK)
+    headersHTML += `<th class="copyable-header" 
+                        id="sap-copy-order-header" 
+                        title="Clic para copiar TODA la columna 'Orden'">Orden</th>`;
+
+    // 3. El resto de los headers
+    headers.slice(1).forEach(h => { // Empezamos desde el 1 porque el 0 (Orden) ya lo pusimos
+        headersHTML += `<th>${h.replace(/_/g, ' ')}</th>`;
+    });
+
+    // 4. Encabezado de "Acciones" (si hay permisos)
+    if (canManageThisArea) {
+        headers.push('Acciones'); // (Solo para que el conteo de map() de abajo funcione)
+        headersHTML += `<th>Acciones</th>`;
+    }
+    // --- FIN CAMBIO DE HEADERS ---
+
+
+    table.innerHTML = `
+        <thead><tr>${headersHTML}</tr></thead>
+        <tbody>
+            ${dataToDisplay.map(row => {
+                const orderKey = String(row['Orden']); // Aseguramos que sea string
+                const isChecked = selectedSapOrders.has(orderKey); // Vemos si ya estaba seleccionada
+
+                let actionButtonHTML = '';
+                let checkboxHTML = '';
+
+                if (canManageThisArea) {
+                    // Checkbox para la fila
+                    checkboxHTML = `
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="sap-select-row-checkbox" 
+                                   data-order-key="${orderKey}" 
+                                   ${isChecked ? 'checked' : ''}>
+                        </td>`;
+                    
+                    // Botón de eliminar de la fila
+                    actionButtonHTML = `
+                        <td data-label="Acciones" style="text-align: center;">
+                            <button class="icon-btn sap-delete-btn" title="Eliminar orden SAP" 
+                                    data-order-key="${orderKey}"
+                                    style="font-size: 1rem; filter: grayscale(0) opacity(0.6);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </td>`;
+                }
+
+                return `
+                    <tr class="is-${row.status}-sap ${isChecked ? 'is-selected-row' : ''}"> 
+                        ${checkboxHTML}
+                        
+                        <td data-label="Orden" class="serial-cell sap-copy-cell" 
+                            title="Clic para copiar orden ${orderKey}" 
+                            data-order-key="${orderKey}">${orderKey}</td>
+
+                        <td data-label="Catalogo">${row['Catalogo']}</td>
+                        <td data-label="Material">${row['Material']}</td>
+                        <td data-label="Special Stock">${row['Special Stock']}</td>
+                        <td data-label="Finish">${formatDate(excelSerialToDate(row['Finish']))}</td>
+                        <td data-label="Total orden">${row['Total orden']}</td>
+                        <td data-label="Total confirmado">${row['Total confirmado']}</td>
+                        <td data-label="Faltante">${row['Faltante']}</td>
+                        ${actionButtonHTML} 
+                    </tr>
+                `;
+            }).join('')}
+        </tbody>`;
+
+    // === SECCIÓN DE LISTENERS (MODIFICADA) ===
+
+    // 1. Conectar botones de eliminar (FILA)
+    table.querySelectorAll('.sap-delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const key = e.currentTarget.dataset.orderKey;
+            // Llamamos a la función INTERNA
+            showConfirmationModal(
+                `¿Seguro que quieres eliminar la orden SAP ${key}? Esto la borrará SÓLO del histórico de SAP (No afectará la vista FWD).`, 
+                () => deleteSapOrderFromFirebase(key)
+            );
+        });
+    });
+
+    // 2. Conectar celdas de copiar (CELDA)
+    table.querySelectorAll('.sap-copy-cell').forEach(cell => {
+        cell.addEventListener('click', (e) => {
+            // Evitamos que el clic en la celda active el checkbox
+            e.stopPropagation(); 
+            const key = e.currentTarget.dataset.orderKey;
+            // Llamamos a la función INTERNA/GLOBAL (esta jala de ambas formas)
+            copySerialNumber(e.currentTarget, key);
+        });
+    });
+
+    // --- ¡AQUÍ ESTÁ LA NUEVA MAGIA! ---
+    // 2.5. Conectar encabezado de copiar (COLUMNA)
+    const copyHeader = doc('sap-copy-order-header');
+    if (copyHeader) {
+        copyHeader.addEventListener('click', (e) => {
+            // 'allVisibleOrderKeys' sigue en scope, la usamos
+            // Llamamos a la función GLOBAL 'copyColumnData' que ya existe
+            window.copyColumnData(e.currentTarget, allVisibleOrderKeys); 
+        });
+    }
+    // --- FIN DE LA NUEVA MAGIA ---
+
+    // 3. Conectar "Seleccionar Todo"
+    const selectAllCheckbox = doc('sap-select-all-checkbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('click', (e) => {
+            const isChecked = e.currentTarget.checked;
+            const rowCheckboxes = table.querySelectorAll('.sap-select-row-checkbox');
+            
+            rowCheckboxes.forEach(cb => {
+                const key = cb.dataset.orderKey;
+                cb.checked = isChecked;
+                if (isChecked) {
+                    selectedSapOrders.add(key);
+                } else {
+                    selectedSapOrders.delete(key);
+                }
+                cb.closest('tr').classList.toggle('is-selected-row', isChecked);
+            });
+            updateSapBulkDeleteButton();
+        });
+    }
+
+    // 4. Conectar checkboxes de CADA fila
+    table.querySelectorAll('.sap-select-row-checkbox').forEach(cb => {
+        cb.addEventListener('click', (e) => {
+            // Evitamos que el clic en el check propague a la celda/fila
+            e.stopPropagation(); 
+            const key = e.currentTarget.dataset.orderKey;
+            const isChecked = e.currentTarget.checked;
+
+            if (isChecked) {
+                selectedSapOrders.add(key);
+            } else {
+                selectedSapOrders.delete(key);
+            }
+            e.currentTarget.closest('tr').classList.toggle('is-selected-row', isChecked);
+            updateSapBulkDeleteButton();
+
+            // Sincronizamos el "Seleccionar Todo"
+            if (selectAllCheckbox) {
+                const allVisibleCheckboxes = table.querySelectorAll('.sap-select-row-checkbox');
+                const allChecked = Array.from(allVisibleCheckboxes).every(c => c.checked);
+                selectAllCheckbox.checked = allChecked;
+            }
+        });
+    });
+
+    // Sincronizamos el botón de borrado en lote por si acaso
+    updateSapBulkDeleteButton();
+}
+            function formatCell(value, header, isDateTime = false) {
+                if (isDateTime) return formatDateTimeFromSerial(value);
+                if (header && header.toLowerCase().includes('date')) return formatDate(excelSerialToDate(value));
+                return value === undefined || value === null ? '' : value;
+            }
+            
+            function syncFwdAndSapDates() {
+                if (loadedOrders.size === 0 || sapData.length === 0) return;
+
+                const sapDateMap = new Map(sapData.map(order => [String(order.Orden), order.Finish]));
+                
+                loadedOrders.forEach((orderData, orderKey) => {
+                    if (sapDateMap.has(orderKey)) {
+                        const sapFinishDateSerial = sapDateMap.get(orderKey);
+                        const sapFinishDate = excelSerialToDate(sapFinishDateSerial);
+                        if(sapFinishDate) {
+                            orderData.orderDate = sapFinishDate;
+                        }
+                    }
+                });
+            }
+
+            // ===================================
+            // === AUTH & AREA FUNCTIONS ===
+            // ===================================
+            function showLogin() {
+                let content = `
+                    <p>Introduce tus credenciales para acceder.</p>
+                    <input type="text" id="userInput" placeholder="Usuario" style="text-transform:uppercase">
+                    <input type="password" id="passwordInput" placeholder="Contraseña">
+                    <button id="loginBtn" class="btn" style="margin-top: 16px;">Autenticar</button>
+                `;
+                showModal('Inicio de Sesión', content);
+                doc('loginBtn').addEventListener('click', checkCredentials);
+                doc('passwordInput').addEventListener('keyup', (e) => { if (e.key === 'Enter') checkCredentials(); });
+                doc('userInput').addEventListener('keyup', (e) => { if (e.key === 'Enter') checkCredentials(); });
+            }
+
+            async function checkCredentials() {
+                const userInput = doc('userInput').value.trim().toUpperCase();
+                const passwordInput = doc('passwordInput').value;
+                if (!userInput || !passwordInput) {
+                    showModal('Error', 'Debes ingresar el usuario y la contraseña.', 'error');
+                    return;
+                }
+
+                try {
+                    const userDoc = await db.collection('users').doc(userInput).get();
+                    if (!userDoc.exists) {
+                        showModal('Error', 'El usuario no existe.', 'error');
+                        return;
+                    }
+
+                    const userData = userDoc.data();
+                    if (userData.password === passwordInput) {
+                        session = {
+                            user: userData.username,
+                            isMaster: userData.isMaster || false,
+                            permissions: userData.permissions || []
+                        };
+                        sessionStorage.setItem('appSession', JSON.stringify(session));
+                        hideModal();
+                        updateUIAfterAuth();
+                    } else {
+                        showModal('Error', 'Contraseña incorrecta.', 'error');
+                    }
+                } catch (e) {
+                    console.error("Error de autenticación: ", e);
+                    showModal('Error', 'Ocurrió un error al verificar las credenciales.', 'error');
+                }
+            }
+            
+            function logout() {
+                session = { user: null, isMaster: false, permissions: [] };
+                sessionStorage.removeItem('appSession');
+                updateUIAfterAuth();
+            }
+
+            function updateUIAfterAuth() {
+                const isAuthenticated = !!session.user;
+                const canEditCurrentArea = isAuthenticated && (session.isMaster || (session.permissions && session.permissions.includes(currentArea)));
+
+                fileDropArea.classList.toggle('disabled', !canEditCurrentArea);
+                fileDropArea.querySelector('p').textContent = canEditCurrentArea ? 'Arrastra archivos de detalle (.xlsx)' : 'No tienes permisos para esta área';
+                
+                sapFileDropArea.classList.toggle('disabled', !canEditCurrentArea);
+                if(sapFileDropArea.querySelector('p')) {
+                    sapFileDropArea.querySelector('p').textContent = canEditCurrentArea
+                        ? (session.isMaster ? 'Arrastra un archivo maestro SAP (General o de Área)' : 'Arrastra un archivo maestro SAP (.xlsx)')
+                        : 'No tienes permisos para esta área';
+                }
+                
+                if (isAuthenticated) {
+                    logoutBtn.style.display = 'flex';
+                    if (session.isMaster) {
+                        adminBtn.style.display = 'flex';
+                        adminBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg> ${session.user}`;
+                    } else {
+                        adminBtn.style.display = 'none';
+                    }
+                } else {
+                    logoutBtn.style.display = 'none';
+                    adminBtn.style.display = 'flex';
+                    adminBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>`;
+                }
+
+                dailyPlanContainer.style.display = session.isMaster ? 'flex' : 'none';
+                areaSelectBtn.textContent = `Área: ${currentArea}`;
+                
+                updateOrderList();
+                render();
+            }
+
+            // --- OPTIMIZACIÓN: SELECTOR DE ÁREA CON CACHÉ ---
+async function getCachedAreas() {
+    const CACHE_KEY = 'areas_cache_v1';
+    const CACHE_DURATION = 1000 * 60 * 60; // 1 Hora de validez
+
+    try {
+        // A. Intentar leer del caché local
+        const cachedRaw = localStorage.getItem(CACHE_KEY);
+        if (cachedRaw) {
+            const cached = JSON.parse(cachedRaw);
+            const now = new Date().getTime();
+
+            // Verificar si el caché sigue vigente (Time To Live)
+            if (now - cached.timestamp < CACHE_DURATION) {
+                console.log('⚡ Usando lista de áreas desde caché local');
+                return cached.data;
+            }
+        }
+
+        // B. Si no hay caché o expiró, consultar Firebase
+        console.log('🔥 Consultando lista de áreas a Firebase...');
+        const snapshot = await db.collection('areas').get();
+        let areas = [];
+        snapshot.forEach(doc => {
+            if (doc.id !== 'CONFIG') {
+                areas.push(doc.id);
+            }
+        });
+
+        // Ordenar alfabéticamente
+        areas.sort();
+
+        // C. Guardar en caché para la próxima
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+            timestamp: new Date().getTime(),
+            data: areas
+        }));
+
+        return areas;
+
+    } catch (error) {
+        console.error("Error al obtener áreas:", error);
+        // En caso de error, intentar devolver algo vacío o manejarlo
+        return [];
+    }
+}
+
+// 2. Tu función existente que consume la función de arriba
+async function showAreaSelector() {
+    // Ahora sí va a encontrar la función
+    const areasIds = await getCachedAreas();
+
+    // Como getCachedAreas devuelve solo IDs strings, reconstruimos objetos simples
+    let areas = areasIds.map(id => ({ id: id, name: id }));
+
+    let content = '<h3>Selecciona un Área para Visualizar</h3><ul class="area-list" style="grid-template-columns: 1fr auto;">';
+    areas.forEach(area => {
+        content += `<li><span>${area.name}</span> <button class="btn select-area-btn" data-area="${area.id}" style="width: auto; padding: 5px 10px;">Seleccionar</button></li>`;
+    });
+    content += '</ul>';
+
+    showModal('Selector de Área', content);
+
+    doc('modalBody').querySelectorAll('.select-area-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const newArea = e.target.dataset.area;
+            if (newArea !== currentArea) {
+                currentArea = newArea;
+                localStorage.setItem('currentArea', currentArea);
+                areaSelectBtn.textContent = `Área: ${currentArea}`;
+                setupListenersForArea(currentArea);
+            }
+            updateUIAfterAuth();
+            hideModal();
+        });
+    });
+}
+            async function showAdminPanel() {
+                const [areasSnapshot, usersSnapshot] = await Promise.all([
+                    db.collection('areas').get(),
+                    db.collection('users').get()
+                ]);
+
+                let areas = [];
+                areasSnapshot.forEach(doc => {
+                    if(doc.id !== 'CONFIG') areas.push({ id: doc.id, ...doc.data() })
+                });
+                areas.sort((a,b) => a.id.localeCompare(b.id));
+
+                let users = [];
+                usersSnapshot.forEach(doc => users.push({ id: doc.id, ...doc.data() }));
+                users.sort((a, b) => a.id.localeCompare(b.id));
+
+                let content = `
+                <div class="admin-section">
+                    <h3 class="admin-section-header">Gestionar Usuarios</h3>
+                    <div class="admin-section-content">
+                        <ul class="area-list user-list">
+                            ${users.map(user => `<li>
+                                <span style="font-weight: bold;">${user.username} ${user.isMaster ? ' (Admin)' : ''}</span>
+                                <div class="permissions-display">${(user.permissions || []).join(', ')}</div>
+                                <div>
+                                    ${user.username !== 'MULTIPORT' ? `
+                                    <button class="btn edit-user-btn" data-id="${user.id}" style="width: auto; padding: 5px 10px;">Editar</button>
+                                    <button class="btn btn-danger delete-user-btn" data-id="${user.id}" style="width: auto; padding: 5px 10px; margin-left: 5px;">Eliminar</button>
+                                    ` : ''}
+                                </div>
+                            </li>`).join('')}
+                        </ul>
+                        <button id="createUserBtn" class="btn" style="margin-top: 20px;">Crear Nuevo Usuario</button>
+                    </div>
+                </div>
+
+                <div class="admin-section">
+                    <h3 class="admin-section-header">Gestionar Áreas y Contraseñas</h3>
+                    <div class="admin-section-content">
+                        <ul class="area-list">
+                            ${areas.map(area => `<li>
+                                <input type="text" class="area-name-input" data-id="${area.id}" value="${area.name}" disabled>
+                                <input type="text" class="area-password-input" data-id="${area.id}" value="${area.password || ''}">
+                                <div>
+                                    <button class="btn save-area-btn" data-id="${area.id}" style="width: auto; padding: 5px 10px;">Guardar</button>
+                                    ${!area.isMaster ? `<button class="btn btn-danger delete-area-btn" data-id="${area.id}" style="width: auto; padding: 5px 10px; margin-left: 5px;">Eliminar</button>` : ''}
+                                </div>
+                            </li>`).join('')}
+                        </ul>
+                        <h4 style="margin-top: 20px;">Crear Nueva Área</h4>
+                        <input type="text" id="newAreaInput" placeholder="Nombre de Área (ej. ENSAMBLE)" style="text-transform:uppercase">
+                        <input type="text" id="newPasswordInput" placeholder="Contraseña para la nueva área">
+                        <button id="createAreaBtn" class="btn" style="margin-top: 10px;">Crear Área</button>
+                    </div>
+                </div>
+                
+                <div id="masterConfigSection" class="admin-section" style="display: block;">
+                    <h3 class="admin-section-header">Configuración de Workshop General</h3>
+                    <div class="admin-section-content">
+                        <div class="config-item">
+                            <label for="masterColumnInput">Columna de Código de Área:</label>
+                            <input type="text" id="masterColumnInput" value="${workshopConfig.column}">
+                        </div>
+                        <h4>Mapeo de Códigos a Áreas</h4>
+                        <ul id="areaMappingList" class="area-list"></ul>
+                        <button id="addMappingBtn" class="btn" style="width: auto; padding: 5px 10px; margin-top: 10px;">Añadir Mapeo</button>
+                        <button id="saveWorkshopConfigBtn" class="btn" style="margin-top: 20px;">Guardar Configuración General</button>
+                    </div>
+                </div>`;
+
+                showModal('Panel de Administrador', content);
+                
+                doc('createUserBtn').addEventListener('click', () => createOrUpdateUser(null));
+
+                doc('modalBody').querySelectorAll('.edit-user-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const userId = e.target.dataset.id;
+                        const user = users.find(u => u.id === userId);
+                        createOrUpdateUser(user);
+                    });
+                });
+                doc('modalBody').querySelectorAll('.delete-user-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const userId = e.target.dataset.id;
+                        showConfirmationModal(`¿Seguro que quieres eliminar al usuario "${userId}"?`, async () => {
+                            await db.collection('users').doc(userId).delete();
+                            showAdminPanel();
+                        });
+                    });
+                });
+
+                doc('modalBody').querySelectorAll('.admin-section-header').forEach(header => {
+                    header.addEventListener('click', () => {
+                        header.parentElement.classList.toggle('expanded');
+                    });
+                });
+
+                const mappingList = doc('areaMappingList');
+                mappingList.innerHTML = '';
+                for (const code in workshopConfig.mapping) {
+                    const areaName = workshopConfig.mapping[code];
+                    mappingList.appendChild(createMappingItem(code, areaName));
+                }
+                doc('addMappingBtn').addEventListener('click', () => {
+                    mappingList.appendChild(createMappingItem('', ''));
+                });
+                doc('saveWorkshopConfigBtn').addEventListener('click', saveWorkshopConfig);
+
+                doc('createAreaBtn').addEventListener('click', async () => {
+                    const newAreaName = doc('newAreaInput').value.trim().toUpperCase();
+                    const newPassword = doc('newPasswordInput').value.trim();
+                    if (newAreaName && newPassword) {
+                        await db.collection('areas').doc(newAreaName).set({
+                            name: newAreaName,
+                            password: newPassword,
+                            isMaster: false,
+                            createdAt: new Date()
+                        });
+                        showAdminPanel();
+                    } else {
+                        showModal('Atención', 'Debes especificar un nombre y una contraseña para la nueva área.', 'warning');
+                    }
+                });
+
+                doc('modalBody').querySelectorAll('.save-area-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const areaId = e.target.dataset.id;
+                        const newPassword = doc('modalBody').querySelector(`.area-password-input[data-id="${areaId}"]`).value.trim();
+                        if (newPassword) {
+                            await db.collection('areas').doc(areaId).update({ password: newPassword });
+                            showAdminPanel();
+                        }
+                    });
+                });
+
+                doc('modalBody').querySelectorAll('.delete-area-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const areaId = e.target.dataset.id;
+                        showConfirmationModal(`¿Seguro que quieres eliminar el área "${areaId}" y todos sus datos?`, async () => {
+                            await deleteAreaAndSubcollections(areaId);
+                            showAdminPanel();
+                        });
+                    });
+                });
+            }
+            
+            async function createOrUpdateUser(userToEdit = null) {
+                const isEditing = userToEdit !== null;
+                const title = isEditing ? `Editar Usuario: ${userToEdit.username}` : 'Crear Nuevo Usuario';
+
+                const areasSnapshot = await db.collection('areas').get();
+                let areas = [];
+                areasSnapshot.forEach(doc => { if (doc.id !== 'CONFIG') areas.push({ id: doc.id, ...doc.data() }); });
+                areas.sort((a,b) => a.id.localeCompare(b.id));
+
+                let modalContent = `
+                    <input type="text" id="modalUserInput" placeholder="Nombre de Usuario" style="text-transform:uppercase" value="${isEditing ? userToEdit.username : ''}" ${isEditing ? 'disabled' : ''}>
+                    <input type="text" id="modalPasswordInput" placeholder="${isEditing ? 'Nueva contraseña (dejar en blanco para no cambiar)' : 'Contraseña'}">
+                    <h5 style="margin-top:16px; margin-bottom: 8px;">Permisos de Área:</h5>
+                    <div id="modalPermissions" class="permissions-list">
+                        ${areas.map(area => {
+                            const isChecked = isEditing && userToEdit.permissions && userToEdit.permissions.includes(area.id);
+                            return `<label><input type="checkbox" value="${area.id}" ${isChecked ? 'checked' : ''}>${area.name}</label>`;
+                        }).join('')}
+                    </div>
+                    <div style="margin-top: 16px;">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="modalIsMasterInput" style="width: auto; margin: 0;" ${isEditing && userToEdit.isMaster ? 'checked' : ''}>
+                            Asignar permisos de Administrador
+                        </label>
+                    </div>
+                    <button id="saveUserBtn" class="btn" style="margin-top: 20px;">${isEditing ? 'Guardar Cambios' : 'Crear Usuario'}</button>
+                `;
+                showModal(title, modalContent);
+
+                doc('saveUserBtn').onclick = async () => {
+                    const username = doc('modalUserInput').value.trim().toUpperCase();
+                    const password = doc('modalPasswordInput').value.trim();
+                    
+                    if (!username || (!isEditing && !password)) {
+                        showModal('Error', 'El nombre de usuario y la contraseña son obligatorios.', 'error');
+                        return;
+                    }
+
+                    const permissions = Array.from(doc('modalPermissions').querySelectorAll('input:checked')).map(cb => cb.value);
+                    const isMaster = doc('modalIsMasterInput').checked;
+                    
+                    const userData = {
+                        username: username,
+                        permissions: permissions,
+                        isMaster: isMaster
+                    };
+
+                    if (password) {
+                        userData.password = password;
+                    }
+
+                    await db.collection('users').doc(username).set(userData, { merge: true });
+                    showAdminPanel();
+                };
+            }
+            
+            async function deleteAreaAndSubcollections(areaId) {
+                const subcollections = ['orders', 'sap_data'];
+                for (const subcollection of subcollections) {
+                    const snapshot = await db.collection('areas').doc(areaId).collection(subcollection).get();
+                    const batch = db.batch();
+                    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                }
+                await db.collection('areas').doc(areaId).delete();
+            }
+
+            function createMappingItem(code, areaName) {
+                const li = document.createElement('li');
+                li.className = 'mapping-item';
+                li.innerHTML = `
+                    <input type="text" class="mapping-code" placeholder="Código (ej. K46)" value="${code}">
+                    <input type="text" class="mapping-area" placeholder="Nombre de Área" value="${areaName}">
+                    <button class="btn btn-danger" style="width: auto; padding: 5px 10px;" onclick="this.parentElement.remove()">X</button>
+                `;
+                return li;
+            }
+
+            async function saveWorkshopConfig() {
+                const newColumn = doc('masterColumnInput').value.trim().toUpperCase() || 'C';
+                const newMapping = {};
+                doc('areaMappingList').querySelectorAll('.mapping-item').forEach(item => {
+                    const code = item.querySelector('.mapping-code').value.trim().toUpperCase();
+                    const area = item.querySelector('.mapping-area').value.trim().toUpperCase();
+                    if (code && area) {
+                        newMapping[code] = area;
+                    }
+                });
+                
+                const newConfig = { column: newColumn, mapping: newMapping };
+                
+                try {
+                    await db.collection('areas').doc('CONFIG').set({ general_workshop: newConfig }, { merge: true });
+                    workshopConfig = newConfig;
+                    showModal('Éxito', 'La configuración del workshop general ha sido guardada.', 'success');
+                } catch (e) {
+                    console.error("Error guardando configuración:", e);
+                    showModal('Error', 'No se pudo guardar la configuración.', 'error');
+                }
+            }
+
+            async function loadWorkshopConfig() {
+                try {
+                    const configDoc = await db.collection('areas').doc('CONFIG').get();
+                    if (configDoc.exists && configDoc.data().general_workshop) {
+                        workshopConfig = configDoc.data().general_workshop;
+                        console.log("Configuración de workshop cargada desde Firebase.");
+                    } else {
+                        console.log("No se encontró configuración de workshop, usando valores por defecto.");
+                    }
+                } catch(e) {
+                    console.error("Error cargando configuración de workshop:", e);
+                }
+            }
+            
+            async function generateDailyPlanReport() {
+                showModal('Plan del Día', '<h4 style="text-align: center;">Cargando reporte...</h4>');
+                try {
+                    const todayString = new Date().toLocaleDateString('es-ES', {
+                        timeZone: REYNOSA_TIMEZONE, day: '2-digit', month: '2-digit', year: 'numeric'
+                    });
+
+                    const areasSnapshot = await db.collection('areas').get();
+                    const areaDocs = areasSnapshot.docs.filter(doc => doc.id !== 'CONFIG');
+                    
+                    const promises = areaDocs.map(doc => doc.ref.collection('sap_data').doc('current_data').get());
+                    const allSapDataDocs = await Promise.all(promises);
+
+                    let dailyOrdersByArea = {};
+                    let totalDailyOrders = 0;
+
+                    allSapDataDocs.forEach((sapDoc, index) => {
+                        if (sapDoc.exists) {
+                            const areaName = areaDocs[index].id;
+                            const sapOrders = sapDoc.data().orders || [];
+                            
+                            const pendingOrdersForToday = sapOrders.filter(order =>
+                                isSapOrderForToday(order) && order.status !== 'complete'
+                            );
+                            
+                            const countForArea = pendingOrdersForToday.length;
+                            
+                            if (countForArea > 0) {
+                                dailyOrdersByArea[areaName] = countForArea;
+                                totalDailyOrders += countForArea;
+                            }
+                        }
+                    });
+
+                    let reportHTML = `
+                        <div class="daily-plan-modal">
+                            <div class="plan-header">
+                                <div class="plan-stat">
+                                    <span>Órdenes Pendientes</span>
+                                    <p>${totalDailyOrders}</p>
+                                </div>
+                                <div class="plan-date">
+                                    <span>Fecha</span>
+                                    <p>${todayString}</p>
+                                </div>
+                            </div>
+                            <div class="plan-title-separator">Plan de Trabajo por Área</div>
+                            <ul class="plan-area-list">
+                    `;
+
+                    if (totalDailyOrders > 0) {
+                        const sortedAreas = Object.keys(dailyOrdersByArea).sort();
+                        for (const area of sortedAreas) {
+                            reportHTML += `<li class="plan-area-item">
+                                                <span class="area-name">${area}</span>
+                                                <span class="area-count">${dailyOrdersByArea[area]}</span>
+                                            </li>`;
+                        }
+                    } else {
+                        reportHTML += `<li class="plan-area-item-empty">No hay órdenes pendientes para el día de hoy.</li>`;
+                    }
+                    
+                    reportHTML += `</ul></div>`;
+                    showModal('Plan del Día', reportHTML);
+
+                } catch (e) {
+                    console.error("Error al generar el reporte del plan diario:", e);
+                    showModal('Error', 'No se pudo generar el reporte del plan diario.', 'error');
+                }
+            }
+
+
+            // ===================================
+            // === THEME & INITIALIZATION ===
+            // ===================================
+            let currentTheme = localStorage.getItem('theme') || 'dark';
+
+            function applyTheme(theme) {
+                document.body.className = `${theme}-theme`;
+                const sunIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+                const moonIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+                themeToggleBtn.innerHTML = theme === 'light' ? moonIcon : sunIcon;
+            }
+            
+            function adjustStickyTops() {
+                requestAnimationFrame(() => {
+                    const isCurrentlyMobile = window.innerWidth <= 992;
+                    if (isCurrentlyMobile) return;
+
+                    const fwdHeader = document.querySelector('#fwdView .header');
+                    const fwdControls = document.getElementById('table-controls-header');
+                    const sapHeader = document.querySelector('#sapView .global-header');
+                    const sapControls = document.getElementById('sap-controls-header');
+                    
+                    if (fwdHeader && fwdControls) {
+                        const headerHeight = fwdHeader.offsetHeight;
+                        const topValue = 16 + headerHeight;
+                        fwdControls.style.top = `${topValue}px`;
+                    }
+
+                    if (sapHeader && sapControls) {
+                        const headerHeight = sapHeader.offsetHeight;
+                        const topValue = 16 + headerHeight;
+                        sapControls.style.top = `${topValue}px`;
+                    }
+                });
+            }
+
+            themeToggleBtn.addEventListener('click', () => {
+                currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+                localStorage.setItem('theme', currentTheme);
+                applyTheme(currentTheme);
+            });
+
+            // --- OPTIMIZACIÓN 1: LISTENERS LIMITADOS POR FECHA ---
+function setupListenersForArea(area) {
+    if (!area) return;
+    // Detenemos los listeners anteriores
+    if (fwdListener) fwdListener();
+    if (sapListener) sapListener();
+
+    // FECHA DE CORTE: Solo traer órdenes de los últimos 45 días
+    // Si necesitas más historia, aumenta este número, pero te costará más lecturas.
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - 31); 
+
+    console.log(`📡 Iniciando listeners para ${area} (Datos desde: ${cutoffDate.toLocaleDateString()})`);
+
+    // 1. LISTENER FWD (Sólo órdenes recientes)
+    // NOTA: Si la consola te pide crear un índice, dale clic al link azul que aparecerá.
+    fwdListener = db.collection('areas').doc(area).collection('orders')
+        .where('orderDate', '>=', cutoffDate) 
+        .onSnapshot(snapshot => {
+            const ordersFromDB = new Map();
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.orderDate && data.orderDate.toDate) { data.orderDate = data.orderDate.toDate(); }
+                if (data.lastUpdated && data.lastUpdated.toDate) { data.lastUpdated = data.lastUpdated.toDate(); }
+                
+                const empaqueDataMap = new Map();
+                if (data.empaqueData && Array.isArray(data.empaqueData)) {
+                    data.empaqueData.forEach(item => { empaqueDataMap.set(item.boxId, item.serials); });
+                }
+                data.empaqueData = empaqueDataMap;
+                ordersFromDB.set(doc.id, data);
+            });
+            loadedOrders = ordersFromDB;
+            syncFwdAndSapDates();
+            updateOrderList();
+            if (mainMode === 'fwd') render();
+        }, err => {
+            console.error("Error escuchando datos de FWD: ", err);
+            // Si falla por falta de índice, avisamos
+            if (err.code === 'failed-precondition') {
+                showModal('Requiere Índice', 'Abre la consola del navegador (F12) y haz clic en el link de Firebase para crear el índice de orderDate.', 'warning');
+            } else {
+                showModal('Error de Conexión', `No se pudo conectar a los datos del área ${area}.`, 'error');
+            }
+        });
+    
+    // 2. LISTENER SAP (Sólo histórico reciente)
+    sapListener = db.collection('areas').doc(area).collection('sap_historico')
+        .where('lastUpdated', '>=', cutoffDate) // Asumiendo que usas lastUpdated para filtrar
+        // OJO: Si 'lastUpdated' no existe en todos tus docs viejos, usa otro campo o considera no filtrar este si son pocos.
+        // Si prefieres traer todo el SAP porque son pocos registros (comparado con FWD), quita el .where().
+        .onSnapshot(snapshot => {
+            let newSapData = [];
+            let latestUpdate = null;
+            let updatedBy = null;
+
+            snapshot.forEach(doc => {
+                const orderData = doc.data();
+                newSapData.push(orderData);
+                
+                const orderLastUpdated = orderData.lastUpdated ? orderData.lastUpdated.toDate() : null;
+                if (orderLastUpdated && (!latestUpdate || orderLastUpdated > latestUpdate)) {
+                    latestUpdate = orderLastUpdated;
+                    updatedBy = orderData.lastUpdatedBy;
+                }
+            });
+
+            sapData = newSapData;
+            sapLastUpdated = latestUpdate;
+            sapLastUpdatedBy = updatedBy;
+            
+            syncFwdAndSapDates();
+            updateOrderList();
+            if (mainMode === 'sap') {
+                render();
+            }
+        }, err => {
+            console.error("Error escuchando datos del histórico de SAP: ", err);
+        });
+}
+
+// --- ¡AQUÍ ESTÁ EL CÓDIGO RESTAURADO! ---
+let isMobile = window.innerWidth <= 992;
+const mobileCollapsibleCardIds = ['uploadCard', 'orderListCard', 'filtersCard', 'actionsCard', 'sap-uploadCard', 'sap-orderListCard'];
+function setupMobileMode() {
+    mobileCollapsibleCardIds.forEach(id => {
+        const cardElement = doc(id);
+        if (!cardElement) return;
+        cardElement.classList.add('mobile-collapsible');
+        const trigger = cardElement.querySelector('h3');
+        if (trigger) {
+            trigger.classList.add('mobile-trigger');
+            if (!trigger.dataset.mobileListener) {
+                trigger.addEventListener('click', (e) => {
+                    if(window.innerWidth <= 992) {
+                        e.currentTarget.closest('.card').classList.toggle('expanded');
+                    }
+                });
+                trigger.dataset.mobileListener = 'true';
+            }
+        }
+    });
+}
+
+function teardownMobileMode() {
+    mobileCollapsibleCardIds.forEach(id => {
+        const cardElement = doc(id);
+        if (!cardElement) return;
+        cardElement.classList.remove('mobile-collapsible', 'expanded');
+        const trigger = cardElement.querySelector('h3');
+        if(trigger) trigger.classList.remove('mobile-trigger');
+    });
+}
+            let resizeTimeout;
+
+window.addEventListener('resize', () => {
+    // Limpiamos el timeout anterior si el evento se dispara rápido
+    clearTimeout(resizeTimeout);
+    
+    // Esperamos 200ms a que termine el movimiento
+    resizeTimeout = setTimeout(() => {
+        const newIsMobile = window.innerWidth <= 992;
+        
+        // Solo renderizamos si CAMBIÓ el modo (de escritorio a móvil o viceversa)
+        if (newIsMobile !== isMobile) {
+            isMobile = newIsMobile;
+            if (isMobile) setupMobileMode(); else teardownMobileMode();
+            render();
+        }
+        
+        adjustStickyTops();
+    }, 200);
+});
+
+            window.copySerialNumber = function(element, serial) {
+                if (!serial) return;
+                const serialToCopy = serial.startsWith('S#') ? serial.substring(2) : serial;
+                
+                copyTextToClipboard(serialToCopy,
+                    () => { // Success
+                        const originalText = element.textContent;
+                        element.textContent = '¡Copiado!';
+                        element.style.fontWeight = 'bold';
+                        element.style.color = 'var(--success-color)';
+                        setTimeout(() => {
+                            element.textContent = originalText;
+                            element.style.fontWeight = '';
+                            element.style.color = '';
+                        }, 1500);
+                    },
+                    (err) => { // Error
+                        console.error('Error al copiar el número de serie: ', err);
+                        const originalText = element.textContent;
+                        element.textContent = 'Error';
+                        setTimeout(() => {
+                            element.textContent = originalText;
+                        }, 1500);
+                    }
+                );
+            }
+
+            async function initializeApp() {
+                await loadWorkshopConfig();
+
+                const masterUserRef = db.collection('users').doc('MULTIPORT');
+                const masterUserDoc = await masterUserRef.get();
+                if (!masterUserDoc.exists) {
+                    await masterUserRef.set({
+                        username: 'MULTIPORT',
+                        password: 'CORNING25',
+                        isMaster: true,
+                        permissions: []
+                    });
+                    console.log("Usuario maestro 'MULTIPORT' creado.");
+                }
+                const masterAreaRef = db.collection('areas').doc('MULTIPORT');
+                const masterAreaDoc = await masterAreaRef.get();
+                if (!masterAreaDoc.exists) {
+                    await masterAreaRef.set({
+                        name: 'MULTIPORT',
+                        password: 'CORNING25',
+                        isMaster: true
+                    }, { merge: true });
+                    console.log("Área maestra 'MULTIPORT' verificada y asegurada.");
+                }
+
+
+                mainMode = localStorage.getItem('mainMode') || 'fwd';
+                currentArea = localStorage.getItem('currentArea') || 'MULTIPORT';
+                applyTheme(currentTheme);
+                
+                modeFwd.classList.toggle('active', mainMode === 'fwd');
+                modeSap.classList.toggle('active', mainMode === 'sap');
+
+                doc('fwdView').style.display = mainMode === 'fwd' ? 'block' : 'none';
+                doc('sapView').style.display = mainMode === 'sap' ? 'block' : 'none';
+                doc('fwdView').style.opacity = mainMode === 'fwd' ? '1' : '0';
+                doc('sapView').style.opacity = mainMode === 'sap' ? '1' : '0';
+
+                if (isMobile) setupMobileMode();
+                
+                const savedSession = sessionStorage.getItem('appSession');
+                if (savedSession) {
+                    session = JSON.parse(savedSession);
+                }
+
+                updateUIAfterAuth();
+                setupListenersForArea(currentArea);
+
+                setTimeout(adjustStickyTops, 500);
+            }
+                    
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                .then(registration => {
+                    console.log('✅ Service Worker registrado con éxito. Alcance:', registration.scope);
+                })
+                .catch(error => {
+                    console.log('❌ Error al registrar el Service Worker:', error);
+                });
+            });
+        }
+
+                    
+            // === INICIO DE LA APP ===
+            initializeApp();
+        });
+ 
