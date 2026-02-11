@@ -2338,19 +2338,66 @@ async function syncSapOrdersToFwd(sapOrders, areaName) {
             }
 
             // --- OPTIMIZACIÓN: SELECTOR DE ÁREA CON CACHÉ ---
+async function getCachedAreas() {
+    const CACHE_KEY = 'areas_cache_v1';
+    const CACHE_DURATION = 1000 * 60 * 60; // 1 Hora de validez
+
+    try {
+        // A. Intentar leer del caché local
+        const cachedRaw = localStorage.getItem(CACHE_KEY);
+        if (cachedRaw) {
+            const cached = JSON.parse(cachedRaw);
+            const now = new Date().getTime();
+
+            // Verificar si el caché sigue vigente (Time To Live)
+            if (now - cached.timestamp < CACHE_DURATION) {
+                console.log('⚡ Usando lista de áreas desde caché local');
+                return cached.data;
+            }
+        }
+
+        // B. Si no hay caché o expiró, consultar Firebase
+        console.log('🔥 Consultando lista de áreas a Firebase...');
+        const snapshot = await db.collection('areas').get();
+        let areas = [];
+        snapshot.forEach(doc => {
+            if (doc.id !== 'CONFIG') {
+                areas.push(doc.id);
+            }
+        });
+
+        // Ordenar alfabéticamente
+        areas.sort();
+
+        // C. Guardar en caché para la próxima
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+            timestamp: new Date().getTime(),
+            data: areas
+        }));
+
+        return areas;
+
+    } catch (error) {
+        console.error("Error al obtener áreas:", error);
+        // En caso de error, intentar devolver algo vacío o manejarlo
+        return [];
+    }
+}
+
+// 2. Tu función existente que consume la función de arriba
 async function showAreaSelector() {
-    // Usamos la función optimizada getCachedAreas()
-    const areasIds = await getCachedAreas(); 
-    
+    // Ahora sí va a encontrar la función
+    const areasIds = await getCachedAreas();
+
     // Como getCachedAreas devuelve solo IDs strings, reconstruimos objetos simples
-    let areas = areasIds.map(id => ({ id: id, name: id })); // O ajusta si tienes nombres reales guardados
+    let areas = areasIds.map(id => ({ id: id, name: id }));
 
     let content = '<h3>Selecciona un Área para Visualizar</h3><ul class="area-list" style="grid-template-columns: 1fr auto;">';
     areas.forEach(area => {
         content += `<li><span>${area.name}</span> <button class="btn select-area-btn" data-area="${area.id}" style="width: auto; padding: 5px 10px;">Seleccionar</button></li>`;
     });
     content += '</ul>';
-    
+
     showModal('Selector de Área', content);
 
     doc('modalBody').querySelectorAll('.select-area-btn').forEach(btn => {
@@ -2367,7 +2414,6 @@ async function showAreaSelector() {
         });
     });
 }
-
             async function showAdminPanel() {
                 const [areasSnapshot, usersSnapshot] = await Promise.all([
                     db.collection('areas').get(),
