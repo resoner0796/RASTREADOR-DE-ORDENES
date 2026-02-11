@@ -787,7 +787,7 @@ async function handleSapImageExport() {
 
     orderList.appendChild(fragment);
     
-    if (!isSearching && loadedOrders.size > 200) {
+    if (!isSearching && loadedOrders.size > 250) {
         const infoMsg = document.createElement('div');
         infoMsg.style.padding = "10px";
         infoMsg.style.textAlign = "center";
