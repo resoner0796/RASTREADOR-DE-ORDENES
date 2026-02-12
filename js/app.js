@@ -591,7 +591,7 @@ async function handleSapImageExport() {
 
                             if (ageInHours > 25) {
                                 status = 'very_delayed';
-                            } else if (ageInHours > 6) {
+                            } else if (ageInHours > 8) {
                                 status = 'delayed';
                             } else {
                                 status = 'today';
