@@ -962,55 +962,53 @@ async function handleSapImageExport() {
             }
             
            function renderControls() {
-    const hasOrders = loadedOrders.size > 0;
+                const hasOrders = loadedOrders.size > 0;
 
-    // Filtros de Rastreo (se ocultan por CSS en modo empaque, pero los dejamos aquí)
-    const statusHTML = `
-        <button class="filter-btn ${rastreoStatusFilter === 'all' ? 'active' : ''}" data-filter="all">Todos</button>
-        <button class="filter-btn ${rastreoStatusFilter === 'today' ? 'active' : ''}" data-filter="today">En Movimiento</button>
-        <button class="filter-btn ${rastreoStatusFilter === 'delayed' ? 'active' : ''}" data-filter="delayed">Sin Movimiento</button>
-        <button class="filter-btn ${rastreoStatusFilter === 'scrap' ? 'active' : ''}" data-filter="scrap">Scrap</button>
-    `;
-    mobileControls.status.innerHTML = statusHTML;
-    desktopControls.status.innerHTML = statusHTML;
+                // --- 1. CONTROLES DE RASTREO (Filtros y Botones) ---
+                if (currentMode === 'rastreo') {
+                    // Pintar filtros
+                    const statusHTML = `
+                        <button class="filter-btn ${rastreoStatusFilter === 'all' ? 'active' : ''}" data-filter="all">Todos</button>
+                        <button class="filter-btn ${rastreoStatusFilter === 'today' ? 'active' : ''}" data-filter="today">En Movimiento</button>
+                        <button class="filter-btn ${rastreoStatusFilter === 'delayed' ? 'active' : ''}" data-filter="delayed">Sin Movimiento</button>
+                        <button class="filter-btn ${rastreoStatusFilter === 'scrap' ? 'active' : ''}" data-filter="scrap">Scrap</button>
+                    `;
+                    if (mobileControls.status) mobileControls.status.innerHTML = statusHTML;
+                    if (desktopControls.status) desktopControls.status.innerHTML = statusHTML;
 
-    // Lógica dinámica de botones según el modo actual (Rastreo vs Empaque)
-    let actionsHTML = '';
-    let desktopActionsHTML = '';
+                    // Pintar botones de Rastreo
+                    const actionsHTML = `
+                        <button class="btn" id="exportImageButtonMobile" ${!hasOrders ? 'disabled' : ''}>Exportar Captura</button>
+                        <button class="btn" id="exportStatusButtonMobile" ${!hasOrders ? 'disabled' : ''}>Reporte de Estatus</button>
+                    `;
+                    const desktopActionsHTML = `
+                        <button class="btn" id="exportImageButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Captura</button>
+                        <button class="btn" id="exportStatusButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Reporte</button>
+                    `;
 
-    if (currentMode === 'rastreo') {
-        actionsHTML = `
-            <button class="btn" id="exportImageButtonMobile" ${!hasOrders ? 'disabled' : ''}>Exportar Captura</button>
-            <button class="btn" id="exportStatusButtonMobile" ${!hasOrders ? 'disabled' : ''}>Reporte de Estatus</button>
-        `;
-        desktopActionsHTML = `
-            <button class="btn" id="exportImageButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Captura</button>
-            <button class="btn" id="exportStatusButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Reporte</button>
-        `;
-    } else if (currentMode === 'empaque') {
-        // --- AQUÍ AGREGAMOS EL BOTÓN DE EXCEL ---
-        actionsHTML = `
-            <button class="btn" id="exportExcelButtonMobile" ${!hasOrders ? 'disabled' : ''} style="background-color: var(--success-color); color: #111827;">Exportar Excel</button>
-        `;
-        desktopActionsHTML = `
-            <button class="btn" id="exportExcelButtonDesktop" ${!hasOrders ? 'disabled' : ''} style="background-color: var(--success-color); color: #111827;">Excel</button>
-        `;
-    }
+                    if (mobileControls.actions) mobileControls.actions.innerHTML = actionsHTML;
+                    if (desktopControls.actions) desktopControls.actions.innerHTML = desktopActionsHTML;
 
-    mobileControls.actions.innerHTML = actionsHTML;
-    desktopControls.actions.innerHTML = desktopActionsHTML;
+                    // Asignar listeners de Rastreo
+                    doc('exportImageButtonMobile')?.addEventListener('click', handleImageExport);
+                    doc('exportImageButtonDesktop')?.addEventListener('click', handleImageExport);
+                    doc('exportStatusButtonMobile')?.addEventListener('click', handleStatusReport);
+                    doc('exportStatusButtonDesktop')?.addEventListener('click', handleStatusReport);
+                }
 
-    // Re-asignamos los listeners según lo que se haya pintado
-    if (currentMode === 'rastreo') {
-        doc('exportImageButtonMobile')?.addEventListener('click', handleImageExport);
-        doc('exportImageButtonDesktop')?.addEventListener('click', handleImageExport);
-        doc('exportStatusButtonMobile')?.addEventListener('click', handleStatusReport);
-        doc('exportStatusButtonDesktop')?.addEventListener('click', handleStatusReport);
-    } else if (currentMode === 'empaque') {
-        doc('exportExcelButtonMobile')?.addEventListener('click', handleEmpaqueExcelExport);
-        doc('exportExcelButtonDesktop')?.addEventListener('click', handleEmpaqueExcelExport);
-    }
-}
+                // --- 2. CONTROLES DE EMPAQUE (Botón Excel) ---
+                if (currentMode === 'empaque') {
+                    const empaqueContainer = doc('empaqueActionsContainer');
+                    if (empaqueContainer) {
+                        empaqueContainer.innerHTML = `
+                            <button class="btn" id="exportExcelButton" ${!hasOrders ? 'disabled' : ''} style="background-color: var(--success-color); color: #111827; width: auto; padding: 6px 16px;">
+                                Exportar Excel
+                            </button>
+                        `;
+                        doc('exportExcelButton')?.addEventListener('click', handleEmpaqueExcelExport);
+                    }
+                }
+            }
 
             async function renderRastreoView(key) {
                 const tableWrapper = doc('rastreoTable').parentElement;
