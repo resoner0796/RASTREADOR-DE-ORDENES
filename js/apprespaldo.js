@@ -1688,58 +1688,80 @@ window.copyGR = function(element, gr) {
             async function handleSapFile(file) {
     if (!file) return;
 
-    const canEdit = session.isMaster || (session.permissions && session.permissions.includes(currentArea));
-    if (!canEdit) {
-        showModal('Acceso Denegado', `No tienes permisos para modificar el área ${currentArea}.`, 'error');
-        return;
-    }
-
-    showModal('Procesando SAP...', `<p>Leyendo el archivo y preparando para guardar en el histórico. Por favor, espere...</p>`);
+    showModal('Analizando Archivo SAP...', `<p>Leyendo columna <b>${workshopConfig.column}</b> y distribuyendo órdenes...</p>`);
 
     const reader = new FileReader();
     reader.onload = async (e) => {
         try {
             const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-            
-            // 1. Procesa el archivo y obtiene los datos de las órdenes
-            const processedData = processSapFile(workbook, session.isMaster);
-            
-            // Si es un archivo maestro, manejamos múltiples áreas
-            if (session.isMaster && processedData.isMultiArea) {
-                const areasAfectadas = Object.keys(processedData.data);
-                showModal('Procesando Múltiples Áreas...', `Sincronizando órdenes en ${areasAfectadas.length} áreas...`);
-                
-                const promises = [];
-                for (const areaName in processedData.data) {
-                    const ordersForArea = processedData.data[areaName];
-                    promises.push(saveSapOrdersToHistoric(ordersForArea, areaName)); // Guardamos en el histórico
-                    promises.push(syncSapOrdersToFwd(ordersForArea, areaName));   // Sincronizamos con FWD
-                }
-                await Promise.all(promises);
-                
-                showModal('Éxito', `Workshop general procesado. Se han sincronizado los datos para las áreas: ${areasAfectadas.join(', ')}.`, 'success');
 
-            } else { // Si es un archivo de una sola área
-                const orders = processedData.isMultiArea ? processedData.data[currentArea] || [] : processedData;
-                if(orders.length === 0) {
-                    showModal('Sin Datos', 'El archivo no contiene órdenes válidas para el área actual.', 'warning');
-                    return;
-                }
-                
-                // 2. Guarda las órdenes en el nuevo histórico
-                await saveSapOrdersToHistoric(orders, currentArea);
-                
-                // 3. Sincroniza los datos con la vista FWD como antes
-                await syncSapOrdersToFwd(orders, currentArea);
+            // 1. Separamos las órdenes por área usando tu configuración
+            const groupedData = processSapFile(workbook);
+            const areasInFile = Object.keys(groupedData);
 
-                showModal('Éxito', `Archivo SAP cargado. Se han creado/actualizado ${orders.length} órdenes en el histórico del área ${currentArea}.`, 'success');
+            if (areasInFile.length === 0) {
+                showModal('Sin Datos', `No se encontraron órdenes válidas usando la columna de MRP (${workshopConfig.column}) configurada.`, 'warning');
+                return;
             }
-            
+
+            // 2. Lógica de Permisos: MAESTRO vs USUARIO
+            let areasToProcess = [];
+
+            if (session.isMaster) {
+                // CASO MAESTRO: ¡Poder absoluto! Carga todo lo que encontró el Excel.
+                areasToProcess = areasInFile;
+                console.log("👑 Usuario Maestro: Procesando todas las áreas encontradas.");
+            } else {
+                // CASO USUARIO NORMAL: Solo carga las áreas que tiene permitidas.
+                areasToProcess = areasInFile.filter(areaName =>
+                    session.permissions && session.permissions.includes(areaName)
+                );
+            }
+
+            if (areasToProcess.length === 0) {
+                showModal('Acceso Denegado', `El archivo tiene datos de: ${areasInFile.join(', ')}, pero tu usuario no tiene permisos para esas áreas.`, 'error');
+                return;
+            }
+
+            // 3. Ejecutar la carga en Firebase
+            const roleTitle = session.isMaster ? '👑 Sincronización Maestra' : 'Sincronización de Usuario';
+            showModal(roleTitle, `Procesando <b>${areasToProcess.length}</b> áreas detectadas:<br>${areasToProcess.join(', ')}...`);
+
+            const promises = [];
+            let totalOrdersCount = 0;
+
+            for (const areaName of areasToProcess) {
+                const ordersForArea = groupedData[areaName];
+                totalOrdersCount += ordersForArea.length;
+
+                // A. Guardar en histórico SAP
+                promises.push(saveSapOrdersToHistoric(ordersForArea, areaName));
+
+                // B. Actualizar vista FWD
+                promises.push(syncSapOrdersToFwd(ordersForArea, areaName));
+            }
+
+            await Promise.all(promises);
+
+            // 4. Reporte final
+            const skippedAreas = areasInFile.filter(x => !areasToProcess.includes(x));
+            let msg = `Se procesaron <b>${totalOrdersCount}</b> órdenes exitosamente en:<br><b>${areasToProcess.join(', ')}</b>.`;
+
+            if (skippedAreas.length > 0) {
+                msg += `<br><br><small style="color: var(--warning-color)">⚠️ Se ignoraron: ${skippedAreas.join(', ')} (Sin permisos).</small>`;
+            }
+
+            showModal('Carga Exitosa', msg, 'success');
+
+            // Si actualizaste el área que estás viendo, refresca la tabla
             sapDateFilter = [];
+            if (areasToProcess.includes(currentArea)) {
+                render();
+            }
 
         } catch (err) {
             console.error("Error procesando archivo SAP:", err);
-            showModal('Error', `No se pudo procesar el archivo SAP. <br><small>${err.message}</small>`, 'error');
+            showModal('Error Crítico', `Ocurrió un error al procesar el archivo.<br><small>${err.message}</small>`, 'error');
         }
     };
     reader.readAsArrayBuffer(file);
@@ -1827,56 +1849,49 @@ async function syncSapOrdersToFwd(sapOrders, areaName) {
 }
 
 
-            function processSapFile(workbook, isMasterUpload = false) {
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                if (!worksheet) throw new Error("No se encontró una hoja de cálculo en el archivo.");
-                const getCellValue = (cellAddress) => (worksheet[cellAddress] ? worksheet[cellAddress].v : null);
-                
-                const range = XLSX.utils.decode_range(worksheet['!ref']);
-                const reynosaTodayString = new Date().toLocaleDateString('en-CA', { timeZone: REYNOSA_TIMEZONE });
-                
-                if (isMasterUpload) {
-                    const resultsByArea = {};
-                    for (let i = range.s.r + 1; i <= range.e.r; i++) {
-                        const rowNum = i + 1;
-                        const orderId = getCellValue('A' + rowNum);
-                        if (!orderId) continue;
-                        
-                        const orderIdStr = String(orderId).trim();
-                        if (!orderIdStr.startsWith('900')) {
-                            continue;
-                        }
+            function processSapFile(workbook) {
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    if (!worksheet) throw new Error("No se encontró una hoja de cálculo en el archivo.");
 
-                        const areaCode = getCellValue(workshopConfig.column + rowNum);
-                        const areaName = workshopConfig.mapping[areaCode];
+    const getCellValue = (address) => (worksheet[address] ? worksheet[address].v : null);
 
-                        if (areaName) {
-                            if (!resultsByArea[areaName]) {
-                                resultsByArea[areaName] = [];
-                            }
-                            const orderData = extractSapRow(worksheet, rowNum, reynosaTodayString);
-                            resultsByArea[areaName].push(orderData);
-                        }
-                    }
-                    return { isMultiArea: true, data: resultsByArea };
-                } else {
-                    const processedData = [];
-                    for (let i = range.s.r + 1; i <= range.e.r; i++) {
-                        const rowNum = i + 1;
-                        const orderId = getCellValue('A' + rowNum);
-                        if (!orderId) continue;
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    const reynosaTodayString = new Date().toLocaleDateString('en-CA', { timeZone: REYNOSA_TIMEZONE });
 
-                        const orderIdStr = String(orderId).trim();
-                        if (!orderIdStr.startsWith('900')) {
-                            continue;
-                        }
+    // Objeto para agrupar: { "MULTIPORT": [...], "MOB LEGACY": [...] }
+    const resultsByArea = {};
+    let ordersWithoutMapping = 0;
 
-                        processedData.push(extractSapRow(worksheet, rowNum, reynosaTodayString));
-                    }
-                    return processedData;
-                }
+    for (let i = range.s.r + 1; i <= range.e.r; i++) {
+        const rowNum = i + 1;
+        const orderId = getCellValue('A' + rowNum);
+
+        if (!orderId) continue;
+        const orderIdStr = String(orderId).trim();
+        if (!orderIdStr.startsWith('900')) continue;
+
+        // 1. Leemos el MRP usando la columna configurada en tu panel (ej. "N")
+        const mrpCodeRaw = getCellValue(workshopConfig.column + rowNum);
+        const mrpCode = mrpCodeRaw ? String(mrpCodeRaw).trim().toUpperCase() : null;
+
+        // 2. Mapeamos el código (ej. "K46") al nombre del área (ej. "MULTIPORT")
+        const areaName = workshopConfig.mapping[mrpCode];
+
+        if (areaName) {
+            if (!resultsByArea[areaName]) {
+                resultsByArea[areaName] = [];
             }
+            const orderData = extractSapRow(worksheet, rowNum, reynosaTodayString);
+            resultsByArea[areaName].push(orderData);
+        } else {
+            ordersWithoutMapping++;
+        }
+    }
 
+    console.log(`Procesamiento completado. Órdenes sin mapeo (ignoradas): ${ordersWithoutMapping}`);
+    return resultsByArea;
+}
+                    
             function extractSapRow(worksheet, rowNum, reynosaTodayString){
                 const getCellValue = (cellAddress) => (worksheet[cellAddress] ? worksheet[cellAddress].v : null);
                 const total = parseFloat(getCellValue('I' + rowNum)) || 0;
@@ -3018,4 +3033,3 @@ window.addEventListener('resize', () => {
             initializeApp();
         });
  
-        
