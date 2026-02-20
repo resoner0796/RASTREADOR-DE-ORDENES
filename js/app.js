@@ -618,14 +618,17 @@ async function handleSapImageExport() {
             }
             
             function switchMode(mode) {
-                currentMode = mode;
-                doc('rastreoView').style.display = mode === 'rastreo' ? 'block' : 'none';
-                doc('empaqueView').style.display = mode === 'empaque' ? 'block' : 'none';
+    currentMode = mode;
+    doc('rastreoView').style.display = mode === 'rastreo' ? 'block' : 'none';
+    doc('empaqueView').style.display = mode === 'empaque' ? 'block' : 'none';
 
-                modeRastreo.classList.toggle('active', mode === 'rastreo');
-                modeEmpaque.classList.toggle('active', mode === 'empaque');
-                render();
-            }
+    modeRastreo.classList.toggle('active', mode === 'rastreo');
+    modeEmpaque.classList.toggle('active', mode === 'empaque');
+
+    renderControls(); // <-- AGREGA ESTA LÍNEA AQUÍ
+    render();
+}
+
 
             function updateOrderList() {
     // 1. Obtener texto de búsqueda
@@ -958,33 +961,56 @@ async function handleSapImageExport() {
                 completedOrdersStat.textContent = completedOrdersToday;
             }
             
-            function renderControls() {
-                const hasOrders = loadedOrders.size > 0;
-                const statusHTML = `
-                    <button class="filter-btn ${rastreoStatusFilter === 'all' ? 'active' : ''}" data-filter="all">Todos</button>
-                    <button class="filter-btn ${rastreoStatusFilter === 'today' ? 'active' : ''}" data-filter="today">En Movimiento</button>
-                    <button class="filter-btn ${rastreoStatusFilter === 'delayed' ? 'active' : ''}" data-filter="delayed">Sin Movimiento</button>
-                    <button class="filter-btn ${rastreoStatusFilter === 'scrap' ? 'active' : ''}" data-filter="scrap">Scrap</button>
-                `;
-                mobileControls.status.innerHTML = statusHTML;
-                desktopControls.status.innerHTML = statusHTML;
+           function renderControls() {
+    const hasOrders = loadedOrders.size > 0;
 
-                const actionsHTML = `
-                    <button class="btn" id="exportImageButtonMobile" ${!hasOrders ? 'disabled' : ''}>Exportar Captura</button>
-                    <button class="btn" id="exportStatusButtonMobile" ${!hasOrders ? 'disabled' : ''}>Reporte de Estatus</button>
-                `;
-                const desktopActionsHTML = `
-                    <button class="btn" id="exportImageButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Captura</button>
-                    <button class="btn" id="exportStatusButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Reporte</button>
-                `;
-                mobileControls.actions.innerHTML = actionsHTML;
-                desktopControls.actions.innerHTML = desktopActionsHTML;
+    // Filtros de Rastreo (se ocultan por CSS en modo empaque, pero los dejamos aquí)
+    const statusHTML = `
+        <button class="filter-btn ${rastreoStatusFilter === 'all' ? 'active' : ''}" data-filter="all">Todos</button>
+        <button class="filter-btn ${rastreoStatusFilter === 'today' ? 'active' : ''}" data-filter="today">En Movimiento</button>
+        <button class="filter-btn ${rastreoStatusFilter === 'delayed' ? 'active' : ''}" data-filter="delayed">Sin Movimiento</button>
+        <button class="filter-btn ${rastreoStatusFilter === 'scrap' ? 'active' : ''}" data-filter="scrap">Scrap</button>
+    `;
+    mobileControls.status.innerHTML = statusHTML;
+    desktopControls.status.innerHTML = statusHTML;
 
-                doc('exportImageButtonMobile').addEventListener('click', handleImageExport);
-                doc('exportImageButtonDesktop').addEventListener('click', handleImageExport);
-                doc('exportStatusButtonMobile').addEventListener('click', handleStatusReport);
-                doc('exportStatusButtonDesktop').addEventListener('click', handleStatusReport);
-            }
+    // Lógica dinámica de botones según el modo actual (Rastreo vs Empaque)
+    let actionsHTML = '';
+    let desktopActionsHTML = '';
+
+    if (currentMode === 'rastreo') {
+        actionsHTML = `
+            <button class="btn" id="exportImageButtonMobile" ${!hasOrders ? 'disabled' : ''}>Exportar Captura</button>
+            <button class="btn" id="exportStatusButtonMobile" ${!hasOrders ? 'disabled' : ''}>Reporte de Estatus</button>
+        `;
+        desktopActionsHTML = `
+            <button class="btn" id="exportImageButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Captura</button>
+            <button class="btn" id="exportStatusButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Reporte</button>
+        `;
+    } else if (currentMode === 'empaque') {
+        // --- AQUÍ AGREGAMOS EL BOTÓN DE EXCEL ---
+        actionsHTML = `
+            <button class="btn" id="exportExcelButtonMobile" ${!hasOrders ? 'disabled' : ''} style="background-color: var(--success-color); color: #111827;">Exportar Excel</button>
+        `;
+        desktopActionsHTML = `
+            <button class="btn" id="exportExcelButtonDesktop" ${!hasOrders ? 'disabled' : ''} style="background-color: var(--success-color); color: #111827;">Excel</button>
+        `;
+    }
+
+    mobileControls.actions.innerHTML = actionsHTML;
+    desktopControls.actions.innerHTML = desktopActionsHTML;
+
+    // Re-asignamos los listeners según lo que se haya pintado
+    if (currentMode === 'rastreo') {
+        doc('exportImageButtonMobile')?.addEventListener('click', handleImageExport);
+        doc('exportImageButtonDesktop')?.addEventListener('click', handleImageExport);
+        doc('exportStatusButtonMobile')?.addEventListener('click', handleStatusReport);
+        doc('exportStatusButtonDesktop')?.addEventListener('click', handleStatusReport);
+    } else if (currentMode === 'empaque') {
+        doc('exportExcelButtonMobile')?.addEventListener('click', handleEmpaqueExcelExport);
+        doc('exportExcelButtonDesktop')?.addEventListener('click', handleEmpaqueExcelExport);
+    }
+}
 
             async function renderRastreoView(key) {
                 const tableWrapper = doc('rastreoTable').parentElement;
@@ -1421,6 +1447,67 @@ window.copyGR = function(element, gr) {
             console.error('Error al copiar el GR: ', err);
         }
     );
+}
+
+                    // --- NUEVA FUNCIÓN: EXPORTAR EMPAQUE A EXCEL ---
+function handleEmpaqueExcelExport() {
+    const table = doc('empaqueTable');
+    if (!table || table.querySelector('tbody tr').textContent.includes('No se encontraron resultados') || table.querySelector('tbody tr').textContent.includes('No hay datos')) {
+        showModal('Exportar Excel', 'No hay datos en la tabla para exportar.', 'warning');
+        return;
+    }
+
+    try {
+        showModal('Exportando...', 'Generando archivo Excel, por favor espera...', 'info');
+
+        // 1. Clonar la tabla para no afectar la vista real
+        const clonedTable = table.cloneNode(true);
+
+        // 2. Limpiar el clon: Quitar los inputs de filtro del encabezado
+        const inputs = clonedTable.querySelectorAll('thead input');
+        inputs.forEach(input => input.remove());
+
+        // 3. Limpiar el clon: Solo dejar las filas que están visibles (si usaste filtros)
+        const rows = Array.from(clonedTable.querySelectorAll('tbody tr'));
+        rows.forEach(row => {
+            if (row.style.display === 'none') {
+                row.remove();
+            }
+        });
+
+        // 4. Convertir la tabla HTML limpia a un "Worksheet" de Excel
+        const ws = XLSX.utils.table_to_sheet(clonedTable, { raw: true }); // raw: true mantiene los IDs largos como texto
+
+        // 5. Ajustar el ancho de las columnas para que se vea decente
+        const wscols = [
+            {wch: 25}, // BoxID
+            {wch: 10}, // Cantidad
+            {wch: 20}, // Último Empaque
+            {wch: 20}, // Recibido Logística
+            {wch: 15}, // GR
+            {wch: 15}, // Orden
+            {wch: 15}  // Usuario
+        ];
+        ws['!cols'] = wscols;
+
+        // 6. Crear un "Workbook" y añadir la hoja
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Empaque_Data");
+
+        // 7. Generar el nombre del archivo
+        const dateStamp = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
+        const orderName = (activeOrderKey && activeOrderKey !== 'all') ? activeOrderKey : 'Completo';
+        const fileName = `Empaque_${currentArea}_${orderName}_${dateStamp}.xlsx`;
+
+        // 8. Descargar el archivo
+        XLSX.writeFile(wb, fileName);
+
+        hideModal(); // Cerrar el modal de "Exportando..."
+
+    } catch (e) {
+        console.error("Error al exportar a Excel:", e);
+        showModal('Error', 'Ocurrió un problema al generar el Excel.', 'error');
+    }
 }
 
             
