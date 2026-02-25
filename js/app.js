@@ -645,32 +645,40 @@ async function handleSapImageExport() {
 
     orderList.innerHTML = '';
 
-    // 3. Filtrar órdenes
+    // 3. Filtrar órdenes (¡AQUÍ ESTÁ LA MAGIA NUEVA!)
     let filteredOrders = [];
     if (isSearching) {
         loadedOrders.forEach((value, key) => {
-            if (key.toUpperCase().includes(searchText)) {
+            // Verificamos si el texto coincide con la Orden (key)
+            const matchesOrder = key.toUpperCase().includes(searchText);
+
+            // Verificamos si el texto coincide con el Número de Material (catalogNumber)
+            const material = value.catalogNumber ? String(value.catalogNumber).toUpperCase() : '';
+            const matchesMaterial = material.includes(searchText);
+
+            // Si coincide con la orden O con el material, la agregamos a la lista
+            if (matchesOrder || matchesMaterial) {
                 filteredOrders.push({ key, ...value });
             }
         });
     } else {
         filteredOrders = Array.from(loadedOrders.entries()).map(([key, value]) => ({ key, ...value }));
-        
+
         filteredOrders.sort((a, b) => {
             const dateA = a.orderDate || new Date(0);
             const dateB = b.orderDate || new Date(0);
-            return dateB - dateA; 
+            return dateB - dateA;
         });
 
         // Límite de 200 como pediste
-        const MAX_SIDEBAR_ITEMS = 280; 
+        const MAX_SIDEBAR_ITEMS = 280;
         if (filteredOrders.length > MAX_SIDEBAR_ITEMS) {
             filteredOrders = filteredOrders.slice(0, MAX_SIDEBAR_ITEMS);
         }
     }
 
     if (filteredOrders.length === 0) {
-        orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem; padding: 10px;">${isSearching ? 'No se encontraron órdenes.' : `No hay órdenes recientes.`}</p>`;
+        orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem; padding: 10px;">${isSearching ? 'No se encontraron órdenes ni materiales.' : `No hay órdenes recientes.`}</p>`;
         return;
     }
 
@@ -706,7 +714,7 @@ async function handleSapImageExport() {
         const monthHeaderBtn = document.createElement('button');
         monthHeaderBtn.className = 'month-header';
         monthHeaderBtn.innerHTML = `<span>${monthName}</span> <span class="collapse-icon">►</span>`;
-        
+
         monthHeaderBtn.addEventListener('click', () => {
             monthGroupDiv.classList.toggle('expanded');
         });
@@ -730,13 +738,13 @@ async function handleSapImageExport() {
         sortedDates.forEach(dateString => {
             const ordersOnDate = groupedByDate.get(dateString);
             const isToday = dateString === todayString;
-            
+
             // --- NUEVA LÓGICA DEL CONTADOR (CON CLASE CSS) ---
             const incompleteCount = ordersOnDate.filter(o => (o.packedQty || 0) < (o.orderQty || 0)).length;
-            
+
             // Ahora usamos la clase .incomplete-badge que tiene el efecto de semáforo
-            const warningDotHTML = incompleteCount > 0 
-                ? `<span class="incomplete-badge" title="${incompleteCount} órdenes incompletas">${incompleteCount}</span>` 
+            const warningDotHTML = incompleteCount > 0
+                ? `<span class="incomplete-badge" title="${incompleteCount} órdenes incompletas">${incompleteCount}</span>`
                 : '';
             // -----------------------------------------------
 
@@ -750,7 +758,7 @@ async function handleSapImageExport() {
 
             const dateHeaderBtn = document.createElement('button');
             dateHeaderBtn.className = 'date-header';
-            
+
             dateHeaderBtn.innerHTML = `
                 <span style="display:flex; align-items:center;">
                     ${warningDotHTML} 📅 ${dateString}
@@ -765,7 +773,7 @@ async function handleSapImageExport() {
 
             const ordersContainer = document.createElement('div');
             ordersContainer.className = 'orders-for-date';
-            
+
             ordersOnDate.forEach(order => {
                 ordersContainer.appendChild(createOrderButton(order.key, order));
             });
@@ -789,7 +797,7 @@ async function handleSapImageExport() {
     });
 
     orderList.appendChild(fragment);
-    
+
     if (!isSearching && loadedOrders.size > 200) {
         const infoMsg = document.createElement('div');
         infoMsg.style.padding = "10px";
