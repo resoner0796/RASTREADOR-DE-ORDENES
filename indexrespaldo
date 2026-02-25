@@ -57,10 +57,16 @@
                             <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display: none;">
                         </div>
                     </div>
-                    <div class="card" id="orderListCard">
+                   <div class="card" id="orderListCard">
                         <h3>Órdenes Cargadas</h3>
                         <div style="padding: 0 10px 10px 10px; border-bottom: 1px solid var(--border-color);">
-                            <input type="text" id="orderSearchInput" placeholder="Buscar por número de orden o catalogo..." style="width: 100%; margin: 0; padding: 8px;">
+                            <input type="text" id="orderSearchInput" placeholder="Buscar orden o material..." style="width: 100%; margin: 0; padding: 8px;">
+
+                            <label style="display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 0.8rem; color: var(--text-secondary); cursor: pointer;">
+                                <input type="checkbox" id="filterPendingCheckbox" style="margin: 0; width: auto;">
+                                Mostrar solo pendientes
+                            </label>
+
                         </div>
                         <div id="orderList" class="card-content">
                             <p class="text-dark" style="font-size:0.9rem;">Cargando órdenes...</p>
