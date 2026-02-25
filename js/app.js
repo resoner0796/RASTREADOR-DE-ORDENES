@@ -119,7 +119,7 @@ const copyReportBtn = doc('copyReportBtn');
             rastreoFilterInput.addEventListener('input', () => renderRastreoView(activeOrderKey));
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
             orderSearchInput.addEventListener('input', OrderList); // <-- ¡AGREGA ESTA LÍNEA!
-            doc('filterPendingCheckbox')?.addEventListener('change', derList);
+            doc('filterPendingCheckbox')?.addEventListener('change', OrderList);
             
             const handleFilterClick = (e) => {
                 if (e.target.matches('.filter-btn')) {
