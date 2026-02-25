@@ -119,7 +119,7 @@ const copyReportBtn = doc('copyReportBtn');
             rastreoFilterInput.addEventListener('input', () => renderRastreoView(activeOrderKey));
             empaqueFilterInput.addEventListener('input', () => renderEmpaqueView(activeOrderKey));
             orderSearchInput.addEventListener('input', updateOrderList); // <-- ¡AGREGA ESTA LÍNEA!
-
+            doc('filterPendingCheckbox')?.addEventListener('change', updateOrderList);
             
             const handleFilterClick = (e) => {
                 if (e.target.matches('.filter-btn')) {
@@ -631,58 +631,70 @@ async function handleSapImageExport() {
 
 
             function updateOrderList() {
-    // 1. Obtener texto de búsqueda
+    // 1. Obtener texto de búsqueda y estado del checkbox
     const searchText = orderSearchInput ? orderSearchInput.value.trim().toUpperCase() : '';
     const isSearching = searchText !== '';
+    const showOnlyPending = doc('filterPendingCheckbox') ? doc('filterPendingCheckbox').checked : false;
 
-    // 2. Guardar estado de carpetas expandidas
+    // 2. Guardar estado de carpetas expandidas (para que no se cierren al escribir)
     const expandedMonths = new Set();
     const expandedDates = new Set();
-    if (!isSearching) {
+    if (!isSearching && !showOnlyPending) {
         orderList.querySelectorAll('.month-group.expanded').forEach(g => expandedMonths.add(g.dataset.month));
         orderList.querySelectorAll('.date-group.expanded').forEach(g => expandedDates.add(g.dataset.date));
     }
 
     orderList.innerHTML = '';
 
-    // 3. Filtrar órdenes (¡AQUÍ ESTÁ LA MAGIA NUEVA!)
+    // 3. Filtrar órdenes (Magia combinada: Búsqueda + Checkbox)
     let filteredOrders = [];
-    if (isSearching) {
-        loadedOrders.forEach((value, key) => {
-            // Verificamos si el texto coincide con la Orden (key)
-            const matchesOrder = key.toUpperCase().includes(searchText);
 
-            // Verificamos si el texto coincide con el Número de Material (catalogNumber)
+    loadedOrders.forEach((value, key) => {
+        // A) Validar filtro de texto (Orden o Material)
+        let textMatch = true;
+        if (isSearching) {
+            const matchesOrder = key.toUpperCase().includes(searchText);
             const material = value.catalogNumber ? String(value.catalogNumber).toUpperCase() : '';
             const matchesMaterial = material.includes(searchText);
-
-            // Si coincide con la orden O con el material, la agregamos a la lista
-            if (matchesOrder || matchesMaterial) {
-                filteredOrders.push({ key, ...value });
-            }
-        });
-    } else {
-        filteredOrders = Array.from(loadedOrders.entries()).map(([key, value]) => ({ key, ...value }));
-
-        filteredOrders.sort((a, b) => {
-            const dateA = a.orderDate || new Date(0);
-            const dateB = b.orderDate || new Date(0);
-            return dateB - dateA;
-        });
-
-        // Límite de 200 como pediste
-        const MAX_SIDEBAR_ITEMS = 280;
-        if (filteredOrders.length > MAX_SIDEBAR_ITEMS) {
-            filteredOrders = filteredOrders.slice(0, MAX_SIDEBAR_ITEMS);
+            textMatch = matchesOrder || matchesMaterial;
         }
+
+        // B) Validar filtro de pendientes
+        let pendingMatch = true;
+        if (showOnlyPending) {
+            const orderQty = value.orderQty || 0;
+            const packedQty = value.packedQty || 0;
+            // Solo pasa si la orden tiene cantidad y lo empacado es menor
+            pendingMatch = orderQty > 0 && packedQty < orderQty;
+        }
+
+        // Si pasa ambos filtros, la mostramos
+        if (textMatch && pendingMatch) {
+            filteredOrders.push({ key, ...value });
+        }
+    });
+
+    // Ordenar de más reciente a más antigua
+    filteredOrders.sort((a, b) => {
+        const dateA = a.orderDate || new Date(0);
+        const dateB = b.orderDate || new Date(0);
+        return dateB - dateA;
+    });
+
+    // Límite de 200 órdenes (solo si no estás buscando ni filtrando, para evitar lag)
+    const MAX_SIDEBAR_ITEMS = 280;
+    if (!isSearching && !showOnlyPending && filteredOrders.length > MAX_SIDEBAR_ITEMS) {
+        filteredOrders = filteredOrders.slice(0, MAX_SIDEBAR_ITEMS);
     }
 
     if (filteredOrders.length === 0) {
-        orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem; padding: 10px;">${isSearching ? 'No se encontraron órdenes ni materiales.' : `No hay órdenes recientes.`}</p>`;
+        let emptyMsg = isSearching ? 'No se encontraron órdenes ni materiales.' : 'No hay órdenes recientes.';
+        if (showOnlyPending) emptyMsg = 'No hay órdenes pendientes con estos filtros.';
+        orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem; padding: 10px;">${emptyMsg}</p>`;
         return;
     }
 
-    // 4. Agrupación
+    // 4. Agrupación por Mes y Fecha (El código de pintar las carpetitas)
     const MONTH_NAMES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
     const groupedByMonth = new Map();
 
@@ -739,14 +751,10 @@ async function handleSapImageExport() {
             const ordersOnDate = groupedByDate.get(dateString);
             const isToday = dateString === todayString;
 
-            // --- NUEVA LÓGICA DEL CONTADOR (CON CLASE CSS) ---
             const incompleteCount = ordersOnDate.filter(o => (o.packedQty || 0) < (o.orderQty || 0)).length;
-
-            // Ahora usamos la clase .incomplete-badge que tiene el efecto de semáforo
             const warningDotHTML = incompleteCount > 0
                 ? `<span class="incomplete-badge" title="${incompleteCount} órdenes incompletas">${incompleteCount}</span>`
                 : '';
-            // -----------------------------------------------
 
             const count = ordersOnDate.length;
             const countLabel = count === 1 ? 'orden' : 'órdenes';
@@ -782,7 +790,8 @@ async function handleSapImageExport() {
             dateGroupDiv.appendChild(ordersContainer);
             datesContainer.appendChild(dateGroupDiv);
 
-            if (isSearching || expandedDates.has(dateString)) {
+            // Expandir auto si se está filtrando
+            if (isSearching || showOnlyPending || expandedDates.has(dateString)) {
                 dateGroupDiv.classList.add('expanded');
             }
         });
@@ -791,20 +800,21 @@ async function handleSapImageExport() {
         monthGroupDiv.appendChild(datesContainer);
         fragment.appendChild(monthGroupDiv);
 
-        if (isSearching || expandedMonths.has(monthYearKey)) {
+        // Expandir auto si se está filtrando
+        if (isSearching || showOnlyPending || expandedMonths.has(monthYearKey)) {
             monthGroupDiv.classList.add('expanded');
         }
     });
 
     orderList.appendChild(fragment);
 
-    if (!isSearching && loadedOrders.size > 200) {
+    if (!isSearching && !showOnlyPending && loadedOrders.size > 200) {
         const infoMsg = document.createElement('div');
         infoMsg.style.padding = "10px";
         infoMsg.style.textAlign = "center";
         infoMsg.style.color = "var(--text-secondary)";
         infoMsg.style.fontSize = "0.8rem";
-        infoMsg.innerText = `Mostrando las últimas 200 órdenes de ${loadedOrders.size}. Usa el buscador para ver anteriores.`;
+        infoMsg.innerText = `Mostrando las últimas 200 órdenes. Usa el buscador para ver anteriores.`;
         orderList.appendChild(infoMsg);
     }
 
