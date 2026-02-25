@@ -636,17 +636,15 @@ async function handleSapImageExport() {
     const isSearching = searchText !== '';
     const showOnlyPending = doc('filterPendingCheckbox') ? doc('filterPendingCheckbox').checked : false;
 
-    // 2. Guardar estado de carpetas expandidas (para que no se cierren al escribir)
+    // 2. Guardar estado de carpetas expandidas (SIEMPRE, para que no se cierren solas)
     const expandedMonths = new Set();
     const expandedDates = new Set();
-    if (!isSearching && !showOnlyPending) {
-        orderList.querySelectorAll('.month-group.expanded').forEach(g => expandedMonths.add(g.dataset.month));
-        orderList.querySelectorAll('.date-group.expanded').forEach(g => expandedDates.add(g.dataset.date));
-    }
+    orderList.querySelectorAll('.month-group.expanded').forEach(g => expandedMonths.add(g.dataset.month));
+    orderList.querySelectorAll('.date-group.expanded').forEach(g => expandedDates.add(g.dataset.date));
 
     orderList.innerHTML = '';
 
-    // 3. Filtrar órdenes (Magia combinada: Búsqueda + Checkbox)
+    // 3. Filtrar órdenes (Búsqueda + Checkbox)
     let filteredOrders = [];
 
     loadedOrders.forEach((value, key) => {
@@ -664,7 +662,6 @@ async function handleSapImageExport() {
         if (showOnlyPending) {
             const orderQty = value.orderQty || 0;
             const packedQty = value.packedQty || 0;
-            // Solo pasa si la orden tiene cantidad y lo empacado es menor
             pendingMatch = orderQty > 0 && packedQty < orderQty;
         }
 
@@ -681,7 +678,7 @@ async function handleSapImageExport() {
         return dateB - dateA;
     });
 
-    // Límite de 200 órdenes (solo si no estás buscando ni filtrando, para evitar lag)
+    // Límite de 200 órdenes (solo si no estás filtrando)
     const MAX_SIDEBAR_ITEMS = 280;
     if (!isSearching && !showOnlyPending && filteredOrders.length > MAX_SIDEBAR_ITEMS) {
         filteredOrders = filteredOrders.slice(0, MAX_SIDEBAR_ITEMS);
@@ -694,7 +691,7 @@ async function handleSapImageExport() {
         return;
     }
 
-    // 4. Agrupación por Mes y Fecha (El código de pintar las carpetitas)
+    // 4. Agrupación por Mes y Fecha
     const MONTH_NAMES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
     const groupedByMonth = new Map();
 
@@ -790,8 +787,9 @@ async function handleSapImageExport() {
             dateGroupDiv.appendChild(ordersContainer);
             datesContainer.appendChild(dateGroupDiv);
 
-            // Expandir auto si se está filtrando
-            if (isSearching || showOnlyPending || expandedDates.has(dateString)) {
+            // --- EL AJUSTE PARA LOS DÍAS ---
+            // Ya no se abren automáticamente al buscar. Solo si tú le das clic (memoria local).
+            if (expandedDates.has(dateString)) {
                 dateGroupDiv.classList.add('expanded');
             }
         });
@@ -800,7 +798,8 @@ async function handleSapImageExport() {
         monthGroupDiv.appendChild(datesContainer);
         fragment.appendChild(monthGroupDiv);
 
-        // Expandir auto si se está filtrando
+        // --- EL AJUSTE PARA LOS MESES ---
+        // Al buscar o filtrar, el mes sí se abre solo, para que puedas ver los días disponibles.
         if (isSearching || showOnlyPending || expandedMonths.has(monthYearKey)) {
             monthGroupDiv.classList.add('expanded');
         }
