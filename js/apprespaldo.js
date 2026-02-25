@@ -618,14 +618,17 @@ async function handleSapImageExport() {
             }
             
             function switchMode(mode) {
-                currentMode = mode;
-                doc('rastreoView').style.display = mode === 'rastreo' ? 'block' : 'none';
-                doc('empaqueView').style.display = mode === 'empaque' ? 'block' : 'none';
+    currentMode = mode;
+    doc('rastreoView').style.display = mode === 'rastreo' ? 'block' : 'none';
+    doc('empaqueView').style.display = mode === 'empaque' ? 'block' : 'none';
 
-                modeRastreo.classList.toggle('active', mode === 'rastreo');
-                modeEmpaque.classList.toggle('active', mode === 'empaque');
-                render();
-            }
+    modeRastreo.classList.toggle('active', mode === 'rastreo');
+    modeEmpaque.classList.toggle('active', mode === 'empaque');
+
+    renderControls(); // <-- AGREGA ESTA LÍNEA AQUÍ
+    render();
+}
+
 
             function updateOrderList() {
     // 1. Obtener texto de búsqueda
@@ -642,32 +645,40 @@ async function handleSapImageExport() {
 
     orderList.innerHTML = '';
 
-    // 3. Filtrar órdenes
+    // 3. Filtrar órdenes (¡AQUÍ ESTÁ LA MAGIA NUEVA!)
     let filteredOrders = [];
     if (isSearching) {
         loadedOrders.forEach((value, key) => {
-            if (key.toUpperCase().includes(searchText)) {
+            // Verificamos si el texto coincide con la Orden (key)
+            const matchesOrder = key.toUpperCase().includes(searchText);
+
+            // Verificamos si el texto coincide con el Número de Material (catalogNumber)
+            const material = value.catalogNumber ? String(value.catalogNumber).toUpperCase() : '';
+            const matchesMaterial = material.includes(searchText);
+
+            // Si coincide con la orden O con el material, la agregamos a la lista
+            if (matchesOrder || matchesMaterial) {
                 filteredOrders.push({ key, ...value });
             }
         });
     } else {
         filteredOrders = Array.from(loadedOrders.entries()).map(([key, value]) => ({ key, ...value }));
-        
+
         filteredOrders.sort((a, b) => {
             const dateA = a.orderDate || new Date(0);
             const dateB = b.orderDate || new Date(0);
-            return dateB - dateA; 
+            return dateB - dateA;
         });
 
         // Límite de 200 como pediste
-        const MAX_SIDEBAR_ITEMS = 280; 
+        const MAX_SIDEBAR_ITEMS = 280;
         if (filteredOrders.length > MAX_SIDEBAR_ITEMS) {
             filteredOrders = filteredOrders.slice(0, MAX_SIDEBAR_ITEMS);
         }
     }
 
     if (filteredOrders.length === 0) {
-        orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem; padding: 10px;">${isSearching ? 'No se encontraron órdenes.' : `No hay órdenes recientes.`}</p>`;
+        orderList.innerHTML = `<p class="text-dark" style="font-size:0.9rem; padding: 10px;">${isSearching ? 'No se encontraron órdenes ni materiales.' : `No hay órdenes recientes.`}</p>`;
         return;
     }
 
@@ -703,7 +714,7 @@ async function handleSapImageExport() {
         const monthHeaderBtn = document.createElement('button');
         monthHeaderBtn.className = 'month-header';
         monthHeaderBtn.innerHTML = `<span>${monthName}</span> <span class="collapse-icon">►</span>`;
-        
+
         monthHeaderBtn.addEventListener('click', () => {
             monthGroupDiv.classList.toggle('expanded');
         });
@@ -727,13 +738,13 @@ async function handleSapImageExport() {
         sortedDates.forEach(dateString => {
             const ordersOnDate = groupedByDate.get(dateString);
             const isToday = dateString === todayString;
-            
+
             // --- NUEVA LÓGICA DEL CONTADOR (CON CLASE CSS) ---
             const incompleteCount = ordersOnDate.filter(o => (o.packedQty || 0) < (o.orderQty || 0)).length;
-            
+
             // Ahora usamos la clase .incomplete-badge que tiene el efecto de semáforo
-            const warningDotHTML = incompleteCount > 0 
-                ? `<span class="incomplete-badge" title="${incompleteCount} órdenes incompletas">${incompleteCount}</span>` 
+            const warningDotHTML = incompleteCount > 0
+                ? `<span class="incomplete-badge" title="${incompleteCount} órdenes incompletas">${incompleteCount}</span>`
                 : '';
             // -----------------------------------------------
 
@@ -747,7 +758,7 @@ async function handleSapImageExport() {
 
             const dateHeaderBtn = document.createElement('button');
             dateHeaderBtn.className = 'date-header';
-            
+
             dateHeaderBtn.innerHTML = `
                 <span style="display:flex; align-items:center;">
                     ${warningDotHTML} 📅 ${dateString}
@@ -762,7 +773,7 @@ async function handleSapImageExport() {
 
             const ordersContainer = document.createElement('div');
             ordersContainer.className = 'orders-for-date';
-            
+
             ordersOnDate.forEach(order => {
                 ordersContainer.appendChild(createOrderButton(order.key, order));
             });
@@ -786,7 +797,7 @@ async function handleSapImageExport() {
     });
 
     orderList.appendChild(fragment);
-    
+
     if (!isSearching && loadedOrders.size > 200) {
         const infoMsg = document.createElement('div');
         infoMsg.style.padding = "10px";
@@ -958,32 +969,53 @@ async function handleSapImageExport() {
                 completedOrdersStat.textContent = completedOrdersToday;
             }
             
-            function renderControls() {
+           function renderControls() {
                 const hasOrders = loadedOrders.size > 0;
-                const statusHTML = `
-                    <button class="filter-btn ${rastreoStatusFilter === 'all' ? 'active' : ''}" data-filter="all">Todos</button>
-                    <button class="filter-btn ${rastreoStatusFilter === 'today' ? 'active' : ''}" data-filter="today">En Movimiento</button>
-                    <button class="filter-btn ${rastreoStatusFilter === 'delayed' ? 'active' : ''}" data-filter="delayed">Sin Movimiento</button>
-                    <button class="filter-btn ${rastreoStatusFilter === 'scrap' ? 'active' : ''}" data-filter="scrap">Scrap</button>
-                `;
-                mobileControls.status.innerHTML = statusHTML;
-                desktopControls.status.innerHTML = statusHTML;
 
-                const actionsHTML = `
-                    <button class="btn" id="exportImageButtonMobile" ${!hasOrders ? 'disabled' : ''}>Exportar Captura</button>
-                    <button class="btn" id="exportStatusButtonMobile" ${!hasOrders ? 'disabled' : ''}>Reporte de Estatus</button>
-                `;
-                const desktopActionsHTML = `
-                    <button class="btn" id="exportImageButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Captura</button>
-                    <button class="btn" id="exportStatusButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Reporte</button>
-                `;
-                mobileControls.actions.innerHTML = actionsHTML;
-                desktopControls.actions.innerHTML = desktopActionsHTML;
+                // --- 1. CONTROLES DE RASTREO (Filtros y Botones) ---
+                if (currentMode === 'rastreo') {
+                    // Pintar filtros
+                    const statusHTML = `
+                        <button class="filter-btn ${rastreoStatusFilter === 'all' ? 'active' : ''}" data-filter="all">Todos</button>
+                        <button class="filter-btn ${rastreoStatusFilter === 'today' ? 'active' : ''}" data-filter="today">En Movimiento</button>
+                        <button class="filter-btn ${rastreoStatusFilter === 'delayed' ? 'active' : ''}" data-filter="delayed">Sin Movimiento</button>
+                        <button class="filter-btn ${rastreoStatusFilter === 'scrap' ? 'active' : ''}" data-filter="scrap">Scrap</button>
+                    `;
+                    if (mobileControls.status) mobileControls.status.innerHTML = statusHTML;
+                    if (desktopControls.status) desktopControls.status.innerHTML = statusHTML;
 
-                doc('exportImageButtonMobile').addEventListener('click', handleImageExport);
-                doc('exportImageButtonDesktop').addEventListener('click', handleImageExport);
-                doc('exportStatusButtonMobile').addEventListener('click', handleStatusReport);
-                doc('exportStatusButtonDesktop').addEventListener('click', handleStatusReport);
+                    // Pintar botones de Rastreo
+                    const actionsHTML = `
+                        <button class="btn" id="exportImageButtonMobile" ${!hasOrders ? 'disabled' : ''}>Exportar Captura</button>
+                        <button class="btn" id="exportStatusButtonMobile" ${!hasOrders ? 'disabled' : ''}>Reporte de Estatus</button>
+                    `;
+                    const desktopActionsHTML = `
+                        <button class="btn" id="exportImageButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Captura</button>
+                        <button class="btn" id="exportStatusButtonDesktop" ${!hasOrders ? 'disabled' : ''}>Reporte</button>
+                    `;
+
+                    if (mobileControls.actions) mobileControls.actions.innerHTML = actionsHTML;
+                    if (desktopControls.actions) desktopControls.actions.innerHTML = desktopActionsHTML;
+
+                    // Asignar listeners de Rastreo
+                    doc('exportImageButtonMobile')?.addEventListener('click', handleImageExport);
+                    doc('exportImageButtonDesktop')?.addEventListener('click', handleImageExport);
+                    doc('exportStatusButtonMobile')?.addEventListener('click', handleStatusReport);
+                    doc('exportStatusButtonDesktop')?.addEventListener('click', handleStatusReport);
+                }
+
+                // --- 2. CONTROLES DE EMPAQUE (Botón Excel) ---
+                if (currentMode === 'empaque') {
+                    const empaqueContainer = doc('empaqueActionsContainer');
+                    if (empaqueContainer) {
+                        empaqueContainer.innerHTML = `
+                            <button class="btn" id="exportExcelButton" ${!hasOrders ? 'disabled' : ''} style="background-color: var(--success-color); color: #111827; width: auto; padding: 6px 16px;">
+                                Exportar Excel
+                            </button>
+                        `;
+                        doc('exportExcelButton')?.addEventListener('click', handleEmpaqueExcelExport);
+                    }
+                }
             }
 
             async function renderRastreoView(key) {
@@ -1421,6 +1453,67 @@ window.copyGR = function(element, gr) {
             console.error('Error al copiar el GR: ', err);
         }
     );
+}
+
+                    // --- NUEVA FUNCIÓN: EXPORTAR EMPAQUE A EXCEL ---
+function handleEmpaqueExcelExport() {
+    const table = doc('empaqueTable');
+    if (!table || table.querySelector('tbody tr').textContent.includes('No se encontraron resultados') || table.querySelector('tbody tr').textContent.includes('No hay datos')) {
+        showModal('Exportar Excel', 'No hay datos en la tabla para exportar.', 'warning');
+        return;
+    }
+
+    try {
+        showModal('Exportando...', 'Generando archivo Excel, por favor espera...', 'info');
+
+        // 1. Clonar la tabla para no afectar la vista real
+        const clonedTable = table.cloneNode(true);
+
+        // 2. Limpiar el clon: Quitar los inputs de filtro del encabezado
+        const inputs = clonedTable.querySelectorAll('thead input');
+        inputs.forEach(input => input.remove());
+
+        // 3. Limpiar el clon: Solo dejar las filas que están visibles (si usaste filtros)
+        const rows = Array.from(clonedTable.querySelectorAll('tbody tr'));
+        rows.forEach(row => {
+            if (row.style.display === 'none') {
+                row.remove();
+            }
+        });
+
+        // 4. Convertir la tabla HTML limpia a un "Worksheet" de Excel
+        const ws = XLSX.utils.table_to_sheet(clonedTable, { raw: true }); // raw: true mantiene los IDs largos como texto
+
+        // 5. Ajustar el ancho de las columnas para que se vea decente
+        const wscols = [
+            {wch: 25}, // BoxID
+            {wch: 10}, // Cantidad
+            {wch: 20}, // Último Empaque
+            {wch: 20}, // Recibido Logística
+            {wch: 15}, // GR
+            {wch: 15}, // Orden
+            {wch: 15}  // Usuario
+        ];
+        ws['!cols'] = wscols;
+
+        // 6. Crear un "Workbook" y añadir la hoja
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Empaque_Data");
+
+        // 7. Generar el nombre del archivo
+        const dateStamp = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
+        const orderName = (activeOrderKey && activeOrderKey !== 'all') ? activeOrderKey : 'Completo';
+        const fileName = `Empaque_${currentArea}_${orderName}_${dateStamp}.xlsx`;
+
+        // 8. Descargar el archivo
+        XLSX.writeFile(wb, fileName);
+
+        hideModal(); // Cerrar el modal de "Exportando..."
+
+    } catch (e) {
+        console.error("Error al exportar a Excel:", e);
+        showModal('Error', 'Ocurrió un problema al generar el Excel.', 'error');
+    }
 }
 
             
